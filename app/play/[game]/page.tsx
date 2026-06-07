@@ -11,7 +11,7 @@ type PlayPageProps = {
 };
 
 export async function generateStaticParams() {
-  const games = getGames();
+  const games = await getGames();
   return games
     .filter((game) => game.type !== "external")
     .map((game) => ({
@@ -21,7 +21,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PlayPageProps) {
   const { game: gameId } = await params;
-  const game = getGame(gameId);
+  const game = await getGame(gameId);
 
   return {
     title: game ? `${game.title} | Dylan Games` : "Game | Dylan Games"
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PlayPageProps) {
 
 export default async function PlayPage({ params }: PlayPageProps) {
   const { game: gameId } = await params;
-  const game = getGame(gameId);
+  const game = await getGame(gameId);
 
   if (!game || game.type === "external") {
     notFound();

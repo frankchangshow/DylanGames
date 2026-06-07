@@ -1,6 +1,6 @@
 # Dylan Games
 
-A very simple Next.js game launcher. The homepage always renders a small hardcoded launcher list so `/` stays reliable on Vercel.
+A very simple Next.js game launcher. The homepage scans `public/games/` during the Vercel build and creates cards automatically.
 
 ## Run locally
 
@@ -14,25 +14,27 @@ Open `http://localhost:3000`.
 ## Add a new HTML game
 
 1. Create a folder in `public/games/`.
-2. Add `index.html`.
-3. Add the game to `lib/games.ts`.
-4. Deploy.
+2. Add an HTML file.
+3. Commit to `main`.
 
 Example:
 
 ```text
-public/games/stop-then-go/
-  index.html
-  thumbnail.png
+public/games/tower-defense-starters/
+  tower_defense_starters.html
+  style.css
+  script.js
 ```
 
-Clicking it opens `/play/stop-then-go` and loads `/games/stop-then-go/index.html`.
+The launcher prefers `index.html` when it exists. If there is no `index.html`, it uses the first `.html` file in the folder.
+
+Clicking the card opens `/play/tower-defense-starters` and loads the HTML file from that folder.
 
 ## Add a Scratch game
 
-1. Add the Scratch embed URL to `lib/games.ts`.
-2. Set `type` to `scratch`.
-3. Deploy.
+1. Create a folder in `public/games/`.
+2. Add `game.json`.
+3. Commit to `main`.
 
 Example:
 
@@ -44,13 +46,13 @@ Example:
 }
 ```
 
-Clicking it opens `/play/scratch-race` and embeds the Scratch project.
+Clicking the card opens `/play/scratch-race` and embeds the Scratch project.
 
 ## Add an external game
 
-1. Add the external URL to `lib/games.ts`.
-2. Set `type` to `external`.
-3. Deploy.
+1. Create a folder in `public/games/`.
+2. Add `game.json`.
+3. Commit to `main`.
 
 Example:
 
@@ -64,9 +66,13 @@ Example:
 
 External games open in a new tab.
 
+## Remove a game
+
+Delete the game's folder from `public/games/`, then commit to `main`.
+
 ## Notes
 
-- The launcher uses the list in `lib/games.ts`.
-- The homepage does not read the filesystem at runtime.
-- HTML games need an `index.html`.
+- Every direct subfolder of `public/games/` is checked automatically during build.
+- Folder names become play URLs, so use simple names like `tower-defense-starters`.
+- Optional thumbnails can be named `thumbnail.png`, `thumbnail.jpg`, `thumbnail.jpeg`, `thumbnail.webp`, or `thumbnail.gif`.
 - This works on GitHub and the Vercel Hobby Plan.
