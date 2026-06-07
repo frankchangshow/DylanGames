@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGameForKid, getPlayableGames, isKid } from "@/src/data/games";
+import ReactGamePlayer from "@/src/react-games/ReactGamePlayer";
 
 export const dynamicParams = false;
 
@@ -56,13 +57,19 @@ export default async function PlayPage({ params }: PlayPageProps) {
         </Link>
         <h1>{game.title}</h1>
       </div>
-      <iframe
-        className="gameFrame"
-        src={game.playUrl}
-        title={game.title}
-        allow="autoplay; fullscreen; gamepad; microphone; camera"
-        allowFullScreen
-      />
+      {game.type === "react" ? (
+        <div className="reactGameFrame">
+          <ReactGamePlayer kid={kid} gameId={game.id} />
+        </div>
+      ) : (
+        <iframe
+          className="gameFrame"
+          src={game.playUrl}
+          title={game.title}
+          allow="autoplay; fullscreen; gamepad; microphone; camera"
+          allowFullScreen
+        />
+      )}
     </main>
   );
 }

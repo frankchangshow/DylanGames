@@ -11,7 +11,7 @@ A simple Next.js game launcher for two kids.
 
 ## Game folders
 
-Dylan games live here:
+Finished Dylan HTML games live here:
 
 ```text
 public/games/dylan/
@@ -21,6 +21,12 @@ Brayden games live here:
 
 ```text
 public/games/brayden/
+```
+
+React/TSX Dylan games live here:
+
+```text
+src/react-games/dylan/
 ```
 
 ## Add a Dylan HTML game
@@ -41,6 +47,24 @@ public/games/dylan/tower-defense-starters/
 The launcher prefers `index.html`. If there is no `index.html`, it uses the first `.html` file in the folder.
 
 The card appears automatically after Vercel rebuilds.
+
+## Add a Dylan React game
+
+React games are source code, so they must live under `src/react-games/dylan/`, not `public/games/dylan/`.
+
+1. Create a folder in `src/react-games/dylan/`.
+2. Add a client component file.
+3. Add the game to `src/data/dylanGames.ts`.
+4. Add it to `src/react-games/ReactGamePlayer.tsx`.
+5. Commit to `main`.
+
+Example:
+
+```text
+src/react-games/dylan/my-react-game/MyReactGame.tsx
+```
+
+The play route renders React games directly. HTML games still run in an iframe.
 
 ## Add a Brayden HTML game later
 

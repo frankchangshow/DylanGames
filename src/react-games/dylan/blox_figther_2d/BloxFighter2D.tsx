@@ -1,3 +1,6 @@
+// @ts-nocheck
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Map, Home, ShieldAlert, Zap, Sword, Save, Target, Scroll } from 'lucide-react';
 

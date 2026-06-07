@@ -1,6 +1,6 @@
 export type Kid = "dylan" | "brayden";
 
-export type GameType = "html" | "scratch" | "external" | "placeholder";
+export type GameType = "html" | "scratch" | "external" | "placeholder" | "react";
 
 export type Game = {
   id: string;
