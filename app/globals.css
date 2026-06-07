@@ -9,6 +9,7 @@
   --pink: #ff4f9a;
   --yellow: #ffd84d;
   --green: #28c76f;
+  --orange: #ff8a3d;
   --shadow: 0 18px 45px rgba(23, 32, 51, 0.16);
 }
 
@@ -36,23 +37,112 @@ a {
   text-decoration: none;
 }
 
-.home {
+.landingPage,
+.launcherPage {
   min-height: 100vh;
   padding: 28px clamp(16px, 4vw, 48px) 48px;
 }
 
-.hero {
-  display: flex;
-  align-items: center;
-  min-height: 118px;
+.landingPage {
+  display: grid;
+  place-items: center;
 }
 
-.hero h1 {
+.landingHero {
+  display: grid;
+  gap: 22px;
+  justify-items: center;
+  width: min(760px, 100%);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--blue-dark);
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.landingHero h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: 0.95;
+  text-shadow: 0 8px 0 rgba(37, 99, 235, 0.25), 0 18px 36px rgba(23, 32, 51, 0.26);
+}
+
+.kidButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: min(620px, 100%);
+}
+
+.kidButton {
+  display: grid;
+  place-items: center;
+  min-height: 132px;
+  border: 4px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  color: white;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: 900;
+  box-shadow: var(--shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.kidButton:hover {
+  box-shadow: 0 24px 56px rgba(23, 32, 51, 0.24);
+  transform: translateY(-5px);
+}
+
+.kidButton span {
+  text-shadow: 0 4px 0 rgba(23, 32, 51, 0.22);
+}
+
+.dylanButton {
+  background: linear-gradient(135deg, var(--blue), var(--green));
+}
+
+.braydenButton {
+  background: linear-gradient(135deg, var(--orange), var(--pink));
+}
+
+.launcherHero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  min-height: 150px;
+}
+
+.launcherHero h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.5rem, 7vw, 5rem);
   line-height: 0.95;
   text-shadow: 0 7px 0 rgba(37, 99, 235, 0.25), 0 16px 35px rgba(23, 32, 51, 0.28);
+}
+
+.launcherHero p {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  font-weight: 800;
+}
+
+.homeLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--blue-dark);
+  font-size: 0.95rem;
+  font-weight: 900;
 }
 
 .gameGrid {
@@ -107,7 +197,7 @@ a {
 
 .cardBody {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   padding: 14px;
 }
 
@@ -115,6 +205,14 @@ a {
   min-height: 2.4em;
   margin: 0;
   font-size: 1.12rem;
+  line-height: 1.2;
+}
+
+.cardBody p {
+  min-height: 2.4em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
   line-height: 1.2;
 }
 
@@ -136,6 +234,22 @@ a {
 .playButton:hover {
   transform: translateY(2px);
   box-shadow: 0 3px 0 var(--blue-dark);
+}
+
+.disabledButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border-radius: 8px;
+  background: #d7dce8;
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.placeholderCard {
+  opacity: 0.92;
 }
 
 .emptyState {
@@ -218,7 +332,16 @@ a {
     padding: 20px 12px 28px;
   }
 
-  .hero {
+  .landingPage,
+  .launcherPage {
+    padding: 20px 12px 28px;
+  }
+
+  .kidButtons {
+    grid-template-columns: 1fr;
+  }
+
+  .launcherHero {
     min-height: 92px;
   }
 

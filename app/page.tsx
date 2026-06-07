@@ -1,50 +1,20 @@
 import Link from "next/link";
-import { getGames } from "@/lib/games";
 
-export default async function Home() {
-  const games = await getGames();
-
+export default function Home() {
   return (
-    <main className="home">
-      <header className="hero">
-        <h1>🎮 Dylan Games</h1>
-      </header>
-
-      {games.length > 0 ? (
-        <section className="gameGrid" aria-label="Available games">
-          {games.map((game) => {
-            const href = game.type === "external" ? game.playUrl : `/play/${game.id}`;
-
-            return (
-              <article className="gameCard" key={game.id}>
-                <div className="thumbnail">
-                  {game.thumbnailUrl ? (
-                    <img src={game.thumbnailUrl} alt="" />
-                  ) : (
-                    <span>{game.title.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="cardBody">
-                  <h2>{game.title}</h2>
-                  <Link
-                    className="playButton"
-                    href={href}
-                    target={game.type === "external" ? "_blank" : undefined}
-                    rel={game.type === "external" ? "noreferrer" : undefined}
-                  >
-                    Play
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </section>
-      ) : (
-        <section className="emptyState" aria-label="No games yet">
-          <h2>No games yet</h2>
-          <p>Add a folder inside public/games with an HTML file to make a game card appear.</p>
-        </section>
-      )}
+    <main className="landingPage">
+      <section className="landingHero" aria-labelledby="site-title">
+        <p className="eyebrow">Pick a player</p>
+        <h1 id="site-title">Chang Brother Games</h1>
+        <div className="kidButtons" aria-label="Game launchers">
+          <Link className="kidButton dylanButton" href="/dylan">
+            <span>Dylan Games</span>
+          </Link>
+          <Link className="kidButton braydenButton" href="/brayden">
+            <span>Brayden Games</span>
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

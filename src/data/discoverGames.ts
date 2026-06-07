@@ -1,25 +1,16 @@
 import { existsSync } from "fs";
 import { readdir, readFile } from "fs/promises";
 import path from "path";
-
-export type GameType = "html" | "scratch" | "external";
-
-export type Game = {
-  id: string;
-  title: string;
-  type: GameType;
-  playUrl: string;
-  thumbnailUrl: string | null;
-};
+import type { Game, GameType, Kid } from "./types";
 
 type GameJson = {
   title?: string;
+  description?: string;
   type?: GameType;
   url?: string;
   thumbnail?: string;
 };
 
-const gamesDirectory = path.join(process.cwd(), "public", "games");
 const thumbnailNames = ["thumbnail.png", "thumbnail.jpg", "thumbnail.jpeg", "thumbnail.webp", "thumbnail.gif"];
 
 function titleFromName(name: string) {
@@ -32,16 +23,16 @@ function titleFromName(name: string) {
 }
 
 function isGameType(value: unknown): value is GameType {
-  return value === "html" || value === "scratch" || value === "external";
+  return value === "html" || value === "scratch" || value === "external" || value === "placeholder";
 }
 
-function firstExistingThumbnail(folderPath: string, gameId: string, config?: GameJson | null) {
+function getThumbnail(folderPath: string, kid: Kid, gameId: string, config?: GameJson | null) {
   if (config?.thumbnail) {
-    return config.thumbnail.startsWith("/") ? config.thumbnail : `/games/${gameId}/${config.thumbnail}`;
+    return config.thumbnail.startsWith("/") ? config.thumbnail : `/games/${kid}/${gameId}/${config.thumbnail}`;
   }
 
   const thumbnailName = thumbnailNames.find((name) => existsSync(path.join(folderPath, name)));
-  return thumbnailName ? `/games/${gameId}/${thumbnailName}` : null;
+  return thumbnailName ? `/games/${kid}/${gameId}/${thumbnailName}` : null;
 }
 
 async function readGameJson(folderPath: string): Promise<GameJson | null> {
@@ -72,7 +63,9 @@ async function findHtmlFile(folderPath: string) {
   return htmlFiles[0] || null;
 }
 
-export async function getGames(): Promise<Game[]> {
+export async function discoverGames(kid: Kid): Promise<Game[]> {
+  const gamesDirectory = path.join(process.cwd(), "public", "games", kid);
+
   if (!existsSync(gamesDirectory)) {
     return [];
   }
@@ -86,6 +79,7 @@ export async function getGames(): Promise<Game[]> {
         const folderPath = path.join(gamesDirectory, id);
         const config = await readGameJson(folderPath);
         const type = isGameType(config?.type) ? config.type : "html";
+        const title = config?.title?.trim() || titleFromName(id);
 
         if (type === "scratch" || type === "external") {
           if (!config?.url) {
@@ -94,10 +88,11 @@ export async function getGames(): Promise<Game[]> {
 
           return {
             id,
-            title: config.title?.trim() || titleFromName(id),
+            title,
+            description: config.description?.trim() || "Ready to play.",
             type,
             playUrl: config.url,
-            thumbnailUrl: firstExistingThumbnail(folderPath, id, config)
+            thumbnailUrl: getThumbnail(folderPath, kid, id, config)
           };
         }
 
@@ -109,10 +104,11 @@ export async function getGames(): Promise<Game[]> {
 
         return {
           id,
-          title: config?.title?.trim() || titleFromName(id),
+          title,
+          description: config?.description?.trim() || "Jump in and play.",
           type: "html",
-          playUrl: `/games/${id}/${htmlFile}`,
-          thumbnailUrl: firstExistingThumbnail(folderPath, id, config)
+          playUrl: `/games/${kid}/${id}/${htmlFile}`,
+          thumbnailUrl: getThumbnail(folderPath, kid, id, config)
         };
       })
   );
@@ -120,9 +116,4 @@ export async function getGames(): Promise<Game[]> {
   return games
     .filter((game): game is Game => Boolean(game))
     .sort((a, b) => a.title.localeCompare(b.title));
-}
-
-export async function getGame(gameId: string) {
-  const games = await getGames();
-  return games.find((game) => game.id === gameId) || null;
 }

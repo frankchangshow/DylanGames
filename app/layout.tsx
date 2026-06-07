@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dylan Games",
-  description: "A simple game launcher for Dylan Games"
+  title: "Chang Brother Games",
+  description: "Simple game launchers for Dylan and Brayden"
 };
 
 export default function RootLayout({

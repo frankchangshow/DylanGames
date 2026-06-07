@@ -1,78 +1,87 @@
-# Dylan Games
+# Chang Brother Games
 
-A very simple Next.js game launcher. The homepage scans `public/games/` during the Vercel build and creates cards automatically.
+A simple Next.js game launcher for two kids.
 
-## Run locally
+## Pages
 
-```bash
-npm install
-npm run dev
+- `/` shows a landing page with buttons for Dylan Games and Brayden Games.
+- `/dylan` shows Dylan's game launcher.
+- `/brayden` shows Brayden's placeholder launcher.
+- `/play/[kid]/[game]` plays a game in a full-page iframe.
+
+## Game folders
+
+Dylan games live here:
+
+```text
+public/games/dylan/
 ```
 
-Open `http://localhost:3000`.
+Brayden games live here:
 
-## Add a new HTML game
+```text
+public/games/brayden/
+```
 
-1. Create a folder in `public/games/`.
+## Add a Dylan HTML game
+
+1. Create a folder in `public/games/dylan/`.
 2. Add an HTML file.
 3. Commit to `main`.
 
 Example:
 
 ```text
-public/games/tower-defense-starters/
-  tower_defense_starters.html
+public/games/dylan/tower-defense-starters/
+  index.html
   style.css
   script.js
 ```
 
-The launcher prefers `index.html` when it exists. If there is no `index.html`, it uses the first `.html` file in the folder.
+The launcher prefers `index.html`. If there is no `index.html`, it uses the first `.html` file in the folder.
 
-Clicking the card opens `/play/tower-defense-starters` and loads the HTML file from that folder.
+The card appears automatically after Vercel rebuilds.
 
-## Add a Scratch game
+## Add a Brayden HTML game later
 
-1. Create a folder in `public/games/`.
-2. Add `game.json`.
-3. Commit to `main`.
+1. Create a folder in `public/games/brayden/`.
+2. Add an HTML file.
+3. Update `src/data/braydenGames.ts` to use discovery instead of the placeholder.
+4. Commit to `main`.
 
-Example:
+## Add a Scratch or external game
+
+Create a folder and add `game.json`.
+
+Scratch example:
 
 ```json
 {
   "title": "Scratch Race",
+  "description": "A fun Scratch racing game.",
   "type": "scratch",
   "url": "https://scratch.mit.edu/projects/123456/embed"
 }
 ```
 
-Clicking the card opens `/play/scratch-race` and embeds the Scratch project.
-
-## Add an external game
-
-1. Create a folder in `public/games/`.
-2. Add `game.json`.
-3. Commit to `main`.
-
-Example:
+External example:
 
 ```json
 {
   "title": "Water Chess",
+  "description": "Open Water Chess in a new tab.",
   "type": "external",
   "url": "https://waterchess.vercel.app"
 }
 ```
 
-External games open in a new tab.
-
 ## Remove a game
 
-Delete the game's folder from `public/games/`, then commit to `main`.
+Delete the game's folder from `public/games/dylan/` or `public/games/brayden/`, then commit to `main`.
 
 ## Notes
 
-- Every direct subfolder of `public/games/` is checked automatically during build.
+- Dylan games are auto-discovered during the Vercel build.
 - Folder names become play URLs, so use simple names like `tower-defense-starters`.
 - Optional thumbnails can be named `thumbnail.png`, `thumbnail.jpg`, `thumbnail.jpeg`, `thumbnail.webp`, or `thumbnail.gif`.
-- This works on GitHub and the Vercel Hobby Plan.
+- No database, login, admin page, CMS, blog, or extra branches are needed.
