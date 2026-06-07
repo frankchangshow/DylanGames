@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Castle Heart Defense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020617;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            color: white;
+        }
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+        #build-menu {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 10px;
+            border-radius: 20px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(10px);
+            max-width: 95vw;
+            overflow-x: auto;
+        }
+        .build-btn {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid transparent;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        .build-btn.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+        }
+        .build-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        #attack-btn {
+            position: absolute;
+            bottom: 140px;
+            right: 40px;
+            width: 100px;
+            height: 100px;
+            background: rgba(239, 68, 68, 0.7);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            border: 4px solid white;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            z-index: 50;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer" class="p-6">
+        <!-- Top Stats -->
+        <div id="stats-hud" class="flex justify-between items-start opacity-0 transition-opacity duration-500">
+            <div class="bg-black/70 p-4 rounded-xl backdrop-blur-md border border-white/10 shadow-2xl">
+                <h1 class="text-xl font-bold text-yellow-400">💰 Coins: <span id="coin-count">0</span></h1>
+                <p class="text-sm opacity-80">Kill & Collect!</p>
+            </div>
+            
+            <div class="bg-black/70 p-4 rounded-xl backdrop-blur-md border border-white/10 text-right shadow-2xl">
+                <h2 class="text-xl font-bold text-red-400">❤️ Heart HP: <span id="heart-hp">100</span>%</h2>
+                <div class="w-48 h-2 bg-gray-700 rounded-full mt-2 overflow-hidden">
+                    <div id="hp-bar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div>
+                </div>
+                <p class="text-xs mt-1 opacity-70 italic">Wave: <span id="wave-count">1</span></p>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay-screen">
+            <div class="text-center p-8 bg-slate-900 border-4 border-blue-500 rounded-3xl max-w-lg shadow-2xl">
+                <h1 class="text-5xl font-black text-white mb-2 tracking-tighter italic">CASTLE BATTLE</h1>
+                <h2 class="text-xl font-bold text-blue-400 mb-6 uppercase tracking-widest">New Arsenal Online</h2>
+                
+                <div class="grid grid-cols-2 gap-3 text-left mb-6 text-sm">
+                    <div class="bg-slate-800/50 p-3 rounded-lg border border-white/5">
+                        <p class="text-orange-400 font-bold mb-1">🔫 SHOTGUN</p>
+                        <p class="text-xs text-white/60">Short range, multi-hit.</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-3 rounded-lg border border-white/5">
+                        <p class="text-cyan-400 font-bold mb-1">⚡ ENERGY</p>
+                        <p class="text-xs text-white/60">Constant beam pressure.</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-3 rounded-lg border border-white/5">
+                        <p class="text-gray-400 font-bold mb-1">🔥 MINIGUN</p>
+                        <p class="text-xs text-white/60">Insane speed, low push.</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-3 rounded-lg border border-white/5">
+                        <p class="text-yellow-400 font-bold mb-1">🔨 HAMMER</p>
+                        <p class="text-xs text-white/60">Huge AOE, slow reload.</p>
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-2xl rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-blue-900/40">
+                    START THE BATTLE
+                </button>
+            </div>
+        </div>
+
+        <!-- Build Menu -->
+        <div id="build-menu" class="pointer-events-auto opacity-0 transition-opacity duration-500">
+            <button onclick="setBuildType('archer')" id="btn-archer" class="build-btn active text-blue-400">
+                <span>🏹 Archer</span><span class="text-xs">20💰</span>
+            </button>
+            <button onclick="setBuildType('shotgun')" id="btn-shotgun" class="build-btn text-orange-400">
+                <span>🔫 Shotty</span><span class="text-xs">40💰</span>
+            </button>
+            <button onclick="setBuildType('minigun')" id="btn-minigun" class="build-btn text-gray-300">
+                <span>🔥 Mini</span><span class="text-xs">60💰</span>
+            </button>
+            <button onclick="setBuildType('energy')" id="btn-energy" class="build-btn text-cyan-400">
+                <span>⚡ Energy</span><span class="text-xs">70💰</span>
+            </button>
+            <button onclick="setBuildType('hammer')" id="btn-hammer" class="build-btn text-yellow-500">
+                <span>🔨 Hammer</span><span class="text-xs">100💰</span>
+            </button>
+            <button onclick="setBuildType('cannon')" id="btn-cannon" class="build-btn text-red-500">
+                <span>💣 Cannon</span><span class="text-xs">50💰</span>
+            </button>
+        </div>
+
+        <div id="attack-btn" class="pointer-events-auto select-none active:scale-90 transition-transform">KNOCKOUT</div>
+
+        <!-- GameOver Overlay -->
+        <div id="overlay" class="fixed inset-0 bg-black/95 hidden pointer-events-auto flex items-center justify-center z-[100]">
+            <div class="text-center p-12 bg-slate-900 border-4 border-red-500 rounded-3xl max-w-sm shadow-2xl">
+                <h2 class="text-6xl font-black text-red-500 mb-4 tracking-tighter">FALLEN</h2>
+                <p class="text-xl mb-8 text-white opacity-80">The Heart has been destroyed.</p>
+                <button onclick="location.reload()" class="w-full py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 transition-colors">TRY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const coinEl = document.getElementById('coin-count');
+    const hpEl = document.getElementById('heart-hp');
+    const hpBarEl = document.getElementById('hp-bar');
+    const waveEl = document.getElementById('wave-count');
+    const overlay = document.getElementById('overlay');
+    const startScreen = document.getElementById('start-screen');
+    const buildMenu = document.getElementById('build-menu');
+    const statsHud = document.getElementById('stats-hud');
+
+    // Game Config
+    let width, height;
+    const worldSize = 2200;
+    const buildZoneSize = 750;
+    const towerCosts = { archer: 20, shotgun: 40, minigun: 60, energy: 70, hammer: 100, cannon: 50 };
+
+    // Game State
+    let gameState = 'START';
+    let screenShake = 0;
+    let coins = 120; // Extra coins for testing new towers
+    let heartHP = 100;
+    let wave = 1;
+    let enemies = [];
+    let allies = [];
+    let towers = [];
+    let loot = [];
+    let particles = [];
+    let buildType = 'archer';
+    let lastSpawnTime = 0;
+    let spawnRate = 1800;
+
+    let player = {
+        x: 0, y: 180,
+        vx: 0, vy: 0,
+        angle: 0,
+        knockback: 0,
+        attackCooldown: 0,
+        isAttacking: 0,
+        color: '#2563eb',
+        isPlayer: true
+    };
+
+    let keys = {};
+    let mouse = { x: 0, y: 0 };
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+        canvas.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        canvas.addEventListener('mousedown', e => handleBuild(e));
+
+        const allyOffsets = [[-80, 80], [80, 80], [-120, 160], [120, 160]];
+        allyOffsets.forEach((pos, idx) => {
+            allies.push({
+                x: pos[0], y: pos[1],
+                vx: 0, vy: 0,
+                angle: 0,
+                attackCooldown: 0,
+                isAttacking: 0,
+                color: '#60a5fa',
+                id: idx
+            });
+        });
+
+        if ('ontouchstart' in window) {
+            document.getElementById('attack-btn').style.display = 'flex';
+            document.getElementById('attack-btn').addEventListener('touchstart', e => {
+                e.preventDefault();
+                tryAttack(player);
+            });
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    function startGame() {
+        gameState = 'PLAYING';
+        startScreen.classList.add('hidden');
+        buildMenu.classList.remove('opacity-0');
+        statsHud.classList.remove('opacity-0');
+        lastSpawnTime = performance.now();
+    }
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+
+    function setBuildType(type) {
+        buildType = type;
+        document.querySelectorAll('.build-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+    }
+
+    function handleBuild(e) {
+        if (gameState !== 'PLAYING') return;
+        const wx = e.clientX - width/2 + player.x;
+        const wy = e.clientY - height/2 + player.y;
+        const distToCenter = Math.sqrt(wx*wx + wy*wy);
+        if (distToCenter < buildZoneSize/2) {
+            const cost = towerCosts[buildType];
+            if (coins >= cost) {
+                const tooClose = towers.some(t => Math.sqrt((t.x-wx)**2 + (t.y-wy)**2) < 50);
+                if (!tooClose) {
+                    coins -= cost;
+                    towers.push({ x: wx, y: wy, type: buildType, cooldown: 0, angle: 0, target: null });
+                    createExplosion(wx, wy, '#fff', 8);
+                }
+            }
+        }
+    }
+
+    function spawnEnemy() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 900; 
+        enemies.push({
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist,
+            vx: 0, vy: 0,
+            angle: 0,
+            knockback: 0,
+            speed: 1.6 + (wave * 0.12),
+            type: Math.random() > 0.8 ? 'fast' : 'normal'
+        });
+    }
+
+    function tryAttack(char) {
+        if (char.attackCooldown <= 0) {
+            char.isAttacking = 15;
+            char.attackCooldown = 35;
+            enemies.forEach(enemy => {
+                const dx = enemy.x - char.x;
+                const dy = enemy.y - char.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 110) {
+                    const angleToTarget = Math.atan2(dy, dx);
+                    if (Math.abs(normalizeAngle(angleToTarget - char.angle)) < Math.PI / 1.5) {
+                        applyKnockout(char, enemy, 22);
+                    }
+                }
+            });
+        }
+    }
+
+    function applyKnockout(attacker, victim, basePower) {
+        const angle = Math.atan2(victim.y - attacker.y, victim.x - attacker.x);
+        const scaling = 1 + (victim.knockback / 80);
+        const power = basePower * Math.pow(scaling, 2);
+        victim.vx += Math.cos(angle) * power;
+        victim.vy += Math.sin(angle) * power;
+        victim.knockback += 15;
+        createExplosion(victim.x, victim.y, '#fff', 3);
+        if (victim === player) screenShake = 12;
+    }
+
+    function createExplosion(x, y, color, count) {
+        for(let i=0; i<count; i++) {
+            particles.push({
+                x, y,
+                vx: (Math.random()-0.5)*15,
+                vy: (Math.random()-0.5)*15,
+                life: 1, color
+            });
+        }
+    }
+
+    function normalizeAngle(a) {
+        while(a > Math.PI) a -= Math.PI * 2;
+        while(a < -Math.PI) a += Math.PI * 2;
+        return a;
+    }
+
+    function update(time) {
+        if (gameState === 'PLAYING') {
+            if (time - lastSpawnTime > spawnRate) {
+                spawnEnemy();
+                lastSpawnTime = time;
+                spawnRate = Math.max(400, 1800 - (wave * 120));
+                if (enemies.length % 6 === 0) wave++;
+            }
+
+            let mx = 0, my = 0;
+            if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+            if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+            if (mx !== 0 || my !== 0) {
+                const mag = Math.sqrt(mx*mx + my*my);
+                player.vx += (mx/mag) * 0.95;
+                player.vy += (my/mag) * 0.95;
+                player.angle = Math.atan2(my, mx);
+            }
+            if (keys['Space']) tryAttack(player);
+
+            allies.forEach(ally => {
+                let nearest = null;
+                let minDist = 500;
+                enemies.forEach(e => {
+                    const d = Math.sqrt((e.x-ally.x)**2 + (e.y-ally.y)**2);
+                    if (d < minDist) { minDist = d; nearest = e; }
+                });
+                if (nearest) {
+                    const adx = nearest.x - ally.x;
+                    const ady = nearest.y - ally.y;
+                    const dist = Math.sqrt(adx*adx + ady*ady);
+                    ally.vx += (adx/dist) * 0.7;
+                    ally.vy += (ady/dist) * 0.7;
+                    ally.angle = Math.atan2(ady, adx);
+                    if (dist < 80) tryAttack(ally);
+                } else {
+                    const hdx = (ally.id % 2 === 0 ? -100 : 100) - ally.x;
+                    const hdy = 150 - ally.y;
+                    const hdist = Math.sqrt(hdx*hdx + hdy*hdy);
+                    if (hdist > 20) {
+                        ally.vx += (hdx/hdist) * 0.5;
+                        ally.vy += (hdy/hdist) * 0.5;
+                        ally.angle = Math.atan2(hdy, hdx);
+                    }
+                }
+            });
+
+            [player, ...allies].forEach(char => {
+                char.x += char.vx; char.y += char.vy;
+                char.vx *= 0.88; char.vy *= 0.88;
+                if (char.attackCooldown > 0) char.attackCooldown--;
+                if (char.isAttacking > 0) char.isAttacking--;
+            });
+
+            // TOWERS LOGIC
+            towers.forEach(t => {
+                let range = 450;
+                if (t.type === 'shotgun') range = 300;
+                if (t.type === 'energy') range = 500;
+                if (t.type === 'minigun') range = 500;
+                if (t.type === 'hammer') range = 250;
+                if (t.type === 'cannon') range = 600;
+
+                let nearest = null;
+                let minDist = range;
+                enemies.forEach(e => {
+                    const d = Math.sqrt((e.x-t.x)**2 + (e.y-t.y)**2);
+                    if (d < minDist) { minDist = d; nearest = e; }
+                });
+                t.target = nearest;
+
+                if (t.cooldown > 0) t.cooldown--;
+                else if (nearest) {
+                    t.angle = Math.atan2(nearest.y - t.y, nearest.x - t.x);
+                    
+                    if (t.type === 'archer') {
+                        t.cooldown = 40;
+                        applyKnockout(t, nearest, 12);
+                    } else if (t.type === 'shotgun') {
+                        t.cooldown = 70;
+                        enemies.forEach(e => {
+                            const edx = e.x - t.x;
+                            const edy = e.y - t.y;
+                            const edist = Math.sqrt(edx*edx + edy*edy);
+                            if (edist < range) {
+                                const eAngle = Math.atan2(edy, edx);
+                                if (Math.abs(normalizeAngle(eAngle - t.angle)) < Math.PI / 4) {
+                                    applyKnockout(t, e, 25);
+                                }
+                            }
+                        });
+                        screenShake = 4;
+                    } else if (t.type === 'minigun') {
+                        t.cooldown = 6;
+                        applyKnockout(t, nearest, 4);
+                    } else if (t.type === 'energy') {
+                        t.cooldown = 2; // Rapid ticking
+                        applyKnockout(t, nearest, 2);
+                        nearest.knockback += 1; 
+                    } else if (t.type === 'hammer') {
+                        t.cooldown = 150;
+                        enemies.forEach(e => {
+                            const d = Math.sqrt((e.x-t.x)**2 + (e.y-t.y)**2);
+                            if (d < range + 50) applyKnockout(t, e, 45);
+                        });
+                        createExplosion(t.x, t.y, '#eab308', 20);
+                        screenShake = 15;
+                    } else if (t.type === 'cannon') {
+                        t.cooldown = 120;
+                        enemies.forEach(e => {
+                            if (Math.sqrt((e.x-nearest.x)**2 + (e.y-nearest.y)**2) < 130) applyKnockout(t, e, 32);
+                        });
+                        createExplosion(nearest.x, nearest.y, '#f97316', 15);
+                        screenShake = 10;
+                    }
+                }
+            });
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.x += e.vx; e.y += e.vy;
+                e.vx *= 0.9; e.vy *= 0.9;
+                const ang = Math.atan2(-e.y, -e.x);
+                e.x += Math.cos(ang) * e.speed;
+                e.y += Math.sin(ang) * e.speed;
+                e.angle = ang;
+                const distFromCenter = Math.sqrt(e.x*e.x + e.y*e.y);
+                if (distFromCenter < 65) {
+                    heartHP -= 5;
+                    createExplosion(0, 0, '#ef4444', 25);
+                    enemies.splice(i, 1);
+                    screenShake = 20;
+                    if (heartHP <= 0) { gameState = 'GAMEOVER'; overlay.classList.remove('hidden'); }
+                    continue;
+                }
+                if (distFromCenter > 1300 || Math.abs(e.x) > worldSize/2 + 200 || Math.abs(e.y) > worldSize/2 + 200) {
+                    loot.push({x: e.x, y: e.y, value: 5});
+                    enemies.splice(i, 1);
+                }
+            }
+
+            for (let i = loot.length - 1; i >= 0; i--) {
+                const l = loot[i];
+                const d = Math.sqrt((player.x - l.x)**2 + (player.y - l.y)**2);
+                if (d < 60) { coins += l.value; loot.splice(i, 1); }
+                else if (d < 400) {
+                    const ang = Math.atan2(player.y - l.y, player.x - l.x);
+                    l.x += Math.cos(ang) * 11; l.y += Math.sin(ang) * 11;
+                }
+            }
+        }
+
+        particles.forEach((p, idx) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            if (p.life <= 0) particles.splice(idx, 1);
+        });
+
+        if (screenShake > 0) screenShake *= 0.92;
+        updateUI();
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    function updateUI() {
+        coinEl.innerText = coins;
+        hpEl.innerText = Math.max(0, heartHP);
+        hpBarEl.style.width = Math.max(0, heartHP) + '%';
+        waveEl.innerText = wave;
+    }
+
+    function draw() {
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        if (screenShake > 0.5) ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+        ctx.translate(width/2 - player.x, height/2 - player.y);
+
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2;
+        for(let x=-worldSize/2; x<=worldSize/2; x+=100) { ctx.beginPath(); ctx.moveTo(x,-worldSize/2); ctx.lineTo(x,worldSize/2); ctx.stroke(); }
+        for(let y=-worldSize/2; y<=worldSize/2; y+=100) { ctx.beginPath(); ctx.moveTo(-worldSize/2,y); ctx.lineTo(worldSize/2,y); ctx.stroke(); }
+
+        ctx.strokeStyle = '#ef444433'; ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(0, 0, 1150, 0, Math.PI*2); ctx.stroke();
+
+        ctx.fillStyle = '#3b82f615'; ctx.beginPath(); ctx.arc(0, 0, buildZoneSize/2, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#3b82f644'; ctx.setLineDash([15, 15]); ctx.stroke(); ctx.setLineDash([]);
+
+        ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = heartHP > 30 ? '#ef4444' : '#7f1d1d';
+        const pulse = Math.sin(Date.now()/150) * 8;
+        ctx.beginPath(); ctx.moveTo(0, 25+pulse); ctx.bezierCurveTo(-45,-15,-25,-45,0,-15); ctx.bezierCurveTo(25,-45,45,-15,0,25+pulse); ctx.fill();
+
+        loot.forEach(l => {
+            ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(l.x, l.y, 8, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        });
+
+        towers.forEach(t => {
+            ctx.save(); ctx.translate(t.x, t.y);
+            // Tower Base
+            ctx.fillStyle = '#334155'; ctx.fillRect(-25, -25, 50, 50);
+            
+            // Tower Head
+            ctx.rotate(t.angle);
+            const colors = { archer: '#3b82f6', shotgun: '#f97316', minigun: '#94a3b8', energy: '#22d3ee', hammer: '#eab308', cannon: '#ef4444' };
+            ctx.fillStyle = colors[t.type];
+            
+            if (t.type === 'hammer') {
+                ctx.fillRect(0, -10, 40, 20);
+                ctx.fillStyle = '#713f12'; ctx.fillRect(30, -20, 15, 40);
+            } else if (t.type === 'energy' && t.target) {
+                ctx.fillRect(0, -5, 30, 10);
+                // Draw Beam
+                ctx.restore(); ctx.save();
+                ctx.translate(width/2 - player.x, height/2 - player.y);
+                ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 4; ctx.beginPath();
+                ctx.moveTo(t.x, t.y); ctx.lineTo(t.target.x, t.target.y); ctx.stroke();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+            } else {
+                ctx.fillRect(0, -8, 35, 16);
+            }
+            ctx.restore();
+        });
+
+        particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 6, 6); });
+        ctx.globalAlpha = 1;
+
+        enemies.forEach(e => {
+            ctx.save(); ctx.translate(e.x, e.y);
+            ctx.fillStyle = '#0008'; ctx.fillRect(-25, -45, 50, 6);
+            ctx.fillStyle = `hsl(${Math.max(0, 120-e.knockback)}, 80%, 50%)`;
+            ctx.fillRect(-25, -45, Math.min(50, (e.knockback/150)*50), 6);
+            ctx.rotate(e.angle); ctx.fillStyle = e.type === 'fast' ? '#f472b6' : '#ec4899';
+            ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+        });
+
+        [player, ...allies].forEach(char => {
+            ctx.save(); ctx.translate(char.x, char.y);
+            ctx.strokeStyle = char.isPlayer ? '#3b82f6aa' : '#60a5fa88'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(char.isPlayer ? "YOU" : "KNIGHT", 0, -55);
+            ctx.rotate(char.angle);
+            if (char.isAttacking > 0) {
+                ctx.fillStyle = '#fff'; ctx.rotate(Math.sin(char.isAttacking * 0.5) * 1.5);
+                ctx.fillRect(15, -8, 48, 16); ctx.fillStyle = '#475569'; ctx.fillRect(48, -24, 28, 48);
+            }
+            ctx.fillStyle = char.color; ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
+        });
+
+        ctx.restore();
+
+        if (gameState === 'PLAYING') {
+            enemies.forEach(e => {
+                const dx = e.x - player.x; const dy = e.y - player.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > Math.min(width, height) * 0.45) {
+                    const angle = Math.atan2(dy, dx);
+                    const indicatorX = width/2 + Math.cos(angle) * (Math.min(width, height) * 0.45);
+                    const indicatorY = height/2 + Math.sin(angle) * (Math.min(width, height) * 0.45);
+                    ctx.save(); ctx.translate(indicatorX, indicatorY); ctx.rotate(angle);
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-18, -18); ctx.lineTo(-18, 18); ctx.closePath(); ctx.fill();
+                    ctx.restore();
+                }
+            });
+
+            const wx = mouse.x - width/2 + player.x;
+            const wy = mouse.y - height/2 + player.y;
+            const dist = Math.sqrt(wx*wx + wy*wy);
+            if (dist < buildZoneSize/2) {
+                ctx.strokeStyle = coins >= towerCosts[buildType] ? '#3b82f6aa' : '#ef4444aa';
+                ctx.lineWidth = 3; ctx.setLineDash([5, 5]);
+                ctx.strokeRect(mouse.x - 25, mouse.y - 25, 50, 50); ctx.setLineDash([]);
+            }
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
