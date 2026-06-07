@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stop Then Go</title>
+    <style>
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        background: #24c6dc;
+        color: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+      }
+
+      button {
+        border: 0;
+        border-radius: 8px;
+        background: #ffda44;
+        color: #172033;
+        cursor: pointer;
+        font-size: 2rem;
+        font-weight: 900;
+        padding: 18px 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Stop Then Go</h1>
+      <p>Example HTML game folder.</p>
+      <button onclick="document.body.style.background = document.body.style.background === 'rgb(255, 79, 154)' ? '#24c6dc' : '#ff4f9a'">
+        Go!
+      </button>
+    </main>
+  </body>
+</html>
