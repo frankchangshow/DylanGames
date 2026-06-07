@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGame, getGames } from "@/lib/games";
 
+export const dynamicParams = false;
+
 type PlayPageProps = {
   params: Promise<{
     game: string;
