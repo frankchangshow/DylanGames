@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Skyfire Ace Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1a202c;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+        .powerup-indicator {
+            transition: all 0.3s ease;
+        }
+        .shop-card:hover {
+            border-color: #3b82f6;
+            background-color: rgba(30, 41, 59, 0.8);
+        }
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .boss-warning {
+            animation: pulse-red 0.5s infinite;
+        }
+        .admin-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #7f1d1d 100%);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+        .checkpoint-btn {
+            background: linear-gradient(135deg, #10b981 0%, #064e3b 100%);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-layer" class="flex flex-col justify-between p-4">
+        <!-- HUD Stats -->
+        <div class="flex justify-between items-start w-full">
+            <div class="flex flex-col gap-2">
+                <div class="bg-black/50 backdrop-blur-md p-3 rounded-lg border border-white/20 text-white">
+                    <div class="text-xs uppercase tracking-widest opacity-70">Score / Credits</div>
+                    <div id="score-val" class="text-2xl font-bold font-mono">0000</div>
+                </div>
+                <div id="weapon-indicator" class="bg-blue-900/40 backdrop-blur-md px-3 py-1 rounded-full border border-blue-400/30 text-[10px] text-blue-200 font-bold uppercase tracking-wider hidden">
+                    Standard Cannon
+                </div>
+            </div>
+
+            <!-- Boss Health Bar -->
+            <div id="boss-ui" class="hidden flex-1 max-w-md mx-8 mt-2">
+                <div class="bg-black/60 border border-red-500/50 p-2 rounded-lg backdrop-blur-sm">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="boss-name" class="text-red-500 text-[10px] font-black uppercase tracking-widest">OMEGA DREADNOUGHT</span>
+                        <span id="boss-hp-text" class="text-white text-[10px] font-mono">100%</span>
+                    </div>
+                    <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-red-900">
+                        <div id="boss-health-bar" class="bg-red-600 h-full transition-all duration-100" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2 items-end">
+                <div class="flex gap-2">
+                    <button id="deploy-checkpoint-btn" onclick="deployCheckpoint()" class="pointer-events-auto checkpoint-btn text-white font-black text-[10px] px-4 py-3 rounded-lg border border-emerald-400 shadow-lg hidden transition-all active:scale-95 uppercase tracking-widest">
+                        Save Point (x<span id="cp-count">0</span>)
+                    </button>
+                    <button id="admin-panel-btn" onclick="toggleAdminPanel()" class="pointer-events-auto admin-btn text-white font-black text-[10px] px-4 py-3 rounded-lg border border-red-400 shadow-lg hidden transition-all active:scale-95 uppercase tracking-widest">
+                        Admin
+                    </button>
+                    <button id="manual-shop-btn" onclick="openShop(true)" class="pointer-events-auto bg-yellow-600 hover:bg-yellow-500 text-black font-black text-[10px] px-4 py-3 rounded-lg border border-yellow-400 shadow-lg hidden transition-all active:scale-95 uppercase tracking-widest">
+                        Armory
+                    </button>
+                    <div class="bg-black/50 backdrop-blur-md p-3 rounded-lg border border-white/20 text-white min-w-[150px]">
+                        <div class="text-xs uppercase tracking-widest opacity-70">Hull Integrity</div>
+                        <div class="w-full bg-gray-700 h-2 rounded-full mt-1 overflow-hidden">
+                            <div id="health-bar" class="bg-red-500 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div id="armor-val" class="text-[9px] text-emerald-400 font-bold mt-1 text-right"></div>
+                    </div>
+                </div>
+                <div id="powerup-timers" class="flex flex-col gap-1 items-end w-full"></div>
+            </div>
+        </div>
+
+        <!-- Admin Overlay -->
+        <div id="admin-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-red-950/40 backdrop-blur-sm hidden">
+            <div class="bg-gray-900 p-6 rounded-2xl border-2 border-red-600 shadow-2xl w-full max-w-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-red-500 italic uppercase tracking-tighter underline decoration-red-600">Admin Console</h2>
+                    <button onclick="toggleAdminPanel()" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="adminAction('god')" id="god-toggle" class="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg border border-gray-600 text-xs font-bold uppercase tracking-widest">Enable God Mode</button>
+                    <button onclick="adminAction('credits')" class="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg border border-gray-600 text-xs font-bold uppercase tracking-widest">Add 1000 Credits</button>
+                    <button onclick="adminAction('boss')" class="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg border border-gray-600 text-xs font-bold uppercase tracking-widest">Spawn Titan</button>
+                    <button onclick="adminAction('wipe')" class="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg border border-gray-600 text-xs font-bold uppercase tracking-widest">Wipe Enemies</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Overlay -->
+        <div id="shop-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-md hidden">
+            <div class="text-center bg-gray-900 p-8 rounded-2xl border-2 border-yellow-500 shadow-2xl max-w-5xl w-full mx-4 overflow-y-auto max-h-[90vh]">
+                <h2 class="text-3xl font-black text-yellow-500 mb-2 italic tracking-tighter uppercase">HANGAR & ARMORY</h2>
+                <div class="mb-8">
+                    <h3 class="text-left text-white text-xs font-bold mb-4 uppercase tracking-widest border-b border-white/10 pb-2">Weapon Systems</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        <button onclick="buyWeapon('twin')" class="shop-card flex flex-col items-center p-4 rounded-xl border border-white/10 bg-white/5 transition-all">
+                            <div class="text-blue-400 font-bold mb-1 uppercase">Twin</div>
+                            <div class="bg-yellow-600 text-black text-[9px] px-2 py-0.5 rounded font-bold">20 CR</div>
+                        </button>
+                        <button onclick="buyWeapon('rapid')" class="shop-card flex flex-col items-center p-4 rounded-xl border border-white/10 bg-white/5 transition-all">
+                            <div class="text-purple-400 font-bold mb-1 uppercase">Repeater</div>
+                            <div class="bg-yellow-600 text-black text-[9px] px-2 py-0.5 rounded font-bold">30 CR</div>
+                        </button>
+                        <button onclick="buyWeapon('spread')" class="shop-card flex flex-col items-center p-4 rounded-xl border border-white/10 bg-white/5 transition-all">
+                            <div class="text-green-400 font-bold mb-1 uppercase">Spread</div>
+                            <div class="bg-yellow-600 text-black text-[9px] px-2 py-0.5 rounded font-bold">40 CR</div>
+                        </button>
+                        <button onclick="buyWeapon('nuke')" class="shop-card flex flex-col items-center p-4 rounded-xl border border-white/10 bg-white/5 transition-all text-red-500">
+                            <div class="font-bold mb-1 uppercase">Obliterator</div>
+                            <div class="bg-yellow-600 text-black text-[9px] px-2 py-0.5 rounded font-bold">100 CR</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-left text-white text-xs font-bold mb-4 uppercase tracking-widest border-b border-white/10 pb-2">Upgrades & Hangar</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        <button onclick="buyCheckpoint()" class="shop-card flex flex-col items-center p-4 rounded-xl border border-emerald-500/30 bg-emerald-900/5 transition-all">
+                            <div class="text-emerald-500 font-bold mb-1 uppercase text-center">Checkpoint</div>
+                            <div class="bg-yellow-600 text-black text-[9px] px-2 py-0.5 rounded font-black">75 CR</div>
+                        </button>
+                    </div>
+                    <div id="skins-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-4 text-xs"></div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <button onclick="buyAdmin()" id="admin-shop-card" class="shop-card flex flex-col items-center p-4 rounded-xl border border-red-500/30 bg-red-900/5 transition-all">
+                        <div class="text-red-500 font-black mb-1 uppercase italic tracking-tighter text-xs">ULTIMATE ADMIN CONSOLE</div>
+                        <div class="bg-red-600 text-white text-[9px] px-4 py-1 rounded font-black">1000 CREDITS</div>
+                    </button>
+                    <button onclick="closeShop()" class="text-gray-500 hover:text-white uppercase text-xs tracking-widest font-bold transition-colors">
+                        Return to Mission
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay Menu -->
+        <div id="overlay" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/60 backdrop-blur-sm">
+            <div class="text-center bg-gray-900 p-8 rounded-2xl border-2 border-blue-500 shadow-2xl max-w-sm">
+                <h1 id="overlay-title" class="text-4xl font-black text-white mb-4 italic tracking-tighter">SKYFIRE ACE</h1>
+                <div id="overlay-desc" class="text-gray-400 mb-6 uppercase text-xs tracking-widest leading-relaxed">
+                    <p class="mb-2">Move to steer &bull; Click to fire</p>
+                    <p class="mb-2">Hold SHIFT for Afterburners</p>
+                    <p class="mb-2 text-yellow-400 font-bold underline">Defeat Void Titan at 500 to Win</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button id="start-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-lg uppercase tracking-widest">
+                        Engage Mission
+                    </button>
+                    <button id="restore-btn" onclick="restoreCheckpoint()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-lg uppercase tracking-widest">
+                        Restore Checkpoint
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score-val');
+        const healthBar = document.getElementById('health-bar');
+        const armorEl = document.getElementById('armor-val');
+        const bossUI = document.getElementById('boss-ui');
+        const bossName = document.getElementById('boss-name');
+        const bossHealthBar = document.getElementById('boss-health-bar');
+        const bossHPText = document.getElementById('boss-hp-text');
+        const timerContainer = document.getElementById('powerup-timers');
+        const overlay = document.getElementById('overlay');
+        const shopOverlay = document.getElementById('shop-overlay');
+        const adminOverlay = document.getElementById('admin-overlay');
+        const manualShopBtn = document.getElementById('manual-shop-btn');
+        const adminPanelBtn = document.getElementById('admin-panel-btn');
+        const checkpointBtn = document.getElementById('deploy-checkpoint-btn');
+        const cpCountEl = document.getElementById('cp-count');
+        const weaponIndicator = document.getElementById('weapon-indicator');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlayDesc = document.getElementById('overlay-desc');
+        const startBtn = document.getElementById('start-btn');
+        const restoreBtn = document.getElementById('restore-btn');
+        const skinsGrid = document.getElementById('skins-grid');
+
+        let width, height;
+        let gameActive = false;
+        let score = 0;
+        let frame = 0;
+        let shopTriggered = false;
+        let bossTriggered = false;
+        let boss2Triggered = false;
+        let adminUnlocked = false;
+        let godMode = false;
+        let eliteSquadMode = false;
+
+        const player = {
+            x: 0, y: 0, r: 20,
+            angle: -Math.PI / 2,
+            targetAngle: -Math.PI / 2,
+            baseMaxSpeed: 10,
+            boostMaxSpeed: 18,
+            currentSpeed: 0,
+            health: 200, maxHealth: 200, armor: 0,
+            bullets: [],
+            lastShot: 0,
+            baseFireRate: 130,
+            weapon: 'standard', 
+            skin: 'default',
+            unlockedSkins: ['default'],
+            shieldTimer: 0,
+            damageTimer: 0,
+            speedTimer: 0,
+            annihilatorTimer: 0,
+            warpTimer: 0,
+            originalWeapon: 'standard',
+            checkpointCharges: 0
+        };
+
+        const boss = {
+            active: false,
+            type: 'standard', 
+            x: 0, y: -200,
+            targetY: 150,
+            width: 300, height: 120,
+            health: 50, maxHealth: 50,
+            lastShot: 0,
+            fireRate: 950,
+            dir: 1,
+            phase: 1
+        };
+
+        const SKINS = {
+            default: { name: 'Ace Blue', color: '#2563eb', price: 0 },
+            stealth: { name: 'Phantom', color: '#334155', price: 150 },
+            white: { name: 'Ghost', color: '#f8fafc', price: 200 },
+            neon: { name: 'Cyber', color: '#d946ef', price: 250 },
+            gold: { name: 'Solar', color: '#f59e0b', price: 300 }
+        };
+
+        const POWERUP_TYPES = {
+            HEALTH: { color: '#22c55e', label: 'REPAIR', duration: 0 },
+            SHIELD: { color: '#06b6d4', label: 'SHIELD', duration: 480 },
+            DAMAGE: { color: '#eab308', label: 'OVERDRIVE', duration: 600 },
+            SPEED: { color: '#a855f7', label: 'TURBO', duration: 600 },
+            HYPER_RED: { color: '#ef4444', label: 'ANNIHILATOR', duration: 1200 },
+            HYPER_CYAN: { color: '#22d3ee', label: 'FORTRESS', duration: 1800 },
+            HYPER_PURP: { color: '#a855f7', label: 'WARP DRIVE', duration: 1200 },
+            LEGENDARY: { color: 'rainbow', label: 'OMEGA DROP', duration: 1200 }
+        };
+
+        let checkpointData = null;
+        let enemies = [];
+        let particles = [];
+        let clouds = [];
+        let balloons = [];
+        let powerups = [];
+        let enemySpawnTimer = 0;
+        let balloonSpawnTimer = 0;
+
+        const mouse = { x: 0, y: 0, down: false };
+        const keys = { shift: false };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            if (!gameActive) { player.x = width / 2; player.y = height / 2; }
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mousedown', () => { if(gameActive) mouse.down = true; });
+        window.addEventListener('mouseup', () => mouse.down = false);
+        window.addEventListener('keydown', e => { if (e.key === 'Shift') keys.shift = true; });
+        window.addEventListener('keyup', e => { if (e.key === 'Shift') keys.shift = false; });
+        window.addEventListener('touchstart', e => {
+            if(!gameActive) return;
+            mouse.down = true;
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        });
+        window.addEventListener('touchmove', e => {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        });
+        window.addEventListener('touchend', () => mouse.down = false);
+
+        startBtn.addEventListener('click', startGame);
+
+        function initBackground() {
+            clouds = [];
+            for(let i=0; i<15; i++) {
+                clouds.push({ x: Math.random() * width, y: Math.random() * height, size: 40 + Math.random() * 100, speed: 0.5 + Math.random() * 1.5, opacity: 0.1 + Math.random() * 0.2 });
+            }
+        }
+
+        function createExplosion(x, y, color, count = 15, sizeMult = 1) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y, vx: (Math.random() - 0.5) * (10 * sizeMult), vy: (Math.random() - 0.5) * (10 * sizeMult),
+                    life: 1.0, decay: 0.02 + Math.random() * 0.02,
+                    color: color === 'rainbow' ? `hsl(${Math.random() * 360}, 100%, 50%)` : color,
+                    size: (2 + Math.random() * 5) * sizeMult
+                });
+            }
+        }
+
+        function spawnPowerup(x, y, type = null) {
+            const types = Object.keys(POWERUP_TYPES).filter(k => !k.startsWith('HYPER') && k !== 'LEGENDARY');
+            const finalType = type || types[Math.floor(Math.random() * types.length)];
+            powerups.push({ x, y, type: finalType, r: 15, pulse: 0, life: 600 });
+        }
+
+        function spawnBalloon() {
+            const side = Math.random() > 0.5 ? -60 : width + 60;
+            const colorType = ['red', 'cyan', 'purple', 'gold'][Math.floor(Math.random() * 4)];
+            balloons.push({
+                x: side, y: Math.random() * height, r: 40, health: 50, maxHealth: 50,
+                speed: (side < 0 ? 1.5 : -1.5) * (1 + Math.random()), hitTimer: 0, pulse: 0, colorType
+            });
+        }
+
+        function drawRoundedRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function drawBalloons() {
+            balloons.forEach(b => {
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                const s = 1 + Math.sin(b.pulse) * 0.05; ctx.scale(s, s);
+                ctx.beginPath(); ctx.moveTo(0, b.r); ctx.lineTo(Math.sin(frame * 0.1) * 10, b.r + 40); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+                if (b.hitTimer > 0) { ctx.fillStyle = 'white'; } else {
+                    const baseColor = b.colorType === 'red' ? '#ef4444' : b.colorType === 'cyan' ? '#22d3ee' : b.colorType === 'purple' ? '#a855f7' : '#fde047';
+                    const grad = ctx.createRadialGradient(-10, -10, 5, 0, 0, b.r);
+                    grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, baseColor); grad.addColorStop(1, '#000000'); ctx.fillStyle = grad;
+                }
+                ctx.fill(); ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 4; ctx.stroke();
+                ctx.restore();
+            });
+        }
+
+        function spawnEnemy() {
+            if (boss.active) return;
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) { x = -50; y = Math.random() * height; }
+            else if (side === 1) { x = width + 50; y = Math.random() * height; }
+            else if (side === 2) { x = Math.random() * width; y = -50; }
+            else { x = Math.random() * width; y = height + 50; }
+            let health = 2; let speed = 2 + Math.random() * 1.5; let color = '#dc2626';
+            if (eliteSquadMode) {
+                const rand = Math.random();
+                if (rand < 0.33) { color = '#2563eb'; speed = 4; health = 6; } 
+                else if (rand < 0.66) { color = '#9333ea'; speed = 3; health = 10; } 
+                else { color = '#f8fafc'; speed = 5; health = 12; }
+            }
+            enemies.push({ x, y, r: 18, angle: 0, speed, color, health, lastShot: 0, fireRate: 2000, bullets: [], orbitOffset: Math.random() * Math.PI * 2 });
+        }
+
+        function buyWeapon(type) {
+            const prices = { twin: 20, rapid: 30, spread: 40, missile: 60, lightning: 80, nuke: 100 };
+            if (score >= prices[type]) { score -= prices[type]; player.weapon = type; player.originalWeapon = type; updateUI(); updateWeaponHUD(); closeShop(); } 
+            else { scoreEl.style.color = '#ef4444'; setTimeout(() => scoreEl.style.color = 'white', 500); }
+        }
+
+        function buyCheckpoint() {
+            if (score >= 75) { score -= 75; player.checkpointCharges++; updateUI(); closeShop(); } 
+            else { scoreEl.style.color = '#ef4444'; setTimeout(() => scoreEl.style.color = 'white', 500); }
+        }
+
+        function buySkin(skinId) {
+            const skin = SKINS[skinId];
+            if (player.unlockedSkins.includes(skinId)) { player.skin = skinId; updateSkinsUI(); return; }
+            if (score >= skin.price) { score -= skin.price; player.unlockedSkins.push(skinId); player.skin = skinId; updateUI(); updateSkinsUI(); } 
+            else { scoreEl.style.color = '#ef4444'; setTimeout(() => scoreEl.style.color = 'white', 500); }
+        }
+
+        function updateSkinsUI() {
+            skinsGrid.innerHTML = '';
+            Object.keys(SKINS).forEach(id => {
+                const skin = SKINS[id]; const isUnlocked = player.unlockedSkins.includes(id); const isActive = player.skin === id;
+                const btn = document.createElement('button'); btn.onclick = () => buySkin(id);
+                btn.className = `shop-card flex flex-col items-center p-3 rounded-xl border transition-all ${isActive ? 'border-blue-500 bg-blue-900/20' : 'border-white/10 bg-white/5'}`;
+                btn.innerHTML = `<div class="w-6 h-6 rounded-full mb-2" style="background-color: ${skin.color}"></div><div class="text-[10px] font-bold uppercase ${isActive ? 'text-blue-400' : 'text-white'}">${skin.name}</div><div class="bg-gray-800 text-[8px] px-2 py-0.5 rounded mt-1 font-mono">${isUnlocked ? (isActive ? 'ACTIVE' : 'SELECT') : skin.price + ' CR'}</div>`;
+                skinsGrid.appendChild(btn);
+            });
+        }
+
+        function deployCheckpoint() {
+            if (player.checkpointCharges > 0) {
+                player.checkpointCharges--;
+                checkpointData = { score, weapon: player.weapon, originalWeapon: player.originalWeapon, eliteSquadMode, bossTriggered, boss2Triggered, unlockedSkins: [...player.unlockedSkins], skin: player.skin };
+                createExplosion(player.x, player.y, '#10b981', 30, 2); updateUI();
+            }
+        }
+
+        function restoreCheckpoint() {
+            if (!checkpointData) return;
+            score = checkpointData.score; player.weapon = checkpointData.weapon; player.originalWeapon = checkpointData.originalWeapon;
+            eliteSquadMode = checkpointData.eliteSquadMode; bossTriggered = checkpointData.bossTriggered; boss2Triggered = checkpointData.boss2Triggered;
+            player.unlockedSkins = [...checkpointData.unlockedSkins]; player.skin = checkpointData.skin;
+            gameActive = true; player.health = player.maxHealth; player.armor = 0; player.x = width / 2; player.y = height / 2;
+            player.currentSpeed = 0; player.bullets = []; player.shieldTimer = player.damageTimer = player.speedTimer = player.opTimer = player.annihilatorTimer = player.warpTimer = 0;
+            enemies = []; powerups = []; particles = []; balloons = []; overlay.classList.add('hidden'); bossUI.classList.add('hidden'); updateUI(); updateWeaponHUD();
+        }
+
+        function buyAdmin() {
+            if (score >= 1000) { score -= 1000; adminUnlocked = true; adminPanelBtn.classList.remove('hidden'); document.getElementById('admin-shop-card').classList.add('hidden'); updateUI(); closeShop(); } 
+            else { scoreEl.style.color = '#ef4444'; setTimeout(() => scoreEl.style.color = 'white', 500); }
+        }
+
+        function toggleAdminPanel() {
+            if (!adminUnlocked) return;
+            if (adminOverlay.classList.contains('hidden')) { gameActive = false; adminOverlay.classList.remove('hidden'); } 
+            else { gameActive = true; adminOverlay.classList.add('hidden'); }
+        }
+
+        function adminAction(type) {
+            switch(type) {
+                case 'god': godMode = !godMode; document.getElementById('god-toggle').innerText = godMode ? "Disable God Mode" : "Enable God Mode"; break;
+                case 'credits': score += 1000; break;
+                case 'boss': triggerBoss(score >= 500 ? 'titan' : 'standard'); toggleAdminPanel(); break;
+                case 'wipe': enemies = []; break;
+            }
+            updateUI();
+        }
+
+        function triggerBoss(type = 'standard') {
+            boss.active = true; boss.type = type; boss.x = width / 2; boss.y = -200; bossUI.classList.remove('hidden');
+            if (type === 'titan') { boss.health = boss.maxHealth = 500; boss.width = 450; boss.height = 180; boss.fireRate = 600; bossName.innerText = "THE VOID TITAN"; } 
+            else { boss.health = boss.maxHealth = 50; boss.width = 300; boss.height = 120; boss.fireRate = 950; bossName.innerText = "OMEGA DREADNOUGHT"; }
+            player.health = player.maxHealth; player.shieldTimer = 600; player.damageTimer = 600; updateUI();
+        }
+
+        function updateWeaponHUD() {
+            const names = { standard: 'Standard Cannon', twin: 'Twin Cannons', rapid: 'Repeater', spread: 'Spread Arc', missile: 'Missile', lightning: 'Lightning', nuke: 'Obliterator' };
+            weaponIndicator.innerText = (player.annihilatorTimer > 0 ? "HYPER: " : "") + names[player.weapon];
+            weaponIndicator.classList.remove('hidden');
+        }
+
+        function openShop(isManual = false) { if (!gameActive && !isManual) return; gameActive = false; updateSkinsUI(); shopOverlay.classList.remove('hidden'); }
+        function closeShop() { shopOverlay.classList.add('hidden'); gameActive = true; }
+
+        function drawPlane(x, y, angle, color, isPlayer = false) {
+            ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+            if (isPlayer && (player.shieldTimer > 0 || godMode)) {
+                ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                ctx.strokeStyle = godMode ? `rgba(239, 68, 68, ${0.4 + Math.sin(frame * 0.3) * 0.2})` : `rgba(6, 182, 212, ${0.3 + Math.sin(frame * 0.2) * 0.2})`;
+                ctx.lineWidth = godMode ? 5 : 3; ctx.stroke();
+                ctx.fillStyle = godMode ? `rgba(239, 68, 68, 0.1)` : `rgba(6, 182, 212, 0.1)`; ctx.fill();
+            }
+            ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(5, 15, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(-5, -20); ctx.lineTo(5, 0); ctx.lineTo(-5, 20); ctx.lineTo(-2, 0); ctx.fill();
+            ctx.fillStyle = isPlayer ? '#fff' : '#333'; ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = color; ctx.stroke();
+            ctx.fillStyle = isPlayer ? (player.skin === 'neon' ? '#fff' : '#3b82f6') : '#ef4444'; 
+            ctx.beginPath(); ctx.arc(4, 0, 3, 0, Math.PI * 2); ctx.fill();
+            if (isPlayer && player.currentSpeed > 0.5) {
+                const isBoosting = (keys.shift || player.speedTimer > 0) && player.currentSpeed > player.baseMaxSpeed;
+                ctx.fillStyle = isBoosting ? (player.skin === 'neon' ? '#d946ef' : '#93c5fd') : '#f97316';
+                const fSize = (player.currentSpeed * 2) * (isBoosting ? 1.5 : 1);
+                ctx.beginPath(); ctx.moveTo(-15, -2); ctx.lineTo(-15 - fSize - Math.random() * 5, 0); ctx.lineTo(-15, 2); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawBoss() {
+            if (!boss.active) return;
+            ctx.save(); ctx.translate(boss.x, boss.y);
+            ctx.fillStyle = boss.type === 'titan' ? '#0f172a' : '#1e293b'; 
+            drawRoundedRect(-boss.width/2, -boss.height/2, boss.width, boss.height, 20); ctx.fill();
+            ctx.strokeStyle = boss.type === 'titan' ? '#9333ea' : '#ef4444'; ctx.lineWidth = 6; ctx.stroke();
+            const turrets = boss.type === 'titan' ? [-150, -80, 0, 80, 150] : [-80, 0, 80];
+            turrets.forEach(tx => { ctx.beginPath(); ctx.arc(tx, 0, 25, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3; ctx.stroke(); });
+            ctx.restore();
+        }
+
+        function update() {
+            if (!gameActive) return;
+            if (score >= 40) { manualShopBtn.classList.remove('hidden'); if (!shopTriggered) { shopTriggered = true; openShop(); } }
+            if (score >= 100 && !bossTriggered) { bossTriggered = true; triggerBoss('standard'); }
+            if (score >= 500 && !boss2Triggered) { boss2Triggered = true; triggerBoss('titan'); } 
+
+            if (player.checkpointCharges > 0) checkpointBtn.classList.remove('hidden'); else checkpointBtn.classList.add('hidden');
+            cpCountEl.innerText = player.checkpointCharges;
+
+            frame++;
+            if (player.shieldTimer > 0) player.shieldTimer--;
+            if (player.damageTimer > 0) player.damageTimer--;
+            if (player.speedTimer > 0) player.speedTimer--;
+            if (player.annihilatorTimer > 0) { player.annihilatorTimer--; if(player.annihilatorTimer === 0) { player.weapon = player.originalWeapon; updateWeaponHUD(); } }
+            if (player.warpTimer > 0) player.warpTimer--;
+
+            const gameSpeed = player.warpTimer > 0 ? 0.3 : 1.0;
+            const dx = mouse.x - player.x; const dy = mouse.y - player.y; const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > 40) {
+                player.targetAngle = Math.atan2(dy, dx); let angleDiff = player.targetAngle - player.angle;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2; while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                player.angle += angleDiff * 0.12;
+                const activeMax = (keys.shift ? player.boostMaxSpeed : player.baseMaxSpeed) * (player.speedTimer > 0 ? 1.5 : 1.0);
+                const turnBrake = Math.max(0.3, 1 - (Math.abs(angleDiff) / Math.PI));
+                let targetSpeed = activeMax * turnBrake * Math.min(1, dist / 200);
+                player.currentSpeed += (targetSpeed - player.currentSpeed) * 0.1;
+            } else { player.currentSpeed *= 0.8; }
+            player.x += Math.cos(player.angle) * player.currentSpeed; player.y += Math.sin(player.angle) * player.currentSpeed;
+
+            const now = Date.now();
+            let fireRate = player.damageTimer > 0 ? player.baseFireRate / 2 : player.baseFireRate;
+            if (player.weapon === 'rapid') fireRate *= 0.4;
+            if (player.annihilatorTimer > 0) fireRate *= 0.6;
+            
+            if (mouse.down && now - player.lastShot > fireRate) {
+                const shoot = (angOff = 0, size = 3, dmg = 1.5, speed = 12, color = '#ff0') => {
+                    const ang = player.angle + angOff;
+                    player.bullets.push({ x: player.x + Math.cos(ang) * 20, y: player.y + Math.sin(ang) * 20, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 60, size, damage: dmg, color });
+                };
+                if (player.annihilatorTimer > 0) { [0, 0.4, -0.4, 0.8, -0.8, Math.PI, Math.PI-0.4, Math.PI+0.4].forEach(a => shoot(a, 5, 3, 15, '#fde047')); }
+                else {
+                    switch(player.weapon) {
+                        case 'twin': shoot(-0.1); shoot(0.1); break;
+                        case 'spread': [-0.3, 0, 0.3].forEach(a => shoot(a)); break;
+                        case 'rapid': shoot((Math.random()-0.5)*0.1); break;
+                        case 'missile': shoot(0, 5, 4, 15, '#fb923c'); break;
+                        case 'lightning': shoot((Math.random()-0.5)*0.02, 2, 2, 20, '#22d3ee'); break;
+                        case 'nuke': shoot(0, 12, 15, 6, '#f87171'); break;
+                        default: shoot(0);
+                    }
+                }
+                player.lastShot = now;
+            }
+
+            player.bullets.forEach((b, i) => {
+                b.x += b.vx; b.y += b.vy; b.life--;
+                if (boss.active && b.x > boss.x-boss.width/2 && b.x < boss.x+boss.width/2 && b.y > boss.y-boss.height/2 && b.y < boss.y+boss.height/2) {
+                    boss.health -= b.damage; createExplosion(b.x, b.y, b.color, 3); player.bullets.splice(i, 1); updateBossUI();
+                    if (boss.health <= 0) destroyBoss(); return;
+                }
+                balloons.forEach((bal, bi) => {
+                    const d = Math.sqrt((b.x - bal.x)**2 + (b.y - bal.y)**2);
+                    if (d < bal.r) {
+                        bal.health -= b.damage; bal.hitTimer = 3; createExplosion(b.x, b.y, '#fef08a', 2); player.bullets.splice(i, 1);
+                        if (bal.health <= 0) {
+                            createExplosion(bal.x, bal.y, 'rainbow', 50, 3);
+                            const dropType = bal.colorType === 'red' ? 'HYPER_RED' : bal.colorType === 'cyan' ? 'HYPER_CYAN' : bal.colorType === 'purple' ? 'HYPER_PURP' : 'LEGENDARY';
+                            powerups.push({ x: bal.x, y: bal.y, type: dropType, r: 25, pulse: 0, life: 1200 });
+                            balloons.splice(bi, 1); score += 100; updateUI();
+                        }
+                    }
+                });
+                if (b.life <= 0) player.bullets.splice(i, 1);
+            });
+
+            powerups.forEach((p, i) => {
+                p.pulse += 0.1; p.life--; if (p.life <= 0) powerups.splice(i, 1);
+                const d = Math.sqrt((p.x - player.x)**2 + (p.y - player.y)**2);
+                if (d < player.r + p.r) { applyPowerup(p.type); createExplosion(p.x, p.y, 'rainbow', 20); powerups.splice(i, 1); }
+            });
+
+            balloonSpawnTimer--; if (balloonSpawnTimer <= 0) { spawnBalloon(); balloonSpawnTimer = 800 + Math.random()*800; }
+            balloons.forEach((b, bi) => { b.x += b.speed * gameSpeed; b.pulse += 0.05; if (b.hitTimer > 0) b.hitTimer--; if (b.x < -100 || b.x > width+100) balloons.splice(bi, 1); });
+
+            enemySpawnTimer--; if (enemySpawnTimer <= 0) { spawnEnemy(); enemySpawnTimer = Math.max(40, 150 - Math.floor(score / 30)); }
+
+            if (boss.active) {
+                if (boss.y < boss.targetY) boss.y += 1.5 * gameSpeed;
+                else {
+                    boss.x += boss.dir * 2 * gameSpeed; if (boss.x < 200 || boss.x > width - 200) boss.dir *= -1;
+                    if (now - boss.lastShot > boss.fireRate) {
+                        const tX = boss.type === 'titan' ? [-150, -80, 0, 80, 150] : [-80, 0, 80];
+                        tX.forEach(tx => { const bAng = Math.atan2(player.y - (boss.y+20), player.x - (boss.x+tx)); enemies.push({ isBossBullet: true, x: boss.x+tx, y: boss.y+20, vx: Math.cos(bAng)*4, vy: Math.sin(bAng)*4, life: 200, size: 5 }); });
+                        boss.lastShot = now;
+                    }
+                }
+            }
+
+            enemies.forEach((en, ei) => {
+                if (en.isBossBullet) { en.x += en.vx * gameSpeed; en.y += en.vy * gameSpeed; en.life--; const d = Math.sqrt((en.x - player.x)**2 + (en.y - player.y)**2);
+                    if (d < player.r) { if (player.shieldTimer <= 0 && !godMode) { if(player.armor > 0) player.armor -= 20; else player.health -= 10; updateUI(); } createExplosion(en.x, en.y, '#f00', 5); enemies.splice(ei, 1); }
+                    if (en.life <= 0) enemies.splice(ei, 1); return;
+                }
+                const edx = player.x - en.x; const edy = player.y - en.y; const eDist = Math.sqrt(edx * edx + edy * edy); en.angle = Math.atan2(edy, edx);
+                if (eDist > 250) { en.x += Math.cos(en.angle)*en.speed*gameSpeed; en.y += Math.sin(en.angle)*en.speed*gameSpeed; } 
+                else if (eDist < 200) { en.x -= Math.cos(en.angle)*en.speed*0.5*gameSpeed; en.y -= Math.sin(en.angle)*en.speed*0.5*gameSpeed; } 
+                else { const orb = en.angle + Math.PI/2; en.x += Math.cos(orb)*en.speed*gameSpeed; en.y += Math.sin(orb)*en.speed*gameSpeed; }
+                if (now - en.lastShot > 2000) { en.bullets.push({ x: en.x, y: en.y, vx: Math.cos(en.angle)*6, vy: Math.sin(en.angle)*6, life: 100 }); en.lastShot = now; }
+                en.bullets.forEach((eb, ebi) => { eb.x += eb.vx*gameSpeed; eb.y += eb.vy*gameSpeed; eb.life--; const d = Math.sqrt((eb.x-player.x)**2+(eb.y-player.y)**2);
+                    if (d < player.r) { if (player.shieldTimer <= 0 && !godMode) { if(player.armor > 0) player.armor -= 10; else player.health -= 4; updateUI(); } createExplosion(eb.x, eb.y, (player.shieldTimer > 0 || godMode) ? '#06b6d4' : '#ff0000', 5); en.bullets.splice(ebi, 1); }
+                    if (eb.life <= 0) en.bullets.splice(ebi, 1);
+                });
+                player.bullets.forEach((pb, pbi) => { const d = Math.sqrt((pb.x-en.x)**2+(pb.y-en.y)**2);
+                    if (d < en.r) { en.health -= pb.damage; createExplosion(pb.x, pb.y, '#ffff00', 3); player.bullets.splice(pbi, 1);
+                        if (en.health <= 0) { score += 10; createExplosion(en.x, en.y, en.color || '#dc2626', 20); if (Math.random()<0.25) spawnPowerup(en.x, en.y); enemies.splice(ei, 1); updateUI(); }
+                    }
+                });
+            });
+            particles.forEach((p, i) => { p.x += p.vx*gameSpeed; p.y += p.vy*gameSpeed; p.life -= p.decay; if (p.life <= 0) particles.splice(i, 1); });
+            clouds.forEach(c => { c.y += c.speed*gameSpeed; if (c.y > height+c.size) { c.y = -c.size; c.x = Math.random()*width; } });
+            if (player.health <= 0) gameOver();
+            updatePowerupUI();
+        }
+
+        function updateBossUI() { const hpPerc = (boss.health / boss.maxHealth) * 100; bossHealthBar.style.width = Math.max(0, hpPerc) + '%'; bossHPText.innerText = Math.max(0, Math.ceil(hpPerc)) + '%'; }
+
+        function destroyBoss() {
+            boss.active = false; bossUI.classList.add('hidden'); createExplosion(boss.x, boss.y, '#ff4400', 100, 3);
+            if (boss.type === 'titan') { gameActive = false; overlay.classList.remove('hidden'); overlayTitle.innerText = "MISSION SUCCESS: YOU WIN"; overlayDesc.innerHTML = `THE VOID TITAN HAS FALLEN.<br>Final Victory Score: ${score}`; startBtn.innerText = "PLAY AGAIN"; boss2Triggered = false; } 
+            else { score += 10; eliteSquadMode = true; updateUI(); gameActive = false; overlay.classList.remove('hidden'); overlayTitle.innerText = "BOSS DEFEATED"; overlayDesc.innerHTML = `Dreadnought Down. +10 Credits.<br><span class="text-blue-400 font-bold">WARNING: ELITE SQUADRONS DETECTED.</span>`; startBtn.innerText = "ENGAGE ELITES"; }
+        }
+
+        function applyPowerup(type) {
+            const config = POWERUP_TYPES[type];
+            if (!config) return;
+            switch(type) {
+                case 'HEALTH': player.health = Math.min(player.maxHealth, player.health + 60); break;
+                case 'SHIELD': player.shieldTimer = config.duration; break;
+                case 'DAMAGE': player.damageTimer = config.duration; break;
+                case 'SPEED': player.speedTimer = config.duration; break;
+                case 'HYPER_RED': player.annihilatorTimer = config.duration; player.weapon = 'nuke'; break;
+                case 'HYPER_CYAN': player.shieldTimer = config.duration; player.armor += 500; break;
+                case 'HYPER_PURP': player.warpTimer = config.duration; player.speedTimer = config.duration; break;
+                case 'LEGENDARY': player.health = player.maxHealth; player.shieldTimer = config.duration; player.annihilatorTimer = config.duration; player.weapon = 'nuke'; break;
+            }
+            updateUI(); updateWeaponHUD();
+        }
+
+        function updatePowerupUI() {
+            timerContainer.innerHTML = ''; const active = [];
+            if (player.shieldTimer > 0) active.push({t: 'SHIELD', val: player.shieldTimer});
+            if (player.damageTimer > 0) active.push({t: 'DAMAGE', val: player.damageTimer});
+            if (player.speedTimer > 0) active.push({t: 'SPEED', val: player.speedTimer});
+            if (player.annihilatorTimer > 0) active.push({t: 'HYPER_RED', val: player.annihilatorTimer});
+            if (player.warpTimer > 0) active.push({t: 'HYPER_PURP', val: player.warpTimer});
+            active.forEach(a => {
+                const config = POWERUP_TYPES[a.t]; const perc = (a.val / config.duration) * 100; const div = document.createElement('div');
+                div.className = "powerup-indicator bg-black/40 p-2 rounded border border-white/10 w-32 flex flex-col gap-1";
+                const barColor = (a.t.startsWith('HYPER')) ? `hsl(${frame * 5 % 360}, 80%, 60%)` : config.color;
+                div.innerHTML = `<div class="flex justify-between text-[10px] font-bold" style="color: ${barColor}"><span>${config.label}</span></div><div class="w-full bg-gray-800 h-1 rounded-full overflow-hidden"><div class="h-full transition-all" style="width: ${perc}%; background-color: ${barColor}"></div></div>`;
+                timerContainer.appendChild(div);
+            });
+        }
+
+        function updateUI() { scoreEl.innerText = score.toString().padStart(4, '0'); healthBar.style.width = Math.max(0, (player.health / player.maxHealth)*100) + '%'; armorEl.innerText = player.armor > 0 ? `+${player.armor} ARMOR` : ''; }
+
+        function draw() {
+            const grad = ctx.createLinearGradient(0, 0, 0, height); grad.addColorStop(0, '#1e3a8a'); grad.addColorStop(1, '#60a5fa'); ctx.fillStyle = grad; ctx.fillRect(0, 0, width, height);
+            clouds.forEach(c => { ctx.globalAlpha = c.opacity; ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2); ctx.fill(); });
+            ctx.globalAlpha = 1.0; drawBalloons();
+            powerups.forEach(p => { const config = POWERUP_TYPES[p.type]; if(!config) return; const color = p.type.startsWith('HYPER') || p.type === 'LEGENDARY' ? `hsl(${frame * 5 % 360}, 100%, 50%)` : config.color; ctx.save(); ctx.translate(p.x, p.y); const s = 1 + Math.sin(p.pulse) * 0.1; ctx.scale(s, s); ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.globalAlpha = 0.6; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, p.r - 4, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.globalAlpha = 1.0; ctx.stroke(); ctx.restore(); });
+            player.bullets.forEach(b => { ctx.fillStyle = b.color || '#ff0'; ctx.beginPath(); ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2); ctx.fill(); });
+            drawBoss();
+            enemies.forEach(en => { if (en.isBossBullet) { ctx.fillStyle = '#f00'; ctx.beginPath(); ctx.arc(en.x, en.y, en.size, 0, Math.PI*2); ctx.fill(); return; } drawPlane(en.x, en.y, en.angle, en.color || '#dc2626'); ctx.fillStyle = '#f00'; en.bullets.forEach(eb => { ctx.beginPath(); ctx.arc(eb.x, eb.y, 3, 0, Math.PI * 2); ctx.fill(); }); });
+            if (gameActive) drawPlane(player.x, player.y, player.angle, SKINS[player.skin].color, true);
+            particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); });
+            ctx.globalAlpha = 1.0; requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        function startGame() {
+            if (overlayTitle.innerText === "BOSS DEFEATED" || overlayTitle.innerText.includes("WIN")) { if (overlayTitle.innerText.includes("WIN")) { location.reload(); return; } gameActive = true; overlay.classList.add('hidden'); return; }
+            gameActive = true; score = 0; shopTriggered = false; bossTriggered = false; boss2Triggered = false; godMode = false; adminUnlocked = false; eliteSquadMode = false;
+            boss.active = false; boss.health = 50; boss.maxHealth = 50;
+            player.health = player.maxHealth; player.armor = 0; player.x = width / 2; player.y = height / 2;
+            player.currentSpeed = 0; player.weapon = 'standard'; player.originalWeapon = 'standard';
+            player.bullets = []; player.shieldTimer = player.damageTimer = player.speedTimer = player.opTimer = player.annihilatorTimer = player.warpTimer = 0;
+            player.checkpointCharges = 0; checkpointData = null; player.skin = 'default'; player.unlockedSkins = ['default'];
+            enemies = []; powerups = []; particles = []; balloons = []; enemySpawnTimer = 60; balloonSpawnTimer = 300;
+            overlay.classList.add('hidden'); shopOverlay.classList.add('hidden'); adminOverlay.classList.add('hidden');
+            manualShopBtn.classList.add('hidden'); adminPanelBtn.classList.add('hidden'); weaponIndicator.classList.add('hidden'); bossUI.classList.add('hidden'); 
+            overlayTitle.className = "text-4xl font-black text-white mb-4 italic tracking-tighter"; restoreBtn.classList.add('hidden'); updateUI();
+        }
+
+        function gameOver() { gameActive = false; overlay.classList.remove('hidden'); overlayTitle.innerText = "MISSION FAILED"; overlayDesc.innerHTML = `Aircraft destroyed.<br><span class="text-white text-xl">Score: ${score}</span>`; startBtn.innerText = "RE-DEPLOY"; if (checkpointData) { restoreBtn.classList.remove('hidden'); } }
+
+        resize(); initBackground(); updateUI(); draw();
+    </script>
+</body>
+</html>
