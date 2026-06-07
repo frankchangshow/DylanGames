@@ -1,6 +1,6 @@
 # Dylan Games
 
-A very simple Next.js game launcher. The homepage automatically scans `public/games/` and shows every game it finds.
+A very simple Next.js game launcher. The homepage always renders a small hardcoded launcher list so `/` stays reliable on Vercel.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ Open `http://localhost:3000`.
 
 1. Create a folder in `public/games/`.
 2. Add `index.html`.
-3. Optional: add `thumbnail.png`, `thumbnail.jpg`, `thumbnail.webp`, or `thumbnail.gif`.
+3. Add the game to `lib/games.ts`.
 4. Deploy.
 
 Example:
@@ -26,14 +26,13 @@ public/games/stop-then-go/
   thumbnail.png
 ```
 
-The game will appear automatically on the homepage. Clicking it opens `/play/stop-then-go` and loads `/games/stop-then-go/index.html`.
+Clicking it opens `/play/stop-then-go` and loads `/games/stop-then-go/index.html`.
 
 ## Add a Scratch game
 
-1. Create a folder in `public/games/`.
-2. Add `game.json`.
-3. Optional: add a thumbnail image.
-4. Deploy.
+1. Add the Scratch embed URL to `lib/games.ts`.
+2. Set `type` to `scratch`.
+3. Deploy.
 
 Example:
 
@@ -45,14 +44,13 @@ Example:
 }
 ```
 
-The game will appear automatically. Clicking it opens `/play/scratch-race` and embeds the Scratch project.
+Clicking it opens `/play/scratch-race` and embeds the Scratch project.
 
 ## Add an external game
 
-1. Create a folder in `public/games/`.
-2. Add `game.json`.
-3. Optional: add a thumbnail image.
-4. Deploy.
+1. Add the external URL to `lib/games.ts`.
+2. Set `type` to `external`.
+3. Deploy.
 
 Example:
 
@@ -68,7 +66,7 @@ External games open in a new tab.
 
 ## Notes
 
-- Every subfolder of `public/games/` is checked automatically.
+- The launcher uses the list in `lib/games.ts`.
+- The homepage does not read the filesystem at runtime.
 - HTML games need an `index.html`.
-- Scratch and external games need a `game.json` with `title`, `type`, and `url`.
 - This works on GitHub and the Vercel Hobby Plan.
