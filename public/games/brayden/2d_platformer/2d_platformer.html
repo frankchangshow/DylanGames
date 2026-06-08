@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Platformer with Grapple & +1 Jump Upgrade</title>
+  <style>
+    html, body { height: 100%; margin: 0; background:#0b1020; color:#e5e7eb; font-family: system-ui, sans-serif; }
+    #wrap { display:flex; align-items:center; justify-content:center; height:100%; }
+    canvas { background: linear-gradient(#1a2240, #0b1020 60%); display:block; width: min(100vw, 960px); height: auto; border-radius:16px; box-shadow: 0 20px 60px rgba(0,0,0,.4); cursor: crosshair; }
+    .hud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display:flex; gap:16px; align-items:center; font-weight:600; }
+    .chip { background:#0f172a; border:1px solid #334155; padding:8px 12px; border-radius:999px; cursor:pointer; }
+    .btns { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display:flex; flex-wrap:wrap; gap:8px; opacity:.9; }
+    .btns button { background:#0f172a; color:#e5e7eb; border:1px solid #334155; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .btns button:hover{ filter: brightness(1.2); }
+    #shop { position: fixed; right: 12px; top: 12px; background:#0f172a; border:1px solid #334155; padding:12px; border-radius:12px; color:#e5e7eb; max-width:220px; }
+    #shop h3 { margin:0 0 8px 0; }
+    #shop button { display:block; margin:4px 0; width:100%; border:none; border-radius:8px; padding:6px; background:#334155; color:#e5e7eb; cursor:pointer; }
+    #shop button:hover { filter:brightness(1.2); }
+  </style>
+</head>
+<body>
+  <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+  <div class="hud">
+    <div class="chip">Distance: <span id="score">0</span></div>
+    <div class="chip">Coins: <span id="coins">0</span></div>
+    <div class="chip">Jumps: <span id="jumps">1</span>x</div>
+    <div class="chip">FPS: <span id="fps">60</span></div>
+    <div class="chip" id="musicBtn">🔊</div>
+  </div>
+  <div id="shop">
+    <h3>Shop</h3>
+    <button id="buyJump">Buy +1 Jump (10)</button>
+    <button id="buyGrapple">Buy Grapple (20)</button>
+    <button id="buyCheckpoint">Buy Checkpoint (15)</button>
+  </div>
+  <div class="btns">
+    <button id="btnJump">Jump ⤴</button>
+    <button id="btnReset">Reset ↺</button>
+  </div>
+
+  <audio id="bgm" loop>
+    <source src="013. Blizzard.mp3" type="audio/mpeg" />
+  </audio>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const coinsEl = document.getElementById('coins');
+  const jumpsEl = document.getElementById('jumps');
+  const fpsEl   = document.getElementById('fps');
+  const musicBtn = document.getElementById('musicBtn');
+  const bgm = document.getElementById('bgm');
+
+  const W = canvas.width; const H = canvas.height;
+
+  const G = 1800, FRICTION=0.86, AIR_DRAG=0.985, MOVE=520, MAX_SPD_X=420, JUMP_VEL=640, DJUMP_VEL=560, CAM_LAG=0.12;
+  const COLORS = { ground:'#0e162b', platform:'#2dd4bf', player:'#fbbf24', playerShadow:'#0b1020', hazard:'#ef4444', coin:'#facc15'};
+
+  const player = {x:80,y:0,w:36,h:48,vx:0,vy:0,onGround:false,jumpsLeft:1,maxJumps:2,alive:true,hasGrapple:false};
+  let cameraX=0,distance=0,coins=0,platforms=[],hazards=[],coinList=[],lastGenX=0;
+  const FLOOR_Y=H-80;
+
+  let totalCoins = 0;
+  let grappleUnlocked = false;
+
+  let grappleTarget = null;
+  let grappleCooldown = 0;
+
+  // Music
+  let musicEnabled = false;
+  function tryPlayMusic() {
+    if (!musicEnabled) {
+      bgm.play().then(() => { musicEnabled = true; })
+        .catch(err => console.log("Music blocked:", err));
+    }
+  }
+  window.addEventListener('keydown', tryPlayMusic);
+  window.addEventListener('click', tryPlayMusic);
+  musicBtn.onclick = () => {
+    bgm.muted = !bgm.muted;
+    musicBtn.textContent = bgm.muted ? '🔇' : '🔊';
+  };
+
+  function rect(x,y,w,h){ ctx.fillRect(Math.floor(x-cameraX), Math.floor(y), Math.floor(w), Math.floor(h)); }
+  function rand(a,b){ return Math.floor(a+Math.random()*(b-a+1)); }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+  function aabb(a,b){ return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y; }
+
+  function createInitialWorld(){
+    platforms=[]; hazards=[]; coinList=[];
+    platforms.push({x:-200,y:FLOOR_Y,w:600,h:40}); lastGenX=300;
+    while(lastGenX<1400) genNextPlatform();
+  }
+  function genNextPlatform(){
+    const gap=rand(80,220), w=rand(120,260), prev=platforms[platforms.length-1];
+    const y=clamp((prev?prev.y:FLOOR_Y)+rand(-90,120),H*0.35,FLOOR_Y);
+    const x=lastGenX+gap;
+    platforms.push({x,y,w,h:20});
+    if(Math.random()<0.25){ platforms.push({x:x+rand(20,w-40), y:clamp(y-rand(50,110),H*0.2,y-40), w:rand(40,80), h:16}); }
+    if(Math.random()<0.12){ hazards.push({x:x+w*0.5-12,y:y-18,w:24,h:18}); }
+    if(Math.random()<0.3){ coinList.push({x:x+rand(10,w-20),y:y-30,w:16,h:16,collected:false}); }
+    lastGenX=x+w;
+  }
+
+  function spawnPlayer(){ 
+    player.x=80;player.y=FLOOR_Y-player.h-1;player.vx=0;player.vy=0;player.onGround=true;player.jumpsLeft=1;
+    player.alive=true;
+    player.hasGrapple = grappleUnlocked;
+    grappleTarget = null;
+    cameraX=0;distance=0;coins=0;
+  }
+  function reset(){ createInitialWorld(); spawnPlayer(); }
+  function doJump(){
+    if(!player.alive)return;
+    if(player.onGround){ player.vy=-JUMP_VEL; player.onGround=false; player.jumpsLeft=player.maxJumps-1; }
+    else if(player.jumpsLeft>0){ player.vy=-DJUMP_VEL; player.jumpsLeft--; }
+  }
+
+  const keys=new Set(); 
+  const K={LEFT:['ArrowLeft','a','A'],RIGHT:['ArrowRight','d','D'],UP:['ArrowUp','w','W'],SPACE:[' ']};
+  addEventListener('keydown',e=>{keys.add(e.key); if(K.SPACE.includes(e.key)||K.UP.includes(e.key))e.preventDefault();});
+  addEventListener('keyup',e=>keys.delete(e.key));
+  document.getElementById('btnJump').onclick=()=>doJump();
+  document.getElementById('btnReset').onclick=()=>reset();
+
+  // Mouse grapple toggle
+  canvas.addEventListener('mousedown', e => {
+    if(!player.hasGrapple) return;
+
+    if (grappleTarget) {
+      // Retract
+      grappleTarget = null;
+      console.log("Grapple retracted");
+    } else if (grappleCooldown <= 0) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      grappleTarget = { x: mx + cameraX, y: my };
+      grappleCooldown = 0.5;
+      console.log("Grapple launched", grappleTarget);
+    }
+  });
+
+  // Shop
+  document.getElementById('buyJump').onclick=()=>{
+    if(totalCoins >= 10){ 
+      totalCoins -= 10; 
+      player.maxJumps += 1; 
+      coinsEl.textContent = totalCoins.toString();
+      alert("You gained an extra jump! Max jumps: " + player.maxJumps);
+    }
+  };
+  document.getElementById('buyGrapple').onclick=()=>{
+    if(totalCoins>=20 && !grappleUnlocked){ 
+      totalCoins-=20; 
+      grappleUnlocked=true; 
+      player.hasGrapple=true;
+      coinsEl.textContent = totalCoins.toString();
+      alert("Grapple purchased! Click to toggle grapple to mouse position."); 
+    }
+  };
+
+  let canJumpPress=true,respawnTimer=0.8,last=performance.now(),fpsSmoothed=60;
+
+  function tick(now){
+    const dt=Math.min(0.033,(now-last)/1000); last=now; fpsSmoothed=fpsSmoothed*0.92+(1/dt)*0.08;
+    update(dt); render(); requestAnimationFrame(tick);
+  }
+
+  function update(dt){
+    const left=K.LEFT.some(k=>keys.has(k)), right=K.RIGHT.some(k=>keys.has(k)), wantJump=K.SPACE.some(k=>keys.has(k))||K.UP.some(k=>keys.has(k));
+    if(left&&!right)player.vx-=MOVE*dt; else if(right&&!left)player.vx+=MOVE*dt; else{ if(player.onGround)player.vx*=FRICTION; else player.vx*=AIR_DRAG; }
+    player.vx=clamp(player.vx,-MAX_SPD_X,MAX_SPD_X);
+
+    if(wantJump&&canJumpPress){doJump();canJumpPress=false;} if(!wantJump)canJumpPress=true;
+
+    player.vy+=G*dt;
+
+    // Grapple fast pull
+    if(grappleTarget){
+      const dx = grappleTarget.x - (player.x + player.w/2);
+      const dy = grappleTarget.y - (player.y + player.h/2);
+      const dist = Math.hypot(dx,dy);
+      if(dist>10){
+        const pullStrength = 1600 * dt; // fast pull
+        player.vx += (dx/dist)*pullStrength;
+        player.vy += (dy/dist)*pullStrength;
+      } else {
+        grappleTarget=null;
+      }
+    }
+    if(grappleCooldown>0) grappleCooldown-=dt;
+
+    let nextX=player.x+(player.vx+160)*dt, nextY=player.y+player.vy*dt, grounded=false;
+    for(let p of platforms){ 
+      if(p.x+p.w<player.x-200) continue; 
+      const prevB=player.y+player.h, nextB=nextY+player.h; 
+      if(prevB<=p.y&&nextB>=p.y&&player.x+player.w>p.x&&player.x<p.x+p.w){ 
+        nextY=p.y-player.h; player.vy=0; grounded=true; 
+      } 
+    }
+    player.x=nextX; player.y=nextY; player.onGround=grounded; if(player.onGround)player.jumpsLeft=player.maxJumps-1;
+
+    for(let hz of hazards){ if(aabb({x:player.x,y:player.y,w:player.w,h:player.h},hz))player.alive=false; }
+    for(let c of coinList){ if(!c.collected && aabb(player,c)){ c.collected=true; coins++; totalCoins++; }}
+    const targetCamX=Math.max(0,player.x-W*0.35); cameraX=cameraX+(targetCamX-cameraX)*CAM_LAG;
+    while(lastGenX-cameraX<W*2)genNextPlatform();
+    platforms=platforms.filter(p=>p.x+p.w>cameraX-300); hazards=hazards.filter(h=>h.x+h.w>cameraX-300); coinList=coinList.filter(c=>!c.collected && c.x+c.w>cameraX-300);
+    distance=Math.max(distance,Math.floor(player.x/10));
+    if(player.y>H+200||player.x+player.w<cameraX-50)player.alive=false;
+    if(!player.alive){respawnTimer-=dt;if(respawnTimer<=0){respawnTimer=0.8;reset();}}
+
+    scoreEl.textContent = distance.toLocaleString();
+    coinsEl.textContent = totalCoins.toString();
+    jumpsEl.textContent = (player.onGround? player.maxJumps-1 : player.jumpsLeft).toString();
+    fpsEl.textContent   = Math.round(fpsSmoothed).toString();
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=COLORS.platform; for(let p of platforms)rect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle=COLORS.hazard; for(let hz of hazards){const x=hz.x-cameraX,y=hz.y,w=hz.w,h=hz.h;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w*0.5,y);ctx.lineTo(x+w,y+h);ctx.closePath();ctx.fill();}
+    ctx.fillStyle=COLORS.coin; for(let c of coinList){ if(!c.collected){ ctx.beginPath(); ctx.arc(c.x-cameraX+c.w/2,c.y+c.h/2,c.w/2,0,Math.PI*2); ctx.fill(); }}
+
+    if(grappleTarget){
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(player.x+player.w/2-cameraX, player.y+player.h/2);
+      ctx.lineTo(grappleTarget.x-cameraX, grappleTarget.y);
+      ctx.stroke();
+    }
+
+    const px=player.x-cameraX, py=player.y; 
+    ctx.fillStyle=COLORS.playerShadow; ctx.globalAlpha=0.25; ctx.beginPath(); ctx.ellipse(px+player.w/2,Math.min(py+player.h+12,FLOOR_Y+8),18,6,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    ctx.fillStyle=COLORS.player; ctx.fillRect(Math.floor(px),Math.floor(py),player.w,player.h);
+    ctx.fillStyle='#1f2937'; ctx.fillRect(Math.floor(px+8),Math.floor(py+12),20,10);
+    ctx.fillStyle='#fde68a'; ctx.fillRect(Math.floor(px+4),Math.floor(py+32),player.w-8,6);
+    ctx.fillStyle=COLORS.ground; rect(cameraX,FLOOR_Y+20,W+200,200);
+  }
+
+  createInitialWorld(); spawnPlayer(); requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
