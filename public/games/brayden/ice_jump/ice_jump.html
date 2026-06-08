@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ice Jump - AI Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #e0f7fa;
+            font-family: 'Fredoka One', cursive;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 3rem;
+            color: #0277bd;
+            text-shadow: 2px 2px 0px #ffffff;
+        }
+
+        #lives-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0px #ffffff;
+        }
+
+        #ammo-display {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            font-size: 2rem;
+            color: #546e7a;
+            text-shadow: 2px 2px 0px #ffffff;
+        }
+        
+        #coin-display {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            font-size: 2rem;
+            color: #ffca28;
+            text-shadow: 2px 2px 0px #000000;
+        }
+
+        #music-toggle {
+            position: absolute;
+            top: 140px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 3px solid #0288d1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 0 #b3e5fc;
+        }
+
+        #message-display {
+            position: absolute;
+            top: 15%;
+            width: 100%;
+            text-align: center;
+            font-size: 2rem;
+            color: #ff9800;
+            text-shadow: 2px 2px 0px #fff;
+            opacity: 0;
+            transition: opacity 0.5s;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        /* MARKETPLACE SHOP BUTTON */
+        #ingame-shop-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 90px;
+            height: 100px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 50;
+            transition: transform 0.1s;
+        }
+        
+        #ingame-shop-btn:active { transform: scale(0.9); }
+
+        .shop-sign {
+            width: 38px;
+            height: 38px;
+            background: #ffffff;
+            border: 4px solid #03a9f4;
+            border-radius: 50%;
+            color: #03a9f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 26px;
+            position: absolute;
+            top: -15px;
+            z-index: 4;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .shop-awning {
+            width: 80px;
+            height: 32px;
+            background: repeating-linear-gradient(90deg, #ff4e42, #ff4e42 15px, #c62828 15px, #c62828 30px);
+            border-radius: 10px 10px 0 0;
+            border: 2.5px solid #3e2723;
+            position: relative;
+            z-index: 2;
+        }
+
+        .shop-base {
+            width: 74px;
+            height: 50px;
+            background: #8d6e63;
+            border: 2.5px solid #3e2723;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .shop-counter {
+            width: 66px;
+            height: 12px;
+            background: #3e2723;
+            border-radius: 3px;
+        }
+
+        /* Screens */
+        #start-screen, #game-over-screen, #shop-screen, #locker-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        #start-screen { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(5px); }
+
+        #game-over-screen {
+            background: rgba(1, 33, 44, 0.7);
+            backdrop-filter: blur(12px);
+        }
+
+        .game-over-panel {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 85%;
+            border: 4px solid #81d4fa;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .game-over-panel h1 { font-size: 3.5rem; color: #d32f2f; margin: 0; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #f1f8e9; padding: 15px; border-radius: 20px; border: 2px solid #c5e1a5; }
+        .stat-card.blue { background: #e1f5fe; border-color: #81d4fa; }
+        .stat-card.gold { background: #fffde7; border-color: #fff176; }
+        .stat-label { font-size: 0.8rem; color: #78909c; text-transform: uppercase; }
+        .stat-value { font-size: 1.8rem; color: #0277bd; }
+
+        #shop-screen, #locker-screen {
+            background: rgba(236, 240, 241, 0.98);
+            justify-content: flex-start;
+            padding-top: 40px;
+            padding-bottom: 40px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .shop-container, .locker-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: #0277bd;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            border-bottom: 3px solid #81d4fa;
+        }
+
+        .shop-item, .locker-item {
+            background: white;
+            border: 2px solid #0288d1;
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin: 8px;
+            width: 360px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            color: #01579b;
+            box-shadow: 0 4px 0 #b3e5fc;
+        }
+
+        .buy-btn, .equip-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s;
+        }
+        .equip-btn.active { background: #0288d1; cursor: default; }
+        .buy-btn:active, .equip-btn:active:not(.active) { transform: scale(0.9); }
+        .buy-btn:disabled, .equip-btn:disabled { background: #9e9e9e; cursor: not-allowed; }
+
+        .hidden { display: none !important; }
+        .btn {
+            background: #0288d1;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #01579b;
+            margin-top: 15px;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: translateY(5px); box-shadow: 0 0 0 #01579b; }
+
+        .btn-locker { background: #673ab7; box-shadow: 0 5px 0 #4527a0; }
+        .btn-locker:hover { background: #7e57c2; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="score-display">0</div>
+        <div id="lives-display">❤️❤️❤️</div>
+        <div id="ammo-display">❄️ 5/5</div>
+        <div id="coin-display">💰 0</div>
+        <div id="music-toggle">🔊</div>
+        <div id="message-display"></div>
+        
+        <div id="ingame-shop-btn">
+            <div class="shop-sign">$</div>
+            <div class="shop-awning"></div>
+            <div class="shop-base"><div class="shop-counter"></div></div>
+        </div>
+
+        <div id="mobile-controls" class="hidden">
+            <div id="reload-btn-mobile" class="mobile-btn" style="background: #29b6f6;">RELOAD</div>
+            <div id="shoot-btn-mobile" class="mobile-btn" style="background: #ff5252;">SHOOT</div>
+        </div>
+    </div>
+
+    <div id="start-screen">
+        <h1>ICE JUMP</h1>
+        <p>AI Oracle Edition</p>
+        <button class="btn" id="start-btn">PLAY</button>
+        <button class="btn btn-locker" id="open-locker-btn-start">LOCKER</button>
+        <button class="btn" style="background: #ffb300; box-shadow: 0 5px 0 #ff6f00;" id="open-shop-btn-start">SHOP</button>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <div class="game-over-panel">
+            <h1>FROZEN!</h1>
+            <p id="death-reason">You fell into the abyss.</p>
+            <div class="stat-grid">
+                <div class="stat-card blue"><div class="stat-label">Platforms</div><div class="stat-value" id="final-score">0</div></div>
+                <div class="stat-card gold"><div class="stat-label">Total Coins</div><div class="stat-value" id="final-coins">0</div></div>
+            </div>
+            <button class="btn" id="restart-btn" style="width:100%">TRY AGAIN</button>
+            <button class="btn btn-locker" id="open-locker-btn-over" style="width:100%">LOCKER</button>
+            <button class="btn" style="background: #ffb300; box-shadow: 0 5px 0 #ff6f00; width:100%" id="open-shop-btn-over">SHOP</button>
+        </div>
+    </div>
+
+    <div id="shop-screen" class="hidden">
+        <div class="shop-container">
+            <h2>MARKET STALL</h2>
+            <p>Your Coins: <span id="shop-coins">0</span></p>
+            
+            <div id="ai-tip-box">"Click below for Icy Wisdom..."</div>
+            <button class="buy-btn" style="background: #673ab7; margin-bottom: 20px;" onclick="fetchAiTip()">CONSULT ORACLE (FREE)</button>
+
+            <div class="section-title">Texture Packs</div>
+            <div class="shop-item"><span>Gem Pack 💎</span><button class="buy-btn" id="buy-pack-gem" onclick="buyItem('pack_gem')">250 💰</button></div>
+            <div class="shop-item"><span>Sports Pack 🏀</span><button class="buy-btn" id="buy-pack-sports" onclick="buyItem('pack_sports')">150 💰</button></div>
+
+            <div class="section-title">Accessories</div>
+            <div class="shop-item"><span>Sports Hat 🧢</span><button class="buy-btn" id="buy-hat-sports" onclick="buyItem('hat_sports')">15 💰</button></div>
+            <div class="shop-item"><span>Miner Hat 🔦</span><button class="buy-btn" id="buy-hat-miner" onclick="buyItem('hat_miner')">30 💰</button></div>
+            <div class="shop-item"><span>Plunger Hat 🪠</span><button class="buy-btn" id="buy-hat-plunger" onclick="buyItem('hat_plunger')">10 💰</button></div>
+
+            <div class="section-title">Skins</div>
+            <div class="shop-item"><span>King Snowman 👑</span><button class="buy-btn" id="buy-king" onclick="buyItem('king')">100 💰</button></div>
+            <div class="shop-item"><span>Snowy Explorer ☁️</span><button class="buy-btn" id="buy-explorer" onclick="buyItem('explorer')">40 💰</button></div>
+            <div class="shop-item"><span>Santa Skin 🎅</span><button class="buy-btn" id="buy-santa" onclick="buyItem('santa')">25 💰</button></div>
+            
+            <div class="section-title">Upgrades</div>
+            <div class="shop-item"><span>Max HP +1</span><button class="buy-btn" id="buy-hp" onclick="buyItem('hp')">10 💰</button></div>
+            <div class="shop-item"><span>Unlock Cannon</span><button class="buy-btn" id="buy-cannon" onclick="buyItem('cannon')">50 💰</button></div>
+            <div class="shop-item"><span>Super Cannon (Reload on Kill)</span><button class="buy-btn" id="buy-super-cannon" onclick="buyItem('super_cannon')">75 💰</button></div>
+            <div class="shop-item"><span>Life Steal (Energy Link)</span><button class="buy-btn" id="buy-lifesteal" onclick="buyItem('lifesteal')">20 💰</button></div>
+            <div class="shop-item"><span>Max Ammo +1</span><button class="buy-btn" id="buy-ammo" onclick="buyItem('ammo')">5 💰</button></div>
+            <div class="shop-item"><span>Rescue Balloon 🎈</span><button class="buy-btn" id="buy-balloon" onclick="buyItem('balloon')">20 💰</button></div>
+
+            <button class="btn" id="close-shop-btn" style="background: #f44336; box-shadow: 0 5px 0 #d32f2f;">CLOSE</button>
+        </div>
+    </div>
+
+    <div id="locker-screen" class="hidden">
+        <div class="locker-container">
+            <h2>LOCKER ROOM</h2>
+            
+            <div class="section-title">Texture Packs</div>
+            <div class="locker-item"><span>Default</span><button class="equip-btn" id="equip-pack-default" onclick="equipPack('default')">EQUIP</button></div>
+            <div class="locker-item"><span>Gem Pack 💎</span><button class="equip-btn" id="equip-pack-gem" onclick="equipPack('gem')">LOCKED</button></div>
+            <div class="locker-item"><span>Sports Pack 🏀</span><button class="equip-btn" id="equip-pack-sports" onclick="equipPack('sports')">LOCKED</button></div>
+
+            <div class="section-title">Skins</div>
+            <div class="locker-item"><span>Default Penguin 🐧</span><button class="equip-btn" id="equip-penguin" onclick="equipSkin('penguin')">EQUIP</button></div>
+            <div class="locker-item"><span>Santa Skin 🎅</span><button class="equip-btn" id="equip-santa" onclick="equipSkin('santa')">LOCKED</button></div>
+            <div class="locker-item"><span>Snowy Explorer ☁️</span><button class="equip-btn" id="equip-explorer" onclick="equipSkin('explorer')">LOCKED</button></div>
+            <div class="locker-item"><span>King Snowman 👑</span><button class="equip-btn" id="equip-king" onclick="equipSkin('king')">LOCKED</button></div>
+
+            <div class="section-title">Hats</div>
+            <div class="locker-item"><span>No Hat</span><button class="equip-btn" id="equip-hat-none" onclick="equipHat('none')">EQUIP</button></div>
+            <div class="locker-item"><span>Sports Hat 🧢</span><button class="equip-btn" id="equip-hat-sports" onclick="equipHat('sports')">LOCKED</button></div>
+            <div class="locker-item"><span>Miner Hat 🔦</span><button class="equip-btn" id="equip-hat-miner" onclick="equipHat('miner')">LOCKED</button></div>
+            <div class="locker-item"><span>Plunger Hat 🪠</span><button class="equip-btn" id="equip-hat-plunger" onclick="equipHat('plunger')">LOCKED</button></div>
+
+            <button class="btn" id="close-locker-btn" style="background: #f44336; box-shadow: 0 5px 0 #d32f2f;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const ammoDisplay = document.getElementById('ammo-display');
+        const coinDisplay = document.getElementById('coin-display');
+        const musicToggle = document.getElementById('music-toggle');
+        const messageDisplay = document.getElementById('message-display');
+        const ingameShopBtn = document.getElementById('ingame-shop-btn');
+        const aiTipBox = document.getElementById('ai-tip-box');
+        const shopCoinsEl = document.getElementById('shop-coins');
+        const shopScreen = document.getElementById('shop-screen');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const lockerScreen = document.getElementById('locker-screen');
+        const deathReasonEl = document.getElementById('death-reason');
+        
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const closeShopBtn = document.getElementById('close-shop-btn');
+        const closeLockerBtn = document.getElementById('close-locker-btn');
+
+        // AUDIO SETUP
+        const gameMusic = new Audio('hitslab-retro-arcade-game-music-396890.mp3');
+        gameMusic.loop = true;
+        gameMusic.volume = 0.5;
+        let isMusicPlaying = true; // Fixed: Default to TRUE
+
+        const toggleMusic = () => {
+            if (isMusicPlaying) {
+                gameMusic.pause();
+                musicToggle.innerText = '🔇';
+                isMusicPlaying = false;
+            } else {
+                gameMusic.play().catch(e => console.log("Audio play blocked until interaction"));
+                musicToggle.innerText = '🔊';
+                isMusicPlaying = true;
+            }
+        };
+
+        musicToggle.onclick = toggleMusic;
+
+        const apiKey = "";
+        let isFetchingTip = false;
+
+        async function fetchAiTip() {
+            if (isFetchingTip) return;
+            isFetchingTip = true;
+            aiTipBox.innerText = "Consulting the Snow Oracle...";
+            const prompt = `Give me a short (10 words max) hilarious winter pun or a secret pro-tip for an ice-jumping game.`;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    aiTipBox.innerText = `"${data.candidates[0].content.parts[0].text.trim()}"`;
+                } else { aiTipBox.innerText = "Stay cool and keep jumping!"; }
+            } catch (e) { aiTipBox.innerText = "Stay frosty!"; }
+            isFetchingTip = false;
+        }
+
+        // Persistent State
+        let totalCoins = 0, upgradeMaxLives = 3, upgradeMaxAmmo = 5, hasCannon = false, hasSnowballCannon = false, hasLifeSteal = false, upgradeBalloonCount = 0, currentSkin = 'penguin', hasSantaSkin = false, hasExplorerSkin = false, hasKingSkin = false, currentHat = 'none', hasSportsHat = false, hasMinerHat = false, hasPlungerHat = false, currentPack = 'default', hasGemPack = false, hasSportsPack = false, bestScore = parseInt(localStorage.getItem('iceJumpBest')) || 0;
+
+        // Session State
+        let gameRunning = false, gamePaused = false, score = 0, currentLives = 3, currentAmmo = 5, balloonCount = 0, cameraX = 0, lastPlatformX = 0;
+        const GRAVITY = 0.6, FRICTION = 0.96, SLIPPERY_FRICTION = 0.998, ACCELERATION = 0.4, SLIPPERY_ACCEL = 0.08, JUMP_FORCE = -14, MAX_SPEED = 8;
+        const keys = { ArrowLeft: false, ArrowRight: false, Space: false, KeyZ: false, KeyE: false };
+        const touchState = { left: false, right: false, jump: false, reload: false };
+        const mousePos = { x: 0, y: 0 };
+        let player, platforms = [], enemies = [], snowballs = [], coins = [], particles = [], snowflakes = [], effects = [];
+        let audience = []; 
+        let stalactites = []; 
+
+        class Snowflake {
+            constructor() { this.reset(); }
+            reset() { this.x = Math.random() * canvas.width; this.y = -10; this.v = 1 + Math.random() * 2; this.s = 1 + Math.random() * 3; this.o = Math.random() * 0.4 + 0.2; }
+            update() { this.y += this.v; if (this.y > canvas.height) this.reset(); }
+            draw() { ctx.fillStyle = `rgba(255,255,255,${this.o})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.s, 0, Math.PI*2); ctx.fill(); }
+        }
+
+        function drawMiniSkin(x, y, type, scale = 0.5, facingRight = true) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            if (type === 'penguin') {
+                ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle = "white"; ctx.beginPath(); ctx.ellipse(0,3,15,14,0,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-6, -6, 2.5, 0, Math.PI*2); ctx.arc(6, -6, 2.5, 0, Math.PI*2); ctx.fill();
+            } else if (type === 'santa') {
+                ctx.fillStyle = "#fab1a0"; ctx.beginPath(); ctx.arc(0, -4, 14, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, 8, 16, 0, Math.PI, false); ctx.fill();
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-5, -7, 2.5, 0, Math.PI*2); ctx.arc(5, -7, 2.5, 0, Math.PI*2); ctx.fill();
+            } else if (type === 'explorer') {
+                ctx.fillStyle = "#7986cb"; ctx.beginPath(); ctx.arc(0, 5, 18, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ffccbc"; ctx.beginPath(); ctx.ellipse(0, 2, 11, 10, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-4, 2, 2, 0, Math.PI*2); ctx.arc(4, 2, 2, 0, Math.PI*2); ctx.fill();
+            } else if (type === 'king') {
+                ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-6, -6, 2.5, 0, Math.PI*2); ctx.arc(6, -6, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.moveTo(-12, -15); ctx.lineTo(0, -32); ctx.lineTo(12, -15); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawGem(x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x, y - size); ctx.lineTo(x + size, y); ctx.lineTo(x, y + size); ctx.lineTo(x - size, y);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.3)";
+            ctx.beginPath(); ctx.moveTo(x, y - size); ctx.lineTo(x + size/2, y); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
+        }
+
+        class Coin {
+            constructor(x, y) { this.x = x; this.y = y; this.radius = 12; this.collected = false; }
+            draw() {
+                if (this.collected) return;
+                let dx = this.x - cameraX, dy = this.y + Math.sin(Date.now()/200)*5;
+                if (currentPack === 'gem') drawGem(dx, dy, 12, "#00e5ff");
+                else if (currentPack === 'sports') {
+                    ctx.fillStyle = "#ffd700";
+                    ctx.fillRect(dx-6, dy-8, 12, 12);
+                    ctx.beginPath(); ctx.arc(dx, dy-8, 8, Math.PI, 0); ctx.fill();
+                    ctx.fillRect(dx-2, dy+4, 4, 6);
+                    ctx.fillRect(dx-8, dy+10, 16, 3);
+                    ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(dx-8, dy-4, 4, 0, Math.PI*2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(dx+8, dy-4, 4, 0, Math.PI*2); ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(dx, dy, this.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#ff8f00'; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('$', dx-4, dy+5);
+                }
+            }
+        }
+
+        class Snowball {
+            constructor(x, y, vx, vy, isPlayer, typeOverride = null) { 
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.radius = isPlayer?8:6; this.isPlayer = isPlayer; this.active = true; 
+                this.subType = typeOverride !== null ? typeOverride : Math.floor(Math.random() * 2); 
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.1; }
+            draw() {
+                let dx = this.x - cameraX;
+                if (currentPack === 'gem') {
+                    const gemColors = ['#f44336', '#00e676', '#00e5ff'];
+                    drawGem(dx, this.y, 10, gemColors[this.subType % 3]);
+                } else if (currentPack === 'sports') {
+                    if (this.subType === 0) { // Basketball
+                        ctx.fillStyle = "#ff9800"; ctx.beginPath(); ctx.arc(dx, this.y, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = "black"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(dx-10, this.y); ctx.lineTo(dx+10, this.y); ctx.stroke();
+                    } else { // Baseball
+                        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(dx, this.y, 8, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = "red"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(dx-8, this.y, 8, -0.5, 0.5); ctx.stroke();
+                    }
+                } else {
+                    ctx.fillStyle = this.isPlayer?"white":"#b2ebf2"; ctx.beginPath(); ctx.arc(dx, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+                }
+            }
+        }
+
+        class Enemy {
+            constructor(p) { 
+                this.x = p.x + p.width/2 - 20; this.y = p.y - 60; this.active = true; this.timer = 0; 
+                this.jerseyColor = ['#d32f2f', '#1976d2', '#388e3c'][Math.floor(Math.random() * 3)];
+            }
+            update(px) {
+                this.facingRight = px > this.x;
+                if (Math.abs(this.x-px) < 800) { this.timer++; if (this.timer > 120) { this.shoot(); this.timer = 0; } }
+            }
+            shoot() { let dir = this.facingRight?1:-1; snowballs.push(new Snowball(this.x+20, this.y+20, dir*7, -2, false)); }
+            draw() {
+                let dx = this.x - cameraX, dy = this.y, cx = dx + 20;
+                let wobble = Math.sin(Date.now()/200)*2;
+                if (currentPack === 'gem') {
+                    drawGem(cx, dy+45+wobble, 15, "#f44336"); drawGem(cx, dy+25+wobble, 12, "#00e676"); drawGem(cx, dy+10+wobble, 10, "#00e5ff");
+                } else {
+                    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(cx, dy+45+wobble, 15, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(cx, dy+25+wobble, 12, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(cx, dy+10+wobble, 10, 0, Math.PI*2); ctx.fill();
+                    if (currentPack === 'sports') { ctx.fillStyle = this.jerseyColor; ctx.fillRect(cx-10, dy+20+wobble, 20, 15); ctx.fillStyle = "white"; ctx.font = "bold 10px Arial"; ctx.fillText("99", cx-6, dy+30+wobble); }
+                    ctx.fillStyle = "#ff6f00"; ctx.beginPath(); ctx.moveTo(cx, dy+10+wobble); ctx.lineTo(cx+(this.facingRight?15:-14), dy+12+wobble); ctx.lineTo(cx, dy+14+wobble); ctx.fill();
+                    ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(cx-4, dy+7+wobble, 1.5, 0, Math.PI*2); ctx.arc(cx+4, dy+7+wobble, 1.5, 0, Math.PI*2); ctx.fill();
+                }
+            }
+        }
+
+        class Player {
+            constructor() { 
+                this.x = 100; this.y = 300; this.w = 40; this.h = 40; this.velX = 0; this.velY = 0; this.onGround = false; this.angle = 0; this.damageFlash = 0; this.reloadTimer = 0; this.cooldown = 0; this.facingRight = true; this.onSlippery = false; 
+                this.nextSportsType = Math.floor(Math.random() * 2);
+            }
+            update() {
+                const accel = this.onSlippery ? SLIPPERY_ACCEL : ACCELERATION;
+                const friction = this.onSlippery ? SLIPPERY_FRICTION : FRICTION;
+                if (keys.ArrowLeft || touchState.left) { this.velX -= accel; this.facingRight = false; }
+                if (keys.ArrowRight || touchState.right) { this.velX += accel; this.facingRight = true; }
+                if ((keys.Space || touchState.jump) && this.onGround) { this.velY = JUMP_FORCE; this.onGround = false; }
+                if (keys.KeyZ && this.cooldown <= 0) this.shoot();
+                if (this.cooldown > 0) this.cooldown--;
+                if ((keys.KeyE || touchState.reload) && currentAmmo < upgradeMaxAmmo && this.onGround) {
+                    this.reloadTimer++;
+                    if (this.reloadTimer > 40) { currentAmmo++; this.reloadTimer = 0; updateAmmoDisplay(); createParticles(this.x+20, this.y+40, 8, '#ffffff'); }
+                } else this.reloadTimer = 0;
+                this.velX *= friction; this.velY += GRAVITY; this.x += this.velX; this.y += this.velY; this.angle += this.velX/20; if (this.damageFlash > 0) this.damageFlash--;
+            }
+            shoot() {
+                if (currentAmmo <= 0) return;
+                currentAmmo--; this.cooldown = 15; updateAmmoDisplay();
+                let vx, vy, dx = mousePos.x-(this.x-cameraX+20), dy = mousePos.y-(this.y+20);
+                if (hasCannon) { let m = Math.hypot(dx,dy)||1; vx = (dx/m)*16; vy = (dy/m)*16; } else { vx = (this.facingRight?1:-1)*12+this.velX; vy = -2; }
+                let shotType = currentPack === 'sports' ? this.nextSportsType : null;
+                snowballs.push(new Snowball(this.x+20, this.y+20, vx, vy, true, shotType));
+                if(currentPack === 'sports') this.nextSportsType = Math.floor(Math.random() * 2);
+            }
+            draw() {
+                let dx = this.x-cameraX, dy = this.y, cx = dx+20, cy = dy+20;
+                ctx.save();
+                ctx.fillStyle = "rgba(129, 212, 250, 0.4)"; ctx.beginPath();
+                let shadowScale = 1 - Math.min(Math.abs(this.velY) * 0.02, 0.5);
+                ctx.ellipse(cx, cy + 22, 18 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+                if (balloonCount > 0) {
+                    for(let i=0; i<Math.min(balloonCount, 3); i++) {
+                        ctx.save(); ctx.translate(cx, cy); ctx.rotate((i - (Math.min(balloonCount,3)-1)/2) * 0.3);
+                        ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(0,-50); ctx.stroke();
+                        ctx.fillStyle = ['#ff5252','#448aff','#69f0ae'][i%3]; ctx.beginPath(); ctx.ellipse(0, -65, 14, 18, 0, 0, Math.PI*2); ctx.fill();
+                        ctx.restore();
+                    }
+                }
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(this.angle);
+                if (this.damageFlash > 0 && Math.floor(Date.now()/50)%2) ctx.globalAlpha = 0.5;
+                if (currentSkin === 'penguin') {
+                    ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "white"; ctx.beginPath(); ctx.ellipse(0,3,15,14,0,0,Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.ellipse(-8,-4,11,13,-0.2,0,Math.PI*2); ctx.ellipse(8,-4,11,13,0.2,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#01579b"; ctx.beginPath(); ctx.arc(-8,-6,5.5,0,Math.PI*2); ctx.arc(8,-6,5.5,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-8,-6,2.5,0,Math.PI*2); ctx.arc(8,-6,2.5,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#ff8f00"; ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(5,0); ctx.lineTo(0,6); ctx.fill();
+                } else if (currentSkin === 'santa') {
+                    ctx.fillStyle = "#fab1a0"; ctx.beginPath(); ctx.arc(0, -4, 14, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "rgba(255, 121, 121, 0.4)"; ctx.beginPath(); ctx.arc(-7, -4, 4, 0, Math.PI*2); ctx.arc(7, -4, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, 8, 16, 0, Math.PI, false); ctx.fill();
+                    ctx.beginPath(); ctx.roundRect(-10, -1, 20, 6, 3); ctx.fill();
+                    ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-5, -7, 2.5, 0, Math.PI*2); ctx.arc(5, -7, 2.5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#ff4444"; ctx.beginPath(); ctx.arc(0, -4, 3.5, 0, Math.PI*2); ctx.fill();
+                    if (currentHat === 'none') {
+                        ctx.fillStyle = "#d63031"; ctx.beginPath(); ctx.moveTo(-18, -10); ctx.bezierCurveTo(-15, -45, 15, -45, 22, -22); ctx.lineTo(15, -8); ctx.fill();
+                        ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(-20, -14, 40, 8, 4); ctx.fill();
+                        ctx.beginPath(); ctx.arc(22, -22, 6, 0, Math.PI*2); ctx.fill();
+                    }
+                } else if (currentSkin === 'explorer') {
+                    ctx.fillStyle = "#7986cb"; ctx.beginPath(); ctx.arc(0, 5, 18, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "white";
+                    for(let i=0; i<8; i++) { let ang = (i/8)*Math.PI*2; ctx.beginPath(); ctx.arc(Math.cos(ang)*15, Math.sin(ang)*15 - 2, 12, 0, Math.PI*2); ctx.fill(); }
+                    ctx.beginPath(); ctx.arc(0, -2, 16, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#ffccbc"; ctx.beginPath(); ctx.ellipse(0, 2, 11, 10, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#5d4037"; ctx.beginPath(); ctx.moveTo(-9,-2); ctx.lineTo(-4, -6); ctx.lineTo(0, -4); ctx.lineTo(4, -6); ctx.lineTo(9,-2); ctx.lineTo(9, 2); ctx.lineTo(-9, 2); ctx.fill();
+                    ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-4, 2, 2, 0, Math.PI*2); ctx.arc(4, 2, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "black"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 5, 4, 0.2, Math.PI-0.2); ctx.stroke();
+                } else if (currentSkin === 'king') {
+                    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.lineWidth = 1; ctx.stroke();
+                    ctx.fillStyle = "#ff6f00"; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(this.facingRight ? 15 : -15, 0); ctx.lineTo(0, 2); ctx.fill();
+                    ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-6, -6, 2.5, 0, Math.PI*2); ctx.arc(6, -6, 2.5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.moveTo(-12, -15); ctx.lineTo(-15, -28); ctx.lineTo(-8, -20); ctx.lineTo(0, -32); ctx.lineTo(8, -20); ctx.lineTo(15, -28); ctx.lineTo(12, -15); ctx.fill();
+                    ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(0, -22, 2.5, 0, Math.PI*2); ctx.fill();
+                }
+                if (currentHat === 'sports') {
+                    ctx.fillStyle = "#d32f2f"; ctx.beginPath(); ctx.arc(0, -12, 12, Math.PI, 0); ctx.fill();
+                    ctx.fillStyle = "white"; ctx.fillRect(0, -13, this.facingRight ? 20 : -20, 4);
+                } else if (currentHat === 'miner') {
+                    ctx.fillStyle = "#fdd835"; ctx.beginPath(); ctx.arc(0, -14, 12, Math.PI, 0); ctx.fill();
+                    ctx.fillStyle = "#333"; ctx.fillRect(-4, -18, 8, 4); ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, -16, 2.5, 0, Math.PI*2); ctx.fill();
+                } else if (currentHat === 'plunger') {
+                    ctx.fillStyle = "#8d6e63"; ctx.fillRect(-2, -32, 4, 20); ctx.fillStyle = "#ef5350"; ctx.beginPath(); ctx.ellipse(0, -12, 12, 5, 0, Math.PI, 0); ctx.fill();
+                }
+                ctx.restore(); ctx.globalAlpha = 1;
+
+                if (hasCannon) {
+                    ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(mousePos.y-cy, mousePos.x-cx));
+                    if (currentPack === 'gem') {
+                        ctx.fillStyle = "#5d4037"; ctx.fillRect(0, -3, 35, 6); ctx.fillStyle = "#90a4ae"; ctx.beginPath(); ctx.moveTo(35, -15); ctx.lineTo(42, 0); ctx.lineTo(35, 15); ctx.lineTo(30, 0); ctx.fill(); ctx.fillStyle = "#00e5ff"; ctx.beginPath(); ctx.arc(42, 0, 3, 0, Math.PI*2); ctx.fill();
+                    } else if (currentPack === 'sports') {
+                        if (this.nextSportsType === 1) { ctx.fillStyle = "#d7ccc8"; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(35, -6); ctx.lineTo(40, -8); ctx.lineTo(40, 8); ctx.lineTo(35, 6); ctx.lineTo(0, 3); ctx.fill(); ctx.strokeStyle = "#8d6e63"; ctx.lineWidth = 1; ctx.stroke(); }
+                        else { ctx.fillStyle = "#333"; ctx.fillRect(0, -2, 20, 4); ctx.fillStyle = "white"; ctx.fillRect(15, -15, 4, 30); ctx.strokeStyle = "#ff3d00"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(25, 0, 12, 4, 0, 0, Math.PI*2); ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(25, 15); ctx.lineTo(35, 0); ctx.stroke(); }
+                    } else {
+                        const blue = hasSnowballCannon ? "#00e5ff" : "#03a9f4"; const darkBlue = hasSnowballCannon ? "#00b8d4" : "#01579b";
+                        ctx.fillStyle = blue; ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(25,-6); ctx.lineTo(38,-12); ctx.lineTo(38,12); ctx.lineTo(25,6); ctx.lineTo(0,6); ctx.fill(); ctx.fillStyle = darkBlue; ctx.fillRect(25, -12, 4, 24); ctx.fillStyle = "#455a64"; ctx.beginPath(); ctx.roundRect(5, -16, 18, 11, 4); ctx.fill(); ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(10,-11,4,0,Math.PI*2); ctx.arc(18,-11,4,0,Math.PI*2); ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                if (this.reloadTimer > 0) {
+                    ctx.save(); let sideOffset = this.facingRight ? 22 : -22; ctx.translate(cx + sideOffset, cy + 10); 
+                    let rs = (this.reloadTimer/40)*14; ctx.rotate((this.reloadTimer/40)*Math.PI*4);
+                    if (currentPack === 'gem') drawGem(0, 0, rs, "#00e5ff");
+                    else if (currentPack === 'sports') { ctx.fillStyle = this.nextSportsType === 0 ? "#ff9800" : "white"; ctx.beginPath(); ctx.arc(0, 0, rs, 0, Math.PI*2); ctx.fill(); }
+                    else { ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(0, 0, rs, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#e1f5fe"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0,rs,0,Math.PI*2); ctx.stroke(); }
+                    ctx.restore();
+                }
+            }
+        }
+
+        class Platform {
+            constructor(x, y, w, type = 'normal') { this.x = x; this.y = y; this.width = w; this.passed = false; this.type = type; this.breakTimer = 0; this.maxBreakTime = 30; this.active = true; }
+            draw() {
+                if (!this.active) return;
+                let dx = this.x-cameraX; if (dx+this.width < 0 || dx > canvas.width) return;
+                if (currentPack === 'gem') {
+                    if (this.type === 'slippery') { ctx.fillStyle = "#1a237e"; ctx.fillRect(dx, this.y, this.width, 400); ctx.fillStyle = "#00e5ff"; ctx.fillRect(dx, this.y, this.width, 8); }
+                    else if (this.type === 'breaking') { ctx.fillStyle = "#424242"; ctx.fillRect(dx, this.y, this.width, 400); let glow = Math.floor((this.breakTimer / 30) * 255); ctx.strokeStyle = `rgb(${glow}, 0, 0)`; ctx.lineWidth = 2 + (this.breakTimer/5); ctx.beginPath(); ctx.moveTo(dx, this.y+5); ctx.lineTo(dx+this.width, this.y+20); ctx.stroke(); }
+                    else { ctx.fillStyle = "#3e2723"; ctx.fillRect(dx, this.y, this.width, 400); ctx.fillStyle = "#4e342e"; ctx.fillRect(dx, this.y, this.width, 10); ctx.fillStyle = "#00e5ff"; ctx.fillRect(dx+10, this.y+15, 6, 6); }
+                } else if (currentPack === 'sports') {
+                    if (this.type === 'slippery') {
+                        ctx.fillStyle = "#ffcc80"; ctx.fillRect(dx, this.y, this.width, 400);
+                        ctx.strokeStyle = "#ef6c00"; ctx.lineWidth = 2;
+                        for(let i=0; i<this.width; i+=15) { ctx.beginPath(); ctx.moveTo(dx+i, this.y); ctx.lineTo(dx+i, this.y+400); ctx.stroke(); }
+                        ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.fillRect(dx, this.y, this.width, 6);
+                    } else if (this.type === 'breaking') {
+                        ctx.fillStyle = "#455a64"; ctx.fillRect(dx, this.y, this.width, 400);
+                        ctx.strokeStyle = "#cfd8dc"; ctx.lineWidth = 1 + (this.breakTimer/5);
+                        ctx.beginPath(); ctx.moveTo(dx+10, this.y); ctx.lineTo(dx+20, this.y+20); ctx.lineTo(dx+5, this.y+30); ctx.moveTo(dx+this.width-10, this.y); ctx.lineTo(dx+this.width-25, this.y+25); ctx.stroke();
+                    } else {
+                        ctx.fillStyle = "#388e3c"; ctx.fillRect(dx, this.y, this.width, 400);
+                        ctx.fillStyle = "white"; ctx.fillRect(dx, this.y, this.width, 5);
+                    }
+                } else if (this.type === 'slippery') {
+                    let g = ctx.createLinearGradient(dx, this.y, dx, this.y + 400); g.addColorStop(0, "#01579b"); g.addColorStop(0.1, "#039be5"); g.addColorStop(1, "#01579b");
+                    ctx.fillStyle = g; ctx.fillRect(dx, this.y, this.width, 400); ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.fillRect(dx, this.y, this.width, 5);
+                } else {
+                    ctx.fillStyle = this.type === 'breaking' ? "#e1f5fe" : "#fff"; ctx.fillRect(dx, this.y, this.width, 400); 
+                    ctx.fillStyle = this.type === 'breaking' ? "#81d4fa" : "#b2ebf2"; ctx.fillRect(dx, this.y+10, this.width, 390);
+                }
+            }
+        }
+
+        function drawSportsBackground() {
+            const rows = 4; const rowHeight = 60; const groundY = canvas.height - 100;
+            for(let i=rows; i>0; i--) {
+                let y = groundY - (i * rowHeight);
+                ctx.fillStyle = "#78909c"; ctx.fillRect(0, y, canvas.width, 40);
+                ctx.fillStyle = "#546e7a"; ctx.fillRect(0, y + 40, canvas.width, 20);
+                audience.forEach(person => {
+                    if (person.row === i) {
+                        let jumpY = Math.sin(Date.now()/150 + person.offset) * 15;
+                        let viewWidth = canvas.width + 200;
+                        let loopedX = (((person.x - cameraX * 0.5) % viewWidth) + viewWidth) % viewWidth - 100;
+                        drawMiniSkin(loopedX, y + jumpY, person.type, 0.4);
+                    }
+                });
+            }
+        }
+
+        function drawGemBackground() {
+            let caveG = ctx.createLinearGradient(0,0,0,canvas.height); caveG.addColorStop(0, "#263238"); caveG.addColorStop(1, "#1a1a1a");
+            ctx.fillStyle = caveG; ctx.fillRect(0,0,canvas.width,canvas.height);
+            stalactites.forEach(s => {
+                let viewWidth = canvas.width + 300;
+                let loopedX = (((s.x - cameraX * 0.3) % viewWidth) + viewWidth) % viewWidth - 150;
+                ctx.fillStyle = "#37474f"; ctx.beginPath(); ctx.moveTo(loopedX - 15, 0); ctx.lineTo(loopedX + 15, 0); ctx.lineTo(loopedX, s.h); ctx.closePath(); ctx.fill();
+                if(s.crystal) drawGem(loopedX, s.h - 10, 5, s.crystal);
+            });
+            for(let i=0; i<10; i++) {
+                let viewWidth = canvas.width + 200;
+                let gx = (((i * 200 - cameraX * 0.2) % viewWidth) + viewWidth) % viewWidth - 100;
+                let gy = 100 + (i % 3) * 150; let glow = 0.5 + Math.sin(Date.now()/500 + i) * 0.3;
+                ctx.globalAlpha = glow; drawGem(gx, gy, 8, i % 2 === 0 ? "#00e5ff" : "#f44336"); ctx.globalAlpha = 1;
+            }
+        }
+
+        function createParticles(x, y, n, c) { for(let i=0; i<n; i++) particles.push({ x, y, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8, l:1, c }); }
+
+        function generatePlatform() {
+            let gap = 120 + Math.random()*180, w = Math.max(60, 200 - score*2);
+            let y = platforms[platforms.length-1].y + (Math.random()-0.5)*150;
+            y = Math.max(200, Math.min(canvas.height-100, y));
+            let x = lastPlatformX + gap, type = 'normal', r = Math.random();
+            if (score > 10) { if (r < 0.25) type = 'breaking'; else if (r < 0.5) type = 'slippery'; } else if (score > 5) { if (r < 0.25) type = 'breaking'; }
+            platforms.push(new Platform(x, y, w, type)); lastPlatformX = x + w;
+            if (Math.random() > 0.4) coins.push(new Coin(x + w/2, y-30));
+            if (platforms.length % 5 === 0) enemies.push(new Enemy(platforms[platforms.length-1]));
+        }
+
+        function init() {
+            player = new Player(); platforms = [new Platform(50, canvas.height-150, 400)]; lastPlatformX = 450;
+            enemies = []; snowballs = []; coins = []; particles = []; score = 0; currentLives = upgradeMaxLives;
+            currentAmmo = upgradeMaxAmmo; balloonCount = upgradeBalloonCount; cameraX = 0;
+            audience = []; stalactites = [];
+            for(let i=0; i<30; i++) {
+                audience.push({ x: Math.random() * 2000, row: Math.floor(Math.random() * 4) + 1, type: ['penguin', 'santa', 'explorer', 'king'][Math.floor(Math.random() * 4)], offset: Math.random() * Math.PI * 2 });
+            }
+            for(let i=0; i<15; i++) {
+                stalactites.push({ x: Math.random() * 3000, h: 40 + Math.random() * 100, crystal: Math.random() > 0.7 ? (Math.random() > 0.5 ? "#00e676" : "#f44336") : null });
+            }
+            scoreDisplay.innerText = "0"; updateLivesDisplay(); updateAmmoDisplay(); updateCoinDisplay();
+            ingameShopBtn.style.display = "flex"; gameRunning = true; gamePaused = false;
+            
+            // Ensure music plays on init if enabled
+            if (isMusicPlaying) {
+                gameMusic.play().catch(e => console.log("Audio play blocked (waiting for interaction)"));
+            }
+            
+            for(let i=0; i<5; i++) generatePlatform();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver(r) {
+            gameRunning = false; bestScore = Math.max(bestScore, score); localStorage.setItem('iceJumpBest', bestScore);
+            deathReasonEl.innerText = r || "Frozen!"; ingameShopBtn.style.display = "none";
+            document.getElementById('final-score').innerText = score; document.getElementById('final-coins').innerText = totalCoins;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function updateLivesDisplay() { livesDisplay.innerText = "❤️".repeat(currentLives); }
+        function updateAmmoDisplay() { ammoDisplay.innerText = `❄️ ${currentAmmo}/${upgradeMaxAmmo}`; }
+        function updateCoinDisplay() { coinDisplay.innerText = `💰 ${totalCoins}`; }
+        function showMessage(m) { messageDisplay.innerText = m; messageDisplay.style.opacity = 1; setTimeout(()=>messageDisplay.style.opacity=0, 2000); }
+
+        function buyItem(item) {
+            const costs = { hp: 10, cannon: 50, super_cannon: 75, lifesteal: 20, ammo: 5, balloon: 20, santa: 25, explorer: 40, king: 100, hat_sports: 15, hat_miner: 30, hat_plunger: 10, pack_gem: 250, pack_sports: 150 };
+            if (totalCoins < costs[item]) return;
+            if (item === 'hp') upgradeMaxLives++;
+            else if (item === 'cannon') hasCannon = true;
+            else if (item === 'super_cannon' && hasCannon) hasSnowballCannon = true;
+            else if (item === 'lifesteal' && hasSnowballCannon) hasLifeSteal = true;
+            else if (item === 'ammo') upgradeMaxAmmo++;
+            else if (item === 'balloon') { upgradeBalloonCount++; if(gameRunning) balloonCount++; }
+            else if (item === 'santa') hasSantaSkin = true;
+            else if (item === 'explorer') hasExplorerSkin = true;
+            else if (item === 'king') hasKingSkin = true;
+            else if (item === 'hat_sports') hasSportsHat = true;
+            else if (item === 'hat_miner') hasMinerHat = true;
+            else if (item === 'hat_plunger') hasPlungerHat = true;
+            else if (item === 'pack_gem') hasGemPack = true;
+            else if (item === 'pack_sports') hasSportsPack = true;
+            totalCoins -= costs[item]; updateCoinDisplay(); updateShopButtons(); updateLockerButtons(); showMessage("Success!"); shopCoinsEl.innerText = totalCoins;
+        }
+
+        function equipSkin(skin) { currentSkin = skin; updateShopButtons(); updateLockerButtons(); showMessage(`Equipped ${skin.charAt(0).toUpperCase() + skin.slice(1)}!`); }
+        function equipHat(hat) { currentHat = hat; updateShopButtons(); updateLockerButtons(); showMessage(hat === 'none' ? "Removed Hat" : `Equipped ${hat.charAt(0).toUpperCase() + hat.slice(1)} Hat!`); }
+        function equipPack(pack) { currentPack = pack; updateLockerButtons(); showMessage(`Equipped ${pack.charAt(0).toUpperCase() + pack.slice(1)} Pack!`); }
+
+        function updateShopButtons() {
+            document.getElementById('buy-hp').disabled = totalCoins < 10;
+            document.getElementById('buy-cannon').disabled = totalCoins < 50 || hasCannon;
+            document.getElementById('buy-super-cannon').disabled = totalCoins < 75 || !hasCannon || hasSnowballCannon;
+            document.getElementById('buy-lifesteal').disabled = totalCoins < 20 || !hasSnowballCannon || hasLifeSteal;
+            document.getElementById('buy-ammo').disabled = totalCoins < 5;
+            document.getElementById('buy-balloon').disabled = totalCoins < 20;
+            document.getElementById('buy-santa').innerText = hasSantaSkin ? "OWNED" : "25 💰"; document.getElementById('buy-santa').disabled = hasSantaSkin;
+            document.getElementById('buy-explorer').innerText = hasExplorerSkin ? "OWNED" : "40 💰"; document.getElementById('buy-explorer').disabled = hasExplorerSkin;
+            document.getElementById('buy-king').innerText = hasKingSkin ? "OWNED" : "100 💰"; document.getElementById('buy-king').disabled = hasKingSkin;
+            document.getElementById('buy-hat-sports').innerText = hasSportsHat ? "OWNED" : "15 💰"; document.getElementById('buy-hat-sports').disabled = hasSportsHat;
+            document.getElementById('buy-hat-miner').innerText = hasMinerHat ? "OWNED" : "30 💰"; document.getElementById('buy-hat-miner').disabled = hasMinerHat;
+            document.getElementById('buy-hat-plunger').innerText = hasPlungerHat ? "OWNED" : "10 💰"; document.getElementById('buy-hat-plunger').disabled = hasPlungerHat;
+            document.getElementById('buy-pack-gem').innerText = hasGemPack ? "OWNED" : "250 💰"; document.getElementById('buy-pack-gem').disabled = hasGemPack;
+            document.getElementById('buy-pack-sports').innerText = hasSportsPack ? "OWNED" : "150 💰"; document.getElementById('buy-pack-sports').disabled = hasSportsPack;
+        }
+
+        function updateLockerButtons() {
+            const tDef = document.getElementById('equip-pack-default'); const tGem = document.getElementById('equip-pack-gem'); const tSports = document.getElementById('equip-pack-sports');
+            tDef.className = currentPack === 'default' ? "equip-btn active" : "equip-btn";
+            tGem.innerText = hasGemPack ? (currentPack === 'gem' ? "EQUIPPED" : "EQUIP") : "LOCKED"; tGem.className = currentPack === 'gem' ? "equip-btn active" : "equip-btn"; tGem.disabled = !hasGemPack;
+            tSports.innerText = hasSportsPack ? (currentPack === 'sports' ? "EQUIPPED" : "EQUIP") : "LOCKED"; tSports.className = currentPack === 'sports' ? "equip-btn active" : "equip-btn"; tSports.disabled = !hasSportsPack;
+            const bPenguin = document.getElementById('equip-penguin'); bPenguin.className = currentSkin === 'penguin' ? "equip-btn active" : "equip-btn";
+            const bSanta = document.getElementById('equip-santa'); bSanta.innerText = hasSantaSkin ? (currentSkin === 'santa' ? "EQUIPPED" : "EQUIP") : "LOCKED"; bSanta.className = currentSkin === 'santa' ? "equip-btn active" : "equip-btn"; bSanta.disabled = !hasSantaSkin;
+            const bExplorer = document.getElementById('equip-explorer'); bExplorer.innerText = hasExplorerSkin ? (currentSkin === 'explorer' ? "EQUIPPED" : "EQUIP") : "LOCKED"; bExplorer.className = currentSkin === 'explorer' ? "equip-btn active" : "equip-btn"; bExplorer.disabled = !hasExplorerSkin;
+            const bKing = document.getElementById('equip-king'); bKing.innerText = hasKingSkin ? (currentSkin === 'king' ? "EQUIPPED" : "EQUIP") : "LOCKED"; bKing.className = currentSkin === 'king' ? "equip-btn active" : "equip-btn"; bKing.disabled = !hasKingSkin;
+            const hNone = document.getElementById('equip-hat-none'); hNone.className = currentHat === 'none' ? "equip-btn active" : "equip-btn";
+            const hSports = document.getElementById('equip-hat-sports'); hSports.innerText = hasSportsHat ? (currentHat === 'sports' ? "EQUIPPED" : "EQUIP") : "LOCKED"; hSports.className = currentHat === 'sports' ? "equip-btn active" : "equip-btn"; hSports.disabled = !hasSportsHat;
+            const hMiner = document.getElementById('equip-hat-miner'); hMiner.innerText = hasMinerHat ? (currentHat === 'miner' ? "EQUIPPED" : "EQUIP") : "LOCKED"; hMiner.className = currentHat === 'miner' ? "equip-btn active" : "equip-btn"; hMiner.disabled = !hasMinerHat;
+            const hPlunger = document.getElementById('equip-hat-plunger'); hPlunger.innerText = hasPlungerHat ? (currentHat === 'plunger' ? "EQUIPPED" : "EQUIP") : "LOCKED"; hPlunger.className = currentHat === 'plunger' ? "equip-btn active" : "equip-btn"; hPlunger.disabled = !hasPlungerHat;
+        }
+
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            if (currentPack === 'sports') { ctx.fillStyle = "#e1f5fe"; ctx.fillRect(0,0,canvas.width,canvas.height); drawSportsBackground(); } 
+            else if (currentPack === 'gem') drawGemBackground();
+            else { ctx.fillStyle = '#81d4fa'; ctx.fillRect(0,0,canvas.width,canvas.height); snowflakes.forEach(s => { s.update(); s.draw(); }); }
+            player.update();
+            let target = player.x - canvas.width*0.3; if (target > cameraX) cameraX += (target - cameraX)*0.1;
+            if (platforms[platforms.length-1].x < cameraX + canvas.width + 200) generatePlatform();
+            player.onGround = false; player.onSlippery = false;
+            for (let p of platforms) {
+                if (!p.active) continue;
+                if (!p.passed && player.x > p.x) { p.passed = true; score++; scoreDisplay.innerText = score; }
+                if (player.velY >= 0 && player.y+40 <= p.y+player.velY+2 && player.y+40 >= p.y && player.x+35 > p.x && player.x < p.x+p.width) { 
+                    player.onGround = true; player.velY = 0; player.y = p.y-40; 
+                    if (p.type === 'breaking') { p.breakTimer++; if (p.breakTimer >= p.maxBreakTime) { p.active = false; player.onGround = false; createParticles(p.x+p.width/2,p.y+5,15,'#b2ebf2'); } }
+                    if (p.type === 'slippery') player.onSlippery = true;
+                }
+                p.draw();
+            }
+            coins.forEach(c => { if(c.collected) return; c.draw(); if (Math.hypot(player.x+20-c.x, player.y+20-c.y) < 35) { c.collected = true; totalCoins++; updateCoinDisplay(); createParticles(c.x, c.y, 5, '#ffd700'); } });
+            enemies.forEach(e => { if(!e.active) return; e.update(player.x); e.draw(); if (Math.abs(player.x-e.x)<30 && Math.abs(player.y-e.y)<30) { e.active=false; currentLives--; updateLivesDisplay(); player.damageFlash=20; if(currentLives<=0) gameOver("Frozen!"); } });
+            snowballs.forEach(s => {
+                if(!s.active) return; s.update(); s.draw();
+                if (!s.isPlayer && Math.hypot(player.x+20-s.x, player.y+20-s.y)<25) { s.active=false; currentLives--; updateLivesDisplay(); player.damageFlash=20; if(currentLives<=0) gameOver("Snowballed!"); }
+                if (s.isPlayer) enemies.forEach(e => {
+                    if (e.active && Math.hypot(e.x+20-s.x, e.y+30-s.y)<35) {
+                        s.active=false; e.active=false; score+=5; scoreDisplay.innerText = score;
+                        if(hasSnowballCannon) { currentAmmo = upgradeMaxAmmo; updateAmmoDisplay(); }
+                        if(hasLifeSteal && currentLives < upgradeMaxLives) { currentLives++; updateLivesDisplay(); effects.push({ type:'lifesteal', x1:e.x+20, y1:e.y+30, x2:player.x+20, y2:player.y+20, t:30 }); }
+                    }
+                });
+            });
+            effects.forEach(f => { if (f.type === 'lifesteal') { ctx.strokeStyle = `rgba(255, 0, 0, ${f.t/30})`; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = "red"; ctx.beginPath(); ctx.moveTo(f.x1-cameraX, f.y1); ctx.lineTo(f.x2-cameraX, f.y2); ctx.stroke(); ctx.shadowBlur = 0; f.t--; } });
+            effects = effects.filter(f => f.t > 0);
+            particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.l-=0.02; ctx.globalAlpha=p.l; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x-cameraX, p.y, 3, 0, Math.PI*2); ctx.fill(); });
+            ctx.globalAlpha=1; particles = particles.filter(p => p.l > 0); player.draw();
+            if (player.y > canvas.height) { if(balloonCount>0) { balloonCount--; player.velY=-25; showMessage("Balloon Save!"); } else gameOver(); }
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.code)) keys[e.code]=true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.code)) keys[e.code]=false; });
+        window.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; });
+        
+        window.addEventListener('touchstart', (e) => {
+            if(e.target.closest('#ingame-shop-btn') || e.target.closest('.buy-btn') || e.target.closest('.equip-btn')) return;
+            const x = e.touches[0].clientX;
+            if (x < window.innerWidth / 3) touchState.left = true;
+            else if (x > window.innerWidth * 0.66) touchState.right = true;
+            else touchState.jump = true;
+        });
+        window.addEventListener('touchend', () => { touchState.left = touchState.right = touchState.jump = false; });
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+        for(let i=0; i<60; i++) snowflakes.push(new Snowflake());
+
+        startBtn.onclick = () => { startScreen.classList.add('hidden'); init(); };
+        restartBtn.onclick = () => { gameOverScreen.classList.add('hidden'); init(); };
+        const toggleUI = (show, screen) => { gamePaused = show; if (show) screen.classList.remove('hidden'); else screen.classList.add('hidden'); };
+        const openShop = () => { shopCoinsEl.innerText = totalCoins; updateShopButtons(); toggleUI(true, shopScreen); };
+        const openLocker = () => { updateLockerButtons(); toggleUI(true, lockerScreen); };
+        ingameShopBtn.onclick = openShop; document.getElementById('open-shop-btn-start').onclick = openShop; document.getElementById('open-shop-btn-over').onclick = openShop;
+        document.getElementById('open-locker-btn-start').onclick = openLocker; document.getElementById('open-locker-btn-over').onclick = openLocker;
+        closeShopBtn.onclick = () => { toggleUI(false, shopScreen); if(gameRunning) requestAnimationFrame(gameLoop); };
+        closeLockerBtn.onclick = () => { toggleUI(false, lockerScreen); if(gameRunning) requestAnimationFrame(gameLoop); };
+
+    </script>
+</body>
+</html>

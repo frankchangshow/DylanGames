@@ -11,6 +11,15 @@ const braydenGames: Game[] = [
     thumbnailUrl: null
   },
   {
+    id: "ice_jump",
+    title: "Ice Jump",
+    description: "Leap across icy platforms and collect coins.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/ice_jump/ice_jump.html",
+    thumbnailUrl: null
+  },
+  {
     id: "metropolis_street_racer",
     title: "Metropolis Street Racer",
     description: "Race through the city with speed boosts and power boxes.",
