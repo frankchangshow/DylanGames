@@ -23,7 +23,14 @@ function titleFromName(name: string) {
 }
 
 function isGameType(value: unknown): value is GameType {
-  return value === "html" || value === "scratch" || value === "external" || value === "placeholder";
+  return (
+    value === "html" ||
+    value === "scratch" ||
+    value === "external" ||
+    value === "placeholder" ||
+    value === "nextjs" ||
+    value === "other"
+  );
 }
 
 function getThumbnail(folderPath: string, kid: Kid, gameId: string, config?: GameJson | null) {
@@ -106,7 +113,7 @@ export async function discoverGames(kid: Kid): Promise<Game[]> {
           id,
           title,
           description: config?.description?.trim() || "Jump in and play.",
-          type: "html",
+          type,
           playUrl: `/games/${kid}/${id}/${htmlFile}`,
           thumbnailUrl: getThumbnail(folderPath, kid, id, config)
         };

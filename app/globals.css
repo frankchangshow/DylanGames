@@ -113,6 +113,268 @@ a {
   background: linear-gradient(135deg, var(--orange), var(--pink));
 }
 
+.braydenDiscoveryPage {
+  min-height: 100vh;
+  padding: 24px clamp(14px, 4vw, 44px) 48px;
+  background: #f2f4f5;
+  color: #1f2128;
+}
+
+.braydenDiscoveryHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1180px;
+  margin: 0 auto 28px;
+}
+
+.braydenDiscoveryHeader h1 {
+  margin: 0;
+  color: #191b22;
+  font-size: clamp(2.4rem, 6vw, 4.1rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.braydenDiscoveryHeader p {
+  margin: 8px 0 0;
+  color: #5d6470;
+  font-size: clamp(1rem, 2.5vw, 1.18rem);
+  font-weight: 800;
+}
+
+.braydenHomeLink {
+  order: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #d7dbe1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #2e333d;
+  font-size: 0.95rem;
+  font-weight: 900;
+  box-shadow: 0 6px 18px rgba(31, 33, 40, 0.06);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.braydenHomeLink:hover,
+.braydenHomeLink:focus-visible {
+  border-color: #b8bec8;
+  box-shadow: 0 10px 26px rgba(31, 33, 40, 0.1);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.braydenGamesSection {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.braydenSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.braydenSectionHeader h2 {
+  margin: 0;
+  color: #191b22;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.1;
+}
+
+.braydenSectionHeader span {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.braydenGameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 22px;
+}
+
+.braydenGameCard {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e1e5ea;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(31, 33, 40, 0.04);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.braydenGameCard:hover,
+.braydenGameCard:focus-visible {
+  border-color: #c9ced6;
+  box-shadow: 0 18px 36px rgba(31, 33, 40, 0.12);
+  outline: none;
+  transform: translateY(-5px);
+}
+
+.braydenGameCard.isComingSoon {
+  opacity: 0.88;
+}
+
+.braydenThumbWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #eceff3;
+}
+
+.braydenTileImage {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #dfe3e8;
+}
+
+.braydenTileImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.braydenGameCard:hover .braydenTileImage img,
+.braydenGameCard:focus-visible .braydenTileImage img {
+  transform: scale(1.04);
+}
+
+.braydenPlaceholderTile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 24% 20%, rgba(255, 255, 255, 0.78), transparent 24%),
+    linear-gradient(135deg, #d7dde7 0%, #aeb8c8 48%, #7f8da3 100%);
+}
+
+.braydenPlaceholderTile::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 28px;
+  transform: rotate(-8deg);
+}
+
+.braydenPlaceholderEmoji {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  font-size: clamp(1.7rem, 5vw, 3.2rem);
+  opacity: 0.28;
+}
+
+.braydenPlaceholderInitial {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: clamp(70px, 35%, 104px);
+  aspect-ratio: 1;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #2e333d;
+  font-size: clamp(2.4rem, 7vw, 4.6rem);
+  font-weight: 950;
+  box-shadow: 0 12px 28px rgba(31, 33, 40, 0.16);
+}
+
+.braydenTypeBadge,
+.braydenStatusBadge {
+  position: absolute;
+  top: 9px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.braydenTypeBadge {
+  left: 9px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2e333d;
+  box-shadow: 0 8px 18px rgba(31, 33, 40, 0.12);
+}
+
+.braydenStatusBadge {
+  right: 9px;
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.braydenCardBody {
+  display: grid;
+  gap: 7px;
+  padding: 2px 2px 0;
+}
+
+.braydenCardBody h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 2.35em;
+  margin: 0;
+  color: #191b22;
+  font-size: 1.02rem;
+  line-height: 1.18;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.braydenCardBody p {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 2.5em;
+  margin: 0;
+  color: #606774;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.braydenPlayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 10px;
+  background: #22c55e;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 950;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.braydenGameCard:hover .braydenPlayButton,
+.braydenGameCard:focus-visible .braydenPlayButton {
+  background: #16a34a;
+}
+
+.braydenGameCard.isComingSoon .braydenPlayButton {
+  background: #d8dde5;
+  color: #555d6b;
+}
+
 .launcherHero {
   display: flex;
   flex-direction: column;
@@ -558,6 +820,61 @@ a {
   background: #ffffff;
 }
 
+.comingSoonPlayPage {
+  background: #f2f4f5;
+}
+
+.comingSoonGamePanel {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-self: center;
+  align-self: center;
+  width: min(540px, calc(100% - 28px));
+  padding: 32px 22px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #191b22;
+  text-align: center;
+  box-shadow: 0 22px 50px rgba(31, 33, 40, 0.14);
+}
+
+.comingSoonGamePanel div {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  aspect-ratio: 1;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #d7dde7, #9aa7ba);
+  font-size: 2.4rem;
+}
+
+.comingSoonGamePanel h2 {
+  margin: 16px 0 8px;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  line-height: 1.05;
+}
+
+.comingSoonGamePanel p {
+  max-width: 360px;
+  margin: 0 0 20px;
+  color: #606774;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.comingSoonBackLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: #22c55e;
+  color: #ffffff;
+  font-weight: 950;
+}
+
 .reactGameFrame {
   width: 100%;
   height: 100%;
@@ -581,6 +898,78 @@ a {
 
   .kidButtons {
     grid-template-columns: 1fr;
+  }
+
+  .braydenDiscoveryPage {
+    padding: 18px 12px 32px;
+  }
+
+  .braydenDiscoveryHeader {
+    align-items: start;
+    margin-bottom: 22px;
+  }
+
+  .braydenDiscoveryHeader h1 {
+    font-size: clamp(2.15rem, 11vw, 3rem);
+  }
+
+  .braydenDiscoveryHeader p {
+    font-size: 0.95rem;
+  }
+
+  .braydenHomeLink {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.86rem;
+  }
+
+  .braydenGameGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .braydenGameCard {
+    gap: 8px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .braydenThumbWrap {
+    border-radius: 12px;
+  }
+
+  .braydenTypeBadge,
+  .braydenStatusBadge {
+    top: 7px;
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 0.66rem;
+  }
+
+  .braydenTypeBadge {
+    left: 7px;
+  }
+
+  .braydenStatusBadge {
+    right: 7px;
+  }
+
+  .braydenCardBody {
+    gap: 6px;
+  }
+
+  .braydenCardBody h3 {
+    font-size: 0.9rem;
+  }
+
+  .braydenCardBody p {
+    font-size: 0.76rem;
+  }
+
+  .braydenPlayButton {
+    min-height: 34px;
+    border-radius: 9px;
+    font-size: 0.84rem;
   }
 
   .dylanDiscoveryPage {

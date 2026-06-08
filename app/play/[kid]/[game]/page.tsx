@@ -49,6 +49,27 @@ export default async function PlayPage({ params }: PlayPageProps) {
     notFound();
   }
 
+  if (game.status === "coming-soon") {
+    return (
+      <main className="playPage comingSoonPlayPage">
+        <div className="playBar">
+          <Link href={`/${kid}`} className="backButton" aria-label={`Back to ${kid} games`}>
+            ←
+          </Link>
+          <h1>{game.title}</h1>
+        </div>
+        <section className="comingSoonGamePanel">
+          <div aria-hidden="true">🎮</div>
+          <h2>{game.title} is coming soon</h2>
+          <p>This game is on the game shelf, but it is not ready to play yet.</p>
+          <Link href={`/${kid}`} className="comingSoonBackLink">
+            Back to games
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="playPage">
       <div className="playBar">
