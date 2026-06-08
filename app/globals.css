@@ -205,74 +205,6 @@ a {
   align-self: start;
 }
 
-.featuredGameSection {
-  position: relative;
-  max-width: 1040px;
-  margin: 0 auto 18px;
-  padding: 0 42px 0 46px;
-  border: 3px solid #172033;
-  border-radius: 18px;
-  background: linear-gradient(90deg, #fff06a 0%, #a7f3a0 7%, #ffffff 7%, #ffffff 92%, #72e1c4 92%, #70d6ff 100%);
-  box-shadow: 7px 7px 0 #172033;
-}
-
-.featuredGameSection::after {
-  content: "";
-  position: absolute;
-  right: 11px;
-  top: 14px;
-  bottom: 10px;
-  width: 9px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.featuredStage {
-  display: grid;
-  place-items: center;
-  min-height: 420px;
-  padding: clamp(18px, 4vw, 34px);
-  border-left: 5px solid #172033;
-  border-right: 5px solid #172033;
-  border-radius: 22px;
-  background: #ffffff;
-}
-
-.featuredGameInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
-  gap: 12px;
-  max-width: 620px;
-  text-align: center;
-}
-
-.sectionEyebrow {
-  margin: 0;
-  color: var(--blue-dark);
-  font-size: 0.86rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.featuredGameInfo h2 {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(3rem, 8vw, 4.3rem);
-  line-height: 1;
-}
-
-.featuredGameInfo p:not(.sectionEyebrow) {
-  margin: 0;
-  color: #1f2937;
-  font-size: clamp(1.08rem, 3vw, 1.25rem);
-  font-weight: 900;
-  line-height: 1.35;
-}
-
-.featuredPlayButton,
 .tilePlayButton {
   display: inline-flex;
   align-items: center;
@@ -286,56 +218,43 @@ a {
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
-.featuredPlayButton {
-  width: min(220px, 100%);
-  min-height: 58px;
-  font-size: 1.35rem;
-}
-
-.featuredPlayButton:hover,
-.tilePlayButton:hover {
-  background: #ff4f66;
-  box-shadow: 2px 2px 0 #172033;
-  transform: translateY(2px);
-}
-
 .allGamesSection {
   max-width: 1040px;
-  margin: 0 auto;
+  margin: 18px auto 0;
 }
 
 .allGamesSection h2 {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   color: var(--ink);
   font-size: clamp(1.5rem, 4vw, 2.1rem);
 }
 
-.discoveryList {
+.discoveryGrid {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 18px;
 }
 
 .discoveryCard {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(160px, 0.7fr) auto;
-  gap: 14px;
-  align-items: center;
-  min-height: 88px;
-  padding: 10px 12px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  aspect-ratio: 1;
+  min-height: 0;
+  overflow: hidden;
   border: 3px solid #172033;
   border-radius: 18px;
   background: #fff7eb;
   box-shadow: 5px 5px 0 #172033;
   transform: translateY(0);
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.discoveryCard:nth-child(odd) {
+.discoveryCard:hover,
+.discoveryCard:focus-visible,
+.discoveryCard:active {
   background: #39d39b;
-}
-
-.discoveryCard:hover {
   box-shadow: 3px 3px 0 #172033;
+  outline: none;
   transform: translateY(2px);
 }
 
@@ -343,40 +262,9 @@ a {
   position: relative;
   display: grid;
   place-items: center;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 1;
   overflow: hidden;
   background: #1f2937;
-}
-
-.featuredTileImage {
-  width: clamp(110px, 20vw, 150px);
-  min-height: 0;
-  aspect-ratio: 1;
-  margin-bottom: 14px;
-  border: 5px solid #172033;
-  border-radius: 50%;
-  box-shadow: 8px 8px 0 #172033;
-}
-
-.compactTileImage {
-  width: 58px;
-  height: 58px;
-  aspect-ratio: 1;
-  border: 2px solid #172033;
-  border-radius: 12px;
-}
-
-.compactTileImage .placeholderEmoji {
-  right: 4px;
-  top: 2px;
-  font-size: 1.25rem;
-  opacity: 0.55;
-}
-
-.compactTileImage .placeholderInitial {
-  width: 30px;
-  border-width: 2px;
-  font-size: 1.35rem;
 }
 
 .gameTileImage img {
@@ -420,50 +308,39 @@ a {
 
 .discoveryCardBody {
   display: grid;
-  gap: 2px;
-  padding: 0;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .discoveryCardBody h3 {
   margin: 0;
   color: var(--ink);
-  font-size: 1.12rem;
+  font-size: 1.05rem;
   line-height: 1.15;
 }
 
 .discoveryCardBody p {
   margin: 0;
-  color: #172033;
-  font-size: 0.88rem;
-  font-weight: 900;
-  line-height: 1.15;
-}
-
-.discoveryCardBody strong {
   color: #24304a;
-  font-size: 0.88rem;
-  line-height: 1.15;
-}
-
-.discoveryCardDescription {
-  margin: 0;
-  color: #24304a;
-  font-size: 0.92rem;
-  font-weight: 750;
+  font-size: 0.9rem;
+  font-weight: 800;
   line-height: 1.25;
+  min-height: 2.5em;
 }
 
 .tilePlayButton {
-  min-width: 86px;
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 38px;
+  padding: 0 12px;
   background: #ffffff;
   color: #172033;
   font-size: 0.98rem;
   box-shadow: 3px 3px 0 #172033;
 }
 
-.tilePlayButton:hover {
+.discoveryCard:hover .tilePlayButton,
+.discoveryCard:focus-visible .tilePlayButton,
+.discoveryCard:active .tilePlayButton {
   background: #ffdf4d;
 }
 
@@ -707,60 +584,20 @@ a {
     font-size: 0.95rem;
   }
 
-  .featuredGameSection {
-    padding: 0 18px 0 20px;
-    border-radius: 16px;
-    box-shadow: 4px 4px 0 #172033;
-  }
-
-  .featuredStage {
-    min-height: 300px;
-    padding: 18px 12px;
-    border-left-width: 4px;
-    border-right-width: 4px;
-    border-radius: 18px;
-  }
-
-  .featuredTileImage {
-    min-height: 0;
-    width: 106px;
-    border-width: 4px;
-    box-shadow: 5px 5px 0 #172033;
-  }
-
-  .featuredGameInfo h2 {
-    font-size: clamp(2.2rem, 11vw, 3.1rem);
-  }
-
-  .featuredGameInfo {
-    padding: 4px 4px 8px;
-  }
-
-  .featuredPlayButton {
-    width: 100%;
-  }
-
-  .discoveryList {
-    gap: 9px;
+  .discoveryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .discoveryCard {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 8px;
-    min-height: 78px;
-    padding: 8px;
     border-width: 2px;
     border-radius: 14px;
     box-shadow: 3px 3px 0 #172033;
   }
 
-  .compactTileImage {
-    width: 52px;
-    height: 52px;
-  }
-
   .discoveryCardBody {
-    padding: 0;
+    gap: 7px;
+    padding: 9px;
   }
 
   .discoveryCardBody h3 {
@@ -771,12 +608,8 @@ a {
     font-size: 0.82rem;
   }
 
-  .discoveryCardDescription {
-    display: none;
-  }
-
   .tilePlayButton {
-    min-width: 58px;
+    width: 100%;
     min-height: 36px;
     padding: 0 9px;
     border-width: 2px;

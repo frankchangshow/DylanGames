@@ -3,17 +3,13 @@ import { getDylanGames } from "@/src/data/dylanGames";
 
 function GameThumbnail({
   title,
-  thumbnailUrl,
-  featured = false,
-  compact = false
+  thumbnailUrl
 }: {
   title: string;
   thumbnailUrl: string | null;
-  featured?: boolean;
-  compact?: boolean;
 }) {
   return (
-    <div className={featured ? "gameTileImage featuredTileImage" : compact ? "gameTileImage compactTileImage" : "gameTileImage"}>
+    <div className="gameTileImage">
       {thumbnailUrl ? (
         <img src={thumbnailUrl} alt="" />
       ) : (
@@ -28,7 +24,6 @@ function GameThumbnail({
 
 export default async function DylanPage() {
   const games = await getDylanGames();
-  const featuredGame = games[0] || null;
 
   return (
     <main className="dylanDiscoveryPage">
@@ -45,58 +40,32 @@ export default async function DylanPage() {
         </Link>
       </header>
 
-      {featuredGame ? (
-        <>
-          <section className="featuredGameSection" aria-labelledby="featured-game-title">
-            <div className="featuredStage">
-              <GameThumbnail title={featuredGame.title} thumbnailUrl={featuredGame.thumbnailUrl} featured />
-              <div className="featuredGameInfo">
-                <p className="sectionEyebrow">Featured Game</p>
-                <h2 id="featured-game-title">{featuredGame.title}</h2>
-                <p>{featuredGame.description}</p>
+      {games.length > 0 ? (
+        <section className="allGamesSection" aria-labelledby="all-games-title">
+          <h2 id="all-games-title">All Games</h2>
+          <div className="discoveryGrid">
+            {games.map((game) => {
+              const href = game.type === "external" ? game.playUrl : `/play/dylan/${game.id}`;
+
+              return (
                 <Link
-                  className="featuredPlayButton"
-                  href={featuredGame.type === "external" ? featuredGame.playUrl : `/play/dylan/${featuredGame.id}`}
-                  target={featuredGame.type === "external" ? "_blank" : undefined}
-                  rel={featuredGame.type === "external" ? "noreferrer" : undefined}
+                  className="discoveryCard"
+                  href={href}
+                  key={game.id}
+                  target={game.type === "external" ? "_blank" : undefined}
+                  rel={game.type === "external" ? "noreferrer" : undefined}
                 >
-                  Play
+                  <GameThumbnail title={game.title} thumbnailUrl={game.thumbnailUrl} />
+                  <div className="discoveryCardBody">
+                    <h3>{game.title}</h3>
+                    <p>{game.description}</p>
+                    <span className="tilePlayButton">Play</span>
+                  </div>
                 </Link>
-              </div>
-            </div>
-          </section>
-
-          <section className="allGamesSection" aria-labelledby="all-games-title">
-            <h2 id="all-games-title">All Games</h2>
-            <div className="discoveryList">
-              {games.map((game) => {
-                const href = game.type === "external" ? game.playUrl : `/play/dylan/${game.id}`;
-
-                return (
-                  <article className="discoveryCard" key={game.id}>
-                    <GameThumbnail title={game.title} thumbnailUrl={game.thumbnailUrl} compact />
-                    <div className="discoveryCardBody">
-                      <h3>{game.title}</h3>
-                      <p>{game.type === "react" ? "React Game" : game.type === "html" ? "HTML Game" : `${game.type} Game`}</p>
-                      <strong>Playable</strong>
-                    </div>
-                    <p className="discoveryCardDescription">{game.description}</p>
-                    <div className="discoveryCardAction">
-                      <Link
-                        className="tilePlayButton"
-                        href={href}
-                        target={game.type === "external" ? "_blank" : undefined}
-                        rel={game.type === "external" ? "noreferrer" : undefined}
-                      >
-                        Play
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        </>
+              );
+            })}
+          </div>
+        </section>
       ) : (
         <section className="emptyState" aria-label="No Dylan games yet">
           <h2>No games yet</h2>
