@@ -149,6 +149,219 @@ a {
   font-weight: 900;
 }
 
+.dylanDiscoveryPage {
+  min-height: 100vh;
+  padding: 24px clamp(16px, 4vw, 52px) 56px;
+}
+
+.dylanDiscoveryHeader {
+  display: grid;
+  gap: 18px;
+  margin: 0 auto 24px;
+  max-width: 1180px;
+}
+
+.dylanDiscoveryHeader h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.9rem, 8vw, 6rem);
+  line-height: 0.95;
+  text-shadow: 0 7px 0 rgba(37, 99, 235, 0.22), 0 18px 36px rgba(23, 32, 51, 0.24);
+}
+
+.dylanDiscoveryHeader p {
+  margin: 10px 0 0;
+  color: #24304a;
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 900;
+}
+
+.featuredGameSection {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+  gap: 24px;
+  align-items: stretch;
+  max-width: 1180px;
+  margin: 0 auto 34px;
+  padding: 18px;
+  border: 4px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 24px 58px rgba(23, 32, 51, 0.18);
+}
+
+.featuredGameInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(8px, 2vw, 20px);
+}
+
+.sectionEyebrow {
+  margin: 0;
+  color: var(--blue-dark);
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.featuredGameInfo h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.featuredGameInfo p:not(.sectionEyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.featuredPlayButton,
+.tilePlayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: #22c55e;
+  color: #ffffff;
+  font-weight: 950;
+  box-shadow: 0 5px 0 #15803d;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.featuredPlayButton {
+  width: min(220px, 100%);
+  min-height: 58px;
+  font-size: 1.35rem;
+}
+
+.featuredPlayButton:hover,
+.tilePlayButton:hover {
+  background: #16a34a;
+  box-shadow: 0 3px 0 #15803d;
+  transform: translateY(2px);
+}
+
+.allGamesSection {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.allGamesSection h2 {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+
+.discoveryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.discoveryCard {
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.78);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 34px rgba(23, 32, 51, 0.14);
+  transform: translateY(0);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.discoveryCard:hover {
+  box-shadow: 0 22px 46px rgba(23, 32, 51, 0.2);
+  transform: translateY(-6px);
+}
+
+.gameTileImage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #1f2937;
+}
+
+.featuredTileImage {
+  min-height: 320px;
+  border-radius: 16px;
+}
+
+.gameTileImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholderTile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 216, 77, 0.95), transparent 24%),
+    radial-gradient(circle at 78% 28%, rgba(40, 199, 111, 0.75), transparent 24%),
+    linear-gradient(135deg, #2563eb 0%, #ff4f9a 56%, #ff8a3d 100%);
+}
+
+.placeholderEmoji {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  font-size: clamp(2rem, 6vw, 4rem);
+  opacity: 0.32;
+}
+
+.placeholderInitial {
+  display: grid;
+  place-items: center;
+  width: clamp(78px, 24%, 124px);
+  aspect-ratio: 1;
+  border: 6px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: clamp(2.8rem, 8vw, 5.2rem);
+  font-weight: 950;
+  text-shadow: 0 5px 0 rgba(23, 32, 51, 0.2);
+}
+
+.discoveryCardBody {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.discoveryCardBody h3 {
+  min-height: 2.35em;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.discoveryCardBody p {
+  min-height: 2.5em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.tilePlayButton {
+  min-height: 42px;
+  font-size: 1rem;
+}
+
 .gameGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -354,6 +567,51 @@ a {
 
   .kidButtons {
     grid-template-columns: 1fr;
+  }
+
+  .dylanDiscoveryPage {
+    padding: 18px 12px 34px;
+  }
+
+  .featuredGameSection {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .featuredTileImage {
+    min-height: 0;
+  }
+
+  .featuredGameInfo {
+    padding: 4px 4px 8px;
+  }
+
+  .featuredPlayButton {
+    width: 100%;
+  }
+
+  .discoveryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .discoveryCard {
+    border-width: 2px;
+    border-radius: 14px;
+  }
+
+  .discoveryCardBody {
+    padding: 10px;
+  }
+
+  .discoveryCardBody h3 {
+    font-size: 0.94rem;
+  }
+
+  .discoveryCardBody p {
+    font-size: 0.82rem;
   }
 
   .launcherHero {
