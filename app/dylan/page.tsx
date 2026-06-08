@@ -52,6 +52,7 @@ export default async function DylanPage() {
                   className="discoveryCard"
                   href={href}
                   key={game.id}
+                  aria-label={`Play ${game.title}`}
                   target={game.type === "external" ? "_blank" : undefined}
                   rel={game.type === "external" ? "noreferrer" : undefined}
                 >

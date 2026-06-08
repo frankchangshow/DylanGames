@@ -231,19 +231,19 @@ a {
 
 .discoveryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 18px;
 }
 
 .discoveryCard {
+  position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
   aspect-ratio: 1;
   min-height: 0;
   overflow: hidden;
   border: 3px solid #172033;
   border-radius: 18px;
-  background: #fff7eb;
+  background: #ffffff;
   box-shadow: 5px 5px 0 #172033;
   transform: translateY(0);
   transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
@@ -253,16 +253,16 @@ a {
 .discoveryCard:focus-visible,
 .discoveryCard:active {
   background: #39d39b;
-  box-shadow: 3px 3px 0 #172033;
+  box-shadow: 0 0 0 5px #39d39b, 7px 7px 0 #172033;
   outline: none;
-  transform: translateY(2px);
+  transform: translateY(-3px);
 }
 
 .gameTileImage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  aspect-ratio: 1;
   overflow: hidden;
   background: #1f2937;
 }
@@ -308,33 +308,65 @@ a {
 
 .discoveryCardBody {
   display: grid;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.72);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title button"
+    "description button";
+  gap: 3px 10px;
+  align-items: center;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
+  min-height: 74px;
+  padding: 10px;
+  border: 3px solid #172033;
+  border-radius: 14px;
+  background: rgba(255, 253, 247, 0.94);
+  box-shadow: 3px 3px 0 #172033;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.discoveryCard:hover .discoveryCardBody,
+.discoveryCard:focus-visible .discoveryCardBody,
+.discoveryCard:active .discoveryCardBody {
+  background: #39d39b;
+  transform: translateY(-2px);
 }
 
 .discoveryCardBody h3 {
+  grid-area: title;
+  display: -webkit-box;
+  overflow: hidden;
   margin: 0;
   color: var(--ink);
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .discoveryCardBody p {
+  grid-area: description;
+  display: -webkit-box;
+  overflow: hidden;
   margin: 0;
   color: #24304a;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 800;
   line-height: 1.25;
-  min-height: 2.5em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .tilePlayButton {
-  min-height: 38px;
+  grid-area: button;
+  min-width: 58px;
+  min-height: 40px;
   padding: 0 12px;
   background: #ffffff;
   color: #172033;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   box-shadow: 3px 3px 0 #172033;
 }
 
@@ -596,25 +628,32 @@ a {
   }
 
   .discoveryCardBody {
-    gap: 7px;
-    padding: 9px;
+    right: 7px;
+    bottom: 7px;
+    left: 7px;
+    gap: 2px 6px;
+    min-height: 64px;
+    padding: 7px;
+    border-width: 2px;
+    border-radius: 11px;
+    box-shadow: 2px 2px 0 #172033;
   }
 
   .discoveryCardBody h3 {
-    font-size: 0.94rem;
-  }
-
-  .discoveryCardBody p {
     font-size: 0.82rem;
   }
 
+  .discoveryCardBody p {
+    font-size: 0.7rem;
+  }
+
   .tilePlayButton {
-    width: 100%;
-    min-height: 36px;
-    padding: 0 9px;
+    min-width: 45px;
+    min-height: 32px;
+    padding: 0 7px;
     border-width: 2px;
     border-radius: 10px;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     box-shadow: 2px 2px 0 #172033;
   }
 
