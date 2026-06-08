@@ -18,6 +18,15 @@ const braydenGames: Game[] = [
     status: "coming-soon",
     playUrl: "/games/brayden/laser-tag/index.html",
     thumbnailUrl: null
+  },
+  {
+    id: "metropolis_street_racer",
+    title: "Metropolis Street Racer",
+    description: "Race through the city with speed boosts and power boxes.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/metropolis_street_racer/metropolis_street_racer.html",
+    thumbnailUrl: null
   }
 ];
 
