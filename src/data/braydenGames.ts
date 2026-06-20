@@ -1,14 +1,14 @@
+import { discoverGames } from "./discoverGames";
 import type { Game } from "./types";
 
-const braydenGames: Game[] = [
+const braydenGameDetails: Array<Pick<Game, "id" | "title" | "description" | "type" | "status" | "playUrl">> = [
   {
     id: "2d_platformer",
     title: "2D Platformer",
     description: "Jump, collect coins, and unlock grapple powers.",
     type: "html",
     status: "playable",
-    playUrl: "/games/brayden/2d_platformer/2d_platformer.html",
-    thumbnailUrl: null
+    playUrl: "/games/brayden/2d_platformer/2d_platformer.html"
   },
   {
     id: "ice_jump",
@@ -16,8 +16,7 @@ const braydenGames: Game[] = [
     description: "Leap across icy platforms and collect coins.",
     type: "html",
     status: "playable",
-    playUrl: "/games/brayden/ice_jump/ice_jump.html",
-    thumbnailUrl: null
+    playUrl: "/games/brayden/ice_jump/ice_jump.html"
   },
   {
     id: "metropolis_street_racer",
@@ -25,8 +24,7 @@ const braydenGames: Game[] = [
     description: "Race through the city with speed boosts and power boxes.",
     type: "html",
     status: "playable",
-    playUrl: "/games/brayden/metropolis_street_racer/metropolis_street_racer.html",
-    thumbnailUrl: null
+    playUrl: "/games/brayden/metropolis_street_racer/metropolis_street_racer.html"
   },
   {
     id: "pokemon_rhythm_jukebox",
@@ -34,15 +32,23 @@ const braydenGames: Game[] = [
     description: "Battle to the beat with rhythm and arena moves.",
     type: "html",
     status: "playable",
-    playUrl: "/games/brayden/pokemon_rhythm_jukebox/pokemon_rhythm_jukebox.html",
-    thumbnailUrl: null
+    playUrl: "/games/brayden/pokemon_rhythm_jukebox/pokemon_rhythm_jukebox.html"
   }
 ];
 
 export async function getBraydenGames() {
-  return braydenGames;
+  const discoveredGames = await discoverGames("brayden");
+
+  return discoveredGames
+    .map((game) => {
+      const details = braydenGameDetails.find((item) => item.id === game.id);
+
+      return details ? { ...game, ...details, thumbnailUrl: game.thumbnailUrl } : game;
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export async function getBraydenGame(gameId: string) {
-  return braydenGames.find((game) => game.id === gameId) || null;
+  const games = await getBraydenGames();
+  return games.find((game) => game.id === gameId) || null;
 }
