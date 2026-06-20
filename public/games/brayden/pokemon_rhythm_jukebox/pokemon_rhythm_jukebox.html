@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokémon Rhythm Jukebox - Battle Arena Edition</title>
+    <!-- Tailwind CSS for UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for Audio Synthesis and MP3 playback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #060814;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px;
+            margin: 0 auto;
+            overflow: hidden;
+            transition: background 0.8s ease, box-shadow 0.8s ease, border-color 0.8s ease;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background: transparent; /* Keep transparent to show background stage */
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 3px solid #ef4444;
+            transition: border-color 0.8s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse-fast {
+            animation: pulse 0.8s infinite;
+        }
+
+        /* Float up battle texts */
+        .battle-text {
+            position: absolute;
+            pointer-events: none;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px #000;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 30;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-70px) scale(1.15); opacity: 0; }
+        }
+
+        /* Screen Shake effect for taking/doing damage */
+        .shake {
+            animation: screenShake 0.15s ease-in-out 2;
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) translateY(-2px); }
+            75% { transform: translateX(8px) translateY(2px); }
+        }
+
+        /* Rhythm Synchronized Sprite Animations */
+        @keyframes rhythmBounce {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.08) translateY(-6px); }
+        }
+        .rhythm-bounce {
+            animation: rhythmBounce 0.5s infinite ease-in-out;
+            transform-origin: bottom center;
+        }
+
+        @keyframes enemyFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1.5deg); }
+        }
+        .enemy-float {
+            animation: enemyFloat 4s infinite ease-in-out;
+            transform-origin: bottom center;
+        }
+
+        /* Visual hit and damage indicators for images */
+        .flash-hit {
+            animation: hitGlow 0.15s ease-out;
+        }
+        @keyframes hitGlow {
+            0% { filter: brightness(1.8) drop-shadow(0 0 15px rgba(255,255,255,0.8)); }
+            100% { filter: brightness(1); }
+        }
+
+        .flash-damage {
+            animation: damageGlow 0.25s ease-out;
+        }
+        @keyframes damageGlow {
+            0% { filter: brightness(0.4) sepia(1) hue-rotate(-50deg) saturate(8) drop-shadow(0 0 20px rgba(239,68,68,0.95)); transform: scale(0.9) translateX(-6px); }
+            50% { transform: translateX(6px); }
+            100% { filter: brightness(1); transform: scale(1) translateX(0); }
+        }
+
+        /* Isometric 3D floor perspective style */
+        .isometric-terrain {
+            transform: rotateX(60deg);
+            transform-origin: center bottom;
+            transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(239, 68, 68, 0.4);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container" class="bg-slate-950 shadow-2xl border-x border-red-950/40">
+        <!-- Floating Battle Combat Text Container -->
+        <div id="battleTextContainer" class="absolute inset-0 pointer-events-none z-20"></div>
+
+        <!-- Animated Arena Stage (Positioned behind transparent canvas) -->
+        <div id="battleStage" class="absolute inset-0 z-0 flex flex-col justify-between pointer-events-none overflow-hidden transition-all duration-700">
+            <!-- Enemy Area: Platform, Terrain, and Trainer -->
+            <div class="h-[40%] flex flex-col items-center justify-end relative mt-24">
+                <!-- Isometric Enemy Platform -->
+                <div id="enemyTerrain" class="isometric-terrain absolute bottom-2 w-44 h-12 rounded-full border shadow-lg flex items-center justify-center">
+                    <div class="w-[85%] h-[80%] rounded-full opacity-40 border border-white/20"></div>
+                </div>
+                
+                <!-- Enemy Trainer (Right gutter) -->
+                <img id="stageEnemyTrainer" class="absolute right-3 bottom-12 w-16 h-16 sm:w-20 sm:h-20 object-contain enemy-float drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-all duration-300 z-10" src="" alt="Enemy Trainer" onerror="this.src='https://placehold.co/100x100/1e1b4b/ffffff?text=TRAINER'">
+                
+                <!-- Wild Opponent Pokémon -->
+                <img id="stageEnemySprite" class="w-24 h-24 object-contain enemy-float drop-shadow-[0_8px_16px_rgba(0,0,0,0.65)] transition-all duration-300 relative z-20" src="" alt="Wild Opponent" onerror="this.src='https://placehold.co/150x150/1e1b4b/ffffff?text=WILD+PKMN'">
+            </div>
+
+            <!-- Player Area: Platform, Terrain, and Trainer -->
+            <div class="h-[35%] flex flex-col items-center justify-end relative mb-32">
+                <!-- Isometric Player Platform -->
+                <div id="playerTerrain" class="isometric-terrain absolute bottom-2 w-40 h-12 rounded-full border shadow-lg flex items-center justify-center">
+                    <div class="w-[85%] h-[80%] rounded-full opacity-40 border border-white/20"></div>
+                </div>
+                
+                <!-- Player Trainer (Left gutter) -->
+                <img id="stagePlayerTrainer" class="absolute left-3 bottom-10 w-16 h-16 sm:w-20 sm:h-20 object-contain rhythm-bounce drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-all duration-300 z-10" src="" alt="Ally Trainer" onerror="this.src='https://placehold.co/100x100/0f172a/ffffff?text=ALLY'">
+                
+                <!-- Active Player Pokémon -->
+                <img id="stagePlayerSprite" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rhythm-bounce drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)] transition-all duration-300 relative z-20" src="" alt="Active Ally" onerror="this.src='https://placehold.co/150x150/0f172a/ffffff?text=ALLY'">
+            </div>
+        </div>
+
+        <!-- Game Canvas (Note falling and line glows layer) -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Dynamic Game HUD containing Opponent/Player panels -->
+        <div id="battleHUD" class="absolute top-14 left-0 w-full px-4 flex flex-col gap-2 pointer-events-none z-20 transition-opacity duration-300">
+            <!-- Dynamic Opponent Panel (Damage / Heal Target) -->
+            <div id="enemyPanel" class="flex items-center justify-between bg-black/75 border border-red-500/30 p-2 rounded-lg transition-all duration-500">
+                <div class="flex items-center gap-1.5">
+                    <span id="enemyHUDIcon" class="text-xs text-red-500 animate-pulse"><i class="fa-solid fa-fire"></i></span>
+                    <span id="enemyHUDName" class="pixel-font text-[9px] text-white tracking-tight">WILD CHARIZARD</span>
+                    <span id="enemyHUDLevel" class="pixel-font text-[8px] text-red-400">Lv50</span>
+                </div>
+                <div class="w-1/2 flex flex-col items-end gap-1">
+                    <div class="w-full bg-slate-800 h-2 rounded border border-slate-700 overflow-hidden">
+                        <div id="enemyHPBar" class="bg-emerald-500 h-full w-full transition-all duration-200"></div>
+                    </div>
+                    <span id="enemyHPText" class="pixel-font text-[7px] text-slate-300">HP: 150/150</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Player Active Pokémon HP Bar -->
+            <div id="playerPanel" class="flex items-center justify-between bg-black/75 border border-yellow-500/30 p-2 rounded-lg transition-all duration-500">
+                <div class="flex items-center gap-1.5">
+                    <span id="playerHUDIcon" class="text-xs text-yellow-400"><i class="fa-solid fa-bolt"></i></span>
+                    <span id="playerHUDName" class="pixel-font text-[9px] text-white tracking-tight">PIKACHU</span>
+                    <span id="playerHUDLevel" class="pixel-font text-[8px] text-yellow-300">Lv48</span>
+                </div>
+                <div class="w-1/2 flex flex-col items-end gap-1">
+                    <div class="w-full bg-slate-800 h-2 rounded border border-slate-700 overflow-hidden">
+                        <div id="playerHPBar" class="bg-emerald-500 h-full w-full transition-all duration-200"></div>
+                    </div>
+                    <span id="playerHPText" class="pixel-font text-[7px] text-slate-300">HP: 100/100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating UI Accents -->
+        <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center pointer-events-none z-20">
+            <div class="text-white text-xl font-bold drop-shadow-md flex items-center gap-2">
+                <span id="themeIcon" class="text-red-500"><i class="fa-solid fa-fire-flame-curved"></i></span>
+                <span id="scoreDisplay" class="pixel-font text-sm">0</span>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <div id="comboDisplay" class="pixel-font text-[10px] text-yellow-400 drop-shadow-md opacity-0 transition-opacity duration-200">
+                    Combo x1
+                </div>
+                <div id="hardModeBadge" class="pixel-font text-[8px] text-red-500 drop-shadow-md animate-pulse hidden">
+                    🔥 HARD
+                </div>
+            </div>
+        </div>
+
+        <!-- Song Choice Display Bar at top-center during game -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-black/70 px-3 py-1 rounded-full border border-red-500/30 pointer-events-none z-20">
+            <span id="currentTrackLabel" class="text-[8px] pixel-font text-red-400">SELECTING SONG...</span>
+        </div>
+
+        <!-- Start Screen Jukebox Deck -->
+        <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-50 p-4 text-center">
+            <div id="menuGlass" class="glass-panel p-6 rounded-2xl shadow-2xl flex flex-col items-center w-full max-w-sm max-h-[92vh] overflow-y-auto custom-scroll">
+                
+                <!-- Animated Pokéball visual -->
+                <div id="menuBall" class="w-16 h-16 bg-red-600 rounded-full border-4 border-gray-900 relative overflow-hidden mb-3 shadow-xl animate-bounce">
+                    <div class="absolute bottom-0 w-full h-1/2 bg-white"></div>
+                    <div class="absolute top-1/2 left-0 w-full h-2 bg-gray-900 -translate-y-1/2"></div>
+                    <div class="absolute top-1/2 left-1/2 w-6 h-6 bg-white border-4 border-gray-900 rounded-full -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                        <div id="menuBallHeart" class="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></div>
+                    </div>
+                </div>
+
+                <h1 class="pixel-font text-sm text-white mb-2 tracking-widest text-red-500 drop-shadow-[0_2px_4px_rgba(239,68,68,0.5)]">POKÉ RHYTHM ARENA</h1>
+                <p class="text-gray-400 text-[10px] mb-4">Tap lanes or use <b class="text-slate-300">ARROW KEYS</b> to defeat wild Pokémon or heal allies! Tap & <b class="text-yellow-400">HOLD</b> neon hold trails!</p>
+
+                <!-- Dynamic Jukebox Song Selector list -->
+                <div id="songSelectorList" class="w-full space-y-2 mb-4 max-h-[42vh] overflow-y-auto custom-scroll pr-1">
+                    <!-- Dynamic songs loaded in via JS -->
+                </div>
+
+                <!-- Hard Mode Neon Toggle Switch -->
+                <div class="w-full flex items-center justify-between bg-red-950/20 border border-red-500/20 rounded-xl p-3 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-red-500 text-xs animate-pulse"><i class="fa-solid fa-skull"></i></span>
+                        <div class="text-left">
+                            <span class="pixel-font text-[9px] text-red-500 block">HARD MODE</span>
+                            <span class="text-[7px] text-slate-400">Rapid speeds & ultra dense notes!</span>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="hardModeToggle" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 peer-checked:after:bg-white peer-checked:after:border-transparent"></div>
+                    </label>
+                </div>
+
+                <button id="startBtn" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-full shadow-lg border-2 border-red-400 transform transition active:scale-95 animate-pulse-fast tracking-wider text-[10px] pixel-font">
+                    <i class="fa-solid fa-burst mr-1"></i> ENTER ARENA!
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over & Replay Screen -->
+        <div id="gameOverScreen" class="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-50 p-6 text-center hidden">
+            <div id="gameOverGlass" class="glass-panel p-6 rounded-2xl shadow-2xl flex flex-col items-center w-full max-w-sm border-red-600">
+                <div id="victoryIcon" class="w-16 h-16 rounded-full flex items-center justify-center text-4xl mb-3 text-yellow-400 animate-bounce">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 id="gameOverHeading" class="pixel-font text-red-500 text-sm mb-4 drop-shadow-[0_2px_4px_rgba(239,68,68,0.5)]">DEFEATED</h2>
+                
+                <div class="bg-slate-900/90 rounded-xl p-4 w-full mb-6 border border-slate-800 text-center">
+                    <p class="text-gray-400 text-[10px] mb-1 uppercase tracking-widest">Final Battle Score</p>
+                    <p id="finalScore" class="text-white text-3xl font-bold text-red-500 pixel-font">0</p>
+                </div>
+
+                <div class="flex flex-col gap-2 w-full">
+                    <button id="restartBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-full shadow-lg border-2 border-emerald-400 transform transition active:scale-95 text-[9px] pixel-font">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> PLAY AGAIN
+                    </button>
+                    <button id="menuBtn" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-6 rounded-full shadow-lg border-2 border-slate-500 transform transition active:scale-95 text-[9px] pixel-font">
+                        <i class="fa-solid fa-list-ul mr-1"></i> JUKEBOX MENU
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+        const battleTextContainer = document.getElementById('battleTextContainer');
+        const battleHUD = document.getElementById('battleHUD');
+        const battleStage = document.getElementById('battleStage');
+        
+        // Sprites inside Battle Stage
+        const stageEnemySprite = document.getElementById('stageEnemySprite');
+        const stagePlayerSprite = document.getElementById('stagePlayerSprite');
+        const stageEnemyTrainer = document.getElementById('stageEnemyTrainer');
+        const stagePlayerTrainer = document.getElementById('stagePlayerTrainer');
+        const enemyTerrain = document.getElementById('enemyTerrain');
+        const playerTerrain = document.getElementById('playerTerrain');
+
+        // Screens and Overlays
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const hardModeBadge = document.getElementById('hardModeBadge');
+        const hardModeToggle = document.getElementById('hardModeToggle');
+        const currentTrackLabel = document.getElementById('currentTrackLabel');
+        const themeIcon = document.getElementById('themeIcon');
+        const victoryIcon = document.getElementById('victoryIcon');
+        
+        // Dynamic HUD Components
+        const enemyPanel = document.getElementById('enemyPanel');
+        const playerPanel = document.getElementById('playerPanel');
+        const enemyHUDIcon = document.getElementById('enemyHUDIcon');
+        const enemyHUDName = document.getElementById('enemyHUDName');
+        const enemyHUDLevel = document.getElementById('enemyHUDLevel');
+        const enemyHPBar = document.getElementById('enemyHPBar');
+        const enemyHPText = document.getElementById('enemyHPText');
+
+        const playerHUDIcon = document.getElementById('playerHUDIcon');
+        const playerHUDName = document.getElementById('playerHUDName');
+        const playerHUDLevel = document.getElementById('playerHUDLevel');
+        const playerHPBar = document.getElementById('playerHPBar');
+        const playerHPText = document.getElementById('playerHPText');
+
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const menuBtn = document.getElementById('menuBtn');
+        const songSelectorList = document.getElementById('songSelectorList');
+
+        // Game Arena Parameters
+        const COLS = 4;
+        const TILE_HEIGHT = 110; 
+        let hitLineY = 0; 
+        let hitZoneHeight = 140; 
+        let spawnGap = 160; 
+
+        // Active Game States
+        let isPlaying = false;
+        let isHardMode = false;
+        let score = 0;
+        let combo = 0;
+        let tiles = [];
+        let particles = [];
+        let columnGlows = [0, 0, 0, 0];
+        let activeInputs = [false, false, false, false]; // Array to track which lanes are currently pressed/held down
+        let animationId;
+        let width = 0;
+        let height = 0;
+        let colWidth = 0;
+
+        // Custom Battle HP States
+        let maxEnemyHP = 150;
+        let enemyHP = 150;
+        let maxPlayerHP = 100;
+        let playerHP = 100;
+
+        // Dynamic Speed settings
+        let currentSpeed = 5.0;
+        let noteSpawnIndex = 0;
+        let noteSpawnIntroActive = true;
+
+        // Sound Engine Units
+        let synth = null;      
+        let bassSynth = null;  
+        let bassLoop = null;   
+        
+        // MP3 Player Core
+        let mp3Player = null;
+        let mp3Loaded = false;
+        let activeTransportEvent = null;
+
+        const SONGS = [
+            {
+                id: "battle",
+                name: "Wild Battle Theme",
+                origin: "Red / Blue / Yellow Retro",
+                icon: "<i class='fa-solid fa-fire text-red-500 animate-bounce'></i>",
+                isMp3: true,
+                audioUrl: "old-pokemon-battle-music.mp3",
+                introNotes: ["D5", "C#5", "C5", "B4", "Bb4", "A4", "Ab4", "G4", "F#4", "F4", "E4", "Eb4", "D4", "C#4", "C4", "B3"],
+                melodyNotes: [
+                    "D5", "D5", "F5", "D5", "G5", "D5", "G#5", "G5",
+                    "F5", "D5", "F5", "D5", "C5", "C5", "B4", "C5",
+                    "D5", "D5", "F5", "D5", "G5", "D5", "G#5", "G5",
+                    "F5", "D5", "F5", "D5", "A5", "A5", "G#5", "A5"
+                ],
+                bassNotes: ["D3", "D3", "D2", "D3", "F3", "F3", "F2", "F3", "G3", "G3", "G2", "G3", "A3", "C3", "C#3", "C#3"],
+                bpm: 155,
+                baseSpeed: 5.6,
+                visual: {
+                    themeGlow: "rgba(239, 68, 68, 0.2)",
+                    borderLine: "rgba(239, 68, 68, 0.9)",
+                    subLine: "rgba(249, 115, 22, 0.7)",
+                    bgGradient: "linear-gradient(180deg, #1e0b0b 0%, #090303 100%)",
+                    particles: ['#EF4444', '#F97316', '#FFFFFF', '#1F2937'],
+                    pType: 'square',
+                    glowColor: '#ef4444',
+                    headerColor: 'text-red-500',
+                    defeatHeading: 'PIKACHU FAINTED!',
+                    victoryHeading: 'WILD PKMN CAPTURED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png', // Charizard
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', // Pikachu
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/blue.png', // Blue
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/red.png', // Red
+                    terrainClass: 'bg-amber-950/80 border-amber-600/70 shadow-amber-600/30'
+                },
+                hud: {
+                    enemyName: "WILD CHARIZARD",
+                    enemyLevel: "Lv50",
+                    playerName: "PIKACHU",
+                    playerLevel: "Lv48",
+                    enemyIcon: "<i class='fa-solid fa-fire text-red-500'></i>",
+                    playerIcon: "<i class='fa-solid fa-bolt text-yellow-400'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 150,
+                    playerMaxHP: 100,
+                    panelColor: "border-red-500/30",
+                    playerColor: "border-yellow-500/30"
+                }
+            },
+            {
+                id: "center",
+                name: "Pokémon Center",
+                origin: "Healing Harmony",
+                icon: "<i class='fa-solid fa-heart text-pink-500 animate-pulse'></i>",
+                isMp3: true,
+                audioUrl: "pokemon_center.mp3",
+                introNotes: ["C4", "D4", "E4", "F4"],
+                melodyNotes: [
+                    "C5", "E5", "G5", "C6", "B5", "A5", "G5", "F5", 
+                    "E5", "D5", "C5", "E5", "G5", "C6", "D6", "B5"
+                ],
+                bassNotes: ["C3", "G3", "E3", "G3", "F3", "C4", "A3", "C4"],
+                bpm: 110,
+                baseSpeed: 4.4,
+                visual: {
+                    themeGlow: "rgba(236, 72, 153, 0.15)",
+                    borderLine: "rgba(236, 72, 153, 0.7)",
+                    subLine: "rgba(16, 185, 129, 0.5)",
+                    bgGradient: "linear-gradient(180deg, #4c0519 0%, #1c0007 100%)",
+                    particles: ['#EC4899', '#10B981', '#FFFFFF', '#FCE7F3'],
+                    pType: 'cross', 
+                    glowColor: '#ec4899',
+                    headerColor: 'text-pink-400',
+                    defeatHeading: 'HEAL FAILED!',
+                    victoryHeading: 'POKÉMON FULLY HEALED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png', // Squirtle
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/113.png', // Chansey
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/beauty-gen4dp.png', // Tired Trainer Class
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/nurse.png', // Nurse Joy
+                    terrainClass: 'bg-pink-950/80 border-pink-500/70 shadow-pink-500/30'
+                },
+                hud: {
+                    enemyName: "TIRED SQUIRTLE",
+                    enemyLevel: "Lv5",
+                    playerName: "NURSE CHANSEY",
+                    playerLevel: "Lv100",
+                    enemyIcon: "<i class='fa-solid fa-heart text-pink-500'></i>",
+                    playerIcon: "<i class='fa-solid fa-kit-medical text-emerald-400'></i>",
+                    barType: "heal",
+                    enemyMaxHP: 100,
+                    playerMaxHP: 100,
+                    panelColor: "border-pink-500/30",
+                    playerColor: "border-emerald-500/30"
+                }
+            },
+            {
+                id: "cascaraffa",
+                name: "Cascaraffa Theme",
+                origin: "Scarlet & Violet OST",
+                icon: "<i class='fa-solid fa-water text-cyan-400 animate-pulse'></i>",
+                isMp3: true,
+                audioUrl: "84. Cascaraffa.mp3",
+                introNotes: ["C4", "E4", "G4", "C5"],
+                melodyNotes: [
+                    "C5", "E5", "G5", "C6", "B5", "G5", "E5", "C5",
+                    "F5", "A5", "C6", "F6", "E6", "C6", "A5", "F5"
+                ],
+                bassNotes: ["C3", "G3", "C3", "G3", "F3", "C4", "F3", "C4"],
+                bpm: 112,
+                baseSpeed: 4.8,
+                visual: {
+                    themeGlow: "rgba(14, 165, 233, 0.18)",
+                    borderLine: "rgba(14, 165, 233, 0.85)",
+                    subLine: "rgba(34, 211, 238, 0.6)",
+                    bgGradient: "linear-gradient(180deg, #075985 0%, #0c4a6e 100%)",
+                    particles: ['#38BDF8', '#0EA5E9', '#FFFFFF', '#7DD3FC'],
+                    pType: 'bubble', 
+                    glowColor: '#0ea5e9',
+                    headerColor: 'text-sky-300',
+                    defeatHeading: 'CHALLENGE OVER!',
+                    victoryHeading: 'WATER BADGE EARNED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/130.png', // Gyarados
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/976.png', // Veluza
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/marlon.png', // Marlon (Water Gym Leader)
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/leaf-masters2.png', // Leaf
+                    terrainClass: 'bg-cyan-950/80 border-cyan-400/70 shadow-cyan-400/30'
+                },
+                hud: {
+                    enemyName: "LEADER GYARADOS",
+                    enemyLevel: "Lv35",
+                    playerName: "VELUZA",
+                    playerLevel: "Lv34",
+                    enemyIcon: "<i class='fa-solid fa-water text-sky-400'></i>",
+                    playerIcon: "<i class='fa-solid fa-fish text-cyan-300'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 140,
+                    playerMaxHP: 110,
+                    panelColor: "border-sky-500/30",
+                    playerColor: "border-cyan-500/30"
+                }
+            },
+            {
+                id: "lavender",
+                name: "Lavender Town",
+                origin: "Haunting Mystery",
+                icon: "<i class='fa-solid fa-ghost text-purple-400'></i>",
+                introNotes: ["C5", "G4", "B4", "F#4"],
+                melodyNotes: [
+                    "C5", "G5", "B5", "F#5", "G5", "B5", "C5", "G5", 
+                    "B5", "F#5", "G5", "B5"
+                ],
+                bassNotes: ["C3", "C3", "G3", "G3", "C4", "C4", "B3", "B3"],
+                bpm: 98,
+                baseSpeed: 3.8,
+                visual: {
+                    themeGlow: "rgba(168, 85, 247, 0.15)",
+                    borderLine: "rgba(168, 85, 247, 0.7)",
+                    subLine: "rgba(244, 63, 94, 0.5)",
+                    bgGradient: "linear-gradient(180deg, #2e073f 0%, #07020d 100%)",
+                    particles: ['#A855F7', '#F43F5E', '#111827', '#E9D5FF'],
+                    pType: 'ghost', 
+                    glowColor: '#a855f7',
+                    headerColor: 'text-purple-400',
+                    defeatHeading: 'SPIRITED AWAY!',
+                    victoryHeading: 'GHOST PACIFIED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/93.png', // Haunter
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/92.png', // Gastly
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/hexmaniac.png', // Hex Maniac
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/red-gen7.png', // Alola Red
+                    terrainClass: 'bg-purple-950/80 border-fuchsia-600/70 shadow-fuchsia-600/30'
+                },
+                hud: {
+                    enemyName: "WILD HAUNTER",
+                    enemyLevel: "Lv30",
+                    playerName: "GASTLY",
+                    playerLevel: "Lv28",
+                    enemyIcon: "<i class='fa-solid fa-ghost text-purple-400'></i>",
+                    playerIcon: "<i class='fa-solid fa-eye text-indigo-400'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 120,
+                    playerMaxHP: 90,
+                    panelColor: "border-purple-500/30",
+                    playerColor: "border-rose-500/30"
+                }
+            },
+            {
+                id: "cynthia",
+                name: "Champion Cynthia",
+                origin: "Diamond / Pearl Retro",
+                icon: "<i class='fa-solid fa-crown text-amber-500 animate-pulse'></i>",
+                introNotes: ["A4", "A4", "A#4", "A4", "A4", "A4", "A#4", "A4", "C5", "C5", "C#5", "C5"],
+                melodyNotes: [
+                    "D5", "F5", "A5", "D6", "C#6", "A5", "F5", "D5",
+                    "E5", "G5", "A#5", "E6", "D#6", "A#5", "G5", "E5",
+                    "D5", "D5", "F5", "D5", "G5", "D5", "A5", "G5"
+                ],
+                bassNotes: ["D3", "A2", "D3", "A2", "G3", "D3", "G3", "D3"],
+                bpm: 165,
+                baseSpeed: 6.2,
+                visual: {
+                    themeGlow: "rgba(244, 63, 94, 0.22)",
+                    borderLine: "rgba(244, 63, 94, 0.9)",
+                    subLine: "rgba(168, 85, 247, 0.7)",
+                    bgGradient: "linear-gradient(180deg, #1f0813 0%, #050106 100%)",
+                    particles: ['#F43F5E', '#A855F7', '#FBBF24', '#FFFFFF'],
+                    pType: 'cross',
+                    glowColor: '#f43f5e',
+                    headerColor: 'text-rose-500',
+                    defeatHeading: 'LUCARIO FAINTED!',
+                    victoryHeading: 'CHAMPION DEFEATED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/445.png', // Garchomp
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png', // Lucario
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/cynthia-gen4.png', // Cynthia
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/lucas.png', // Lucas
+                    terrainClass: 'bg-rose-950/80 border-rose-500/70 shadow-rose-500/30'
+                },
+                hud: {
+                    enemyName: "CYNTHIA GARCHOMP",
+                    enemyLevel: "Lv66",
+                    playerName: "LUCARIO",
+                    playerLevel: "Lv62",
+                    enemyIcon: "<i class='fa-solid fa-crown text-amber-500'></i>",
+                    playerIcon: "<i class='fa-solid fa-hand-fist text-sky-400'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 200,
+                    playerMaxHP: 110,
+                    panelColor: "border-rose-500/30",
+                    playerColor: "border-sky-500/30"
+                }
+            },
+            {
+                id: "bicycle",
+                name: "Bicycle Theme",
+                origin: "Red / Blue High Energy",
+                icon: "<i class='fa-solid fa-bicycle text-emerald-400 animate-bounce'></i>",
+                introNotes: ["C4", "E4", "G4", "C5", "D5", "E5"],
+                melodyNotes: [
+                    "C5", "E5", "G5", "C6", "A5", "F5", "D5", "G5",
+                    "E5", "C5", "E5", "G5", "A5", "B5", "C6", "G5"
+                ],
+                bassNotes: ["C3", "C3", "F3", "F3", "G3", "G3", "C3", "C3"],
+                bpm: 145,
+                baseSpeed: 5.1,
+                visual: {
+                    themeGlow: "rgba(16, 185, 129, 0.18)",
+                    borderLine: "rgba(16, 185, 129, 0.85)",
+                    subLine: "rgba(234, 179, 8, 0.6)",
+                    bgGradient: "linear-gradient(180deg, #064e3b 0%, #022c22 100%)",
+                    particles: ['#10B981', '#EAB308', '#FFFFFF', '#6EE7B7'],
+                    pType: 'bubble',
+                    glowColor: '#10b981',
+                    headerColor: 'text-emerald-400',
+                    defeatHeading: 'OUT OF STAMINA!',
+                    victoryHeading: 'ROAD COMPLETED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png', // Snorlax
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', // Pikachu
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/clerk.png', // Blocking Clerk
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/cyclist.png', // Cyclist Player
+                    terrainClass: 'bg-slate-800/80 border-slate-400/70 shadow-slate-500/30'
+                },
+                hud: {
+                    enemyName: "BLOCKING SNORLAX",
+                    enemyLevel: "Lv30",
+                    playerName: "PIKACHU",
+                    playerLevel: "Lv30",
+                    enemyIcon: "<i class='fa-solid fa-flag-checkered text-emerald-400'></i>",
+                    playerIcon: "<i class='fa-solid fa-bicycle text-yellow-300'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 150,
+                    playerMaxHP: 100,
+                    panelColor: "border-emerald-500/30",
+                    playerColor: "border-yellow-500/30"
+                }
+            },
+            {
+                id: "gym",
+                name: "Gym Leader Battle",
+                origin: "Kanto Arena",
+                icon: "<i class='fa-solid fa-bolt text-yellow-400 animate-pulse'></i>",
+                introNotes: ["D4", "F4", "G#4", "B4", "D5"],
+                melodyNotes: [
+                    "F5", "D5", "F5", "G#5", "F5", "G#5", "B5", "G#5",
+                    "B5", "D6", "B5", "G#5", "F5", "D5", "B4", "G#4"
+                ],
+                bassNotes: ["D3", "D3", "G#3", "G#3", "D3", "D3", "G#3", "G#3"],
+                bpm: 150,
+                baseSpeed: 5.8,
+                visual: {
+                    themeGlow: "rgba(234, 179, 8, 0.2)",
+                    borderLine: "rgba(234, 179, 8, 0.9)",
+                    subLine: "rgba(249, 115, 22, 0.7)",
+                    bgGradient: "linear-gradient(180deg, #3f2204 0%, #0c0500 100%)",
+                    particles: ['#EAB308', '#F97316', '#FFFFFF', '#1F2937'],
+                    pType: 'square',
+                    glowColor: '#eab308',
+                    headerColor: 'text-yellow-400',
+                    defeatHeading: 'SQUIRTLE FAINTED!',
+                    victoryHeading: 'BOULDER BADGE EARNED!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/95.png', // Onix
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png', // Squirtle
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/brock.png', // Brock
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/red.png', // Red
+                    terrainClass: 'bg-yellow-950/80 border-yellow-500/70 shadow-yellow-500/30'
+                },
+                hud: {
+                    enemyName: "LEADER ONIX",
+                    enemyLevel: "Lv14",
+                    playerName: "SQUIRTLE",
+                    playerLevel: "Lv15",
+                    enemyIcon: "<i class='fa-solid fa-gem text-amber-600'></i>",
+                    playerIcon: "<i class='fa-solid fa-droplet text-blue-400'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 140,
+                    playerMaxHP: 100,
+                    panelColor: "border-yellow-500/30",
+                    playerColor: "border-blue-500/30"
+                }
+            },
+            {
+                id: "route1",
+                name: "Route 1 Nostalgia",
+                origin: "Kanto Grasslands",
+                icon: "<i class='fa-solid fa-leaf text-emerald-500'></i>",
+                introNotes: ["C4", "E4", "F4", "G4"],
+                melodyNotes: [
+                    "C5", "G4", "C5", "D5", "E5", "F5", "G5", "E5",
+                    "D5", "C5", "D5", "B4", "G4", "A4", "B4", "C5"
+                ],
+                bassNotes: ["C3", "G3", "C3", "G3", "C3", "G3", "C3", "G3"],
+                bpm: 115,
+                baseSpeed: 4.2,
+                visual: {
+                    themeGlow: "rgba(16, 185, 129, 0.15)",
+                    borderLine: "rgba(16, 185, 129, 0.75)",
+                    subLine: "rgba(34, 197, 94, 0.5)",
+                    bgGradient: "linear-gradient(180deg, #022c22 0%, #020f08 100%)",
+                    particles: ['#10B981', '#22C55E', '#FFFFFF', '#D1FAE5'],
+                    pType: 'bubble',
+                    glowColor: '#10b981',
+                    headerColor: 'text-emerald-400',
+                    defeatHeading: 'BULBASAUR FAINTED!',
+                    victoryHeading: 'WILD PIDGEY CAUGHT!',
+                    enemySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png', // Pidgey
+                    playerSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png', // Bulbasaur
+                    enemyTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/youngster.png', // Youngster
+                    playerTrainer: 'https://play.pokemonshowdown.com/sprites/trainers/red.png', // Red
+                    terrainClass: 'bg-emerald-950/80 border-emerald-500/70 shadow-emerald-500/30'
+                },
+                hud: {
+                    enemyName: "WILD PIDGEY",
+                    enemyLevel: "Lv3",
+                    playerName: "BULBASAUR",
+                    playerLevel: "Lv5",
+                    enemyIcon: "<i class='fa-solid fa-feather text-emerald-500'></i>",
+                    playerIcon: "<i class='fa-solid fa-seedling text-emerald-400'></i>",
+                    barType: "damage",
+                    enemyMaxHP: 80,
+                    playerMaxHP: 100,
+                    panelColor: "border-emerald-500/30",
+                    playerColor: "border-green-500/30"
+                }
+            }
+        ];
+
+        let selectedSongIndex = 0;
+
+        function getAbsoluteAudioUrl(relativeUrl) {
+            try {
+                let origin = window.location.origin;
+                if (!origin || origin === 'null') {
+                    origin = document.baseURI || window.location.href;
+                }
+                if (origin.startsWith('blob:')) {
+                    const match = origin.match(/blob:(https?:\/\/[^\/]+)/);
+                    if (match) {
+                        origin = match[1];
+                    }
+                }
+                return new URL(relativeUrl, origin).href;
+            } catch (e) {
+                console.warn("Failed resolving path, falling back:", e);
+                return relativeUrl;
+            }
+        }
+
+        async function checkMp3Availability(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        async function loadMp3Track(url) {
+            startBtn.disabled = true;
+            startBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-2"></i> BUFFERING TRACK...`;
+            
+            const resolvedUrl = getAbsoluteAudioUrl(url);
+
+            return new Promise((resolve) => {
+                if (mp3Player) {
+                    mp3Player.dispose();
+                    mp3Player = null;
+                }
+                
+                mp3Player = new Tone.Player({
+                    url: resolvedUrl,
+                    autostart: false,
+                    loop: true,
+                    volume: 0,
+                    onload: () => {
+                        mp3Loaded = true;
+                        startBtn.disabled = false;
+                        updateMenuStyling();
+                        resolve(true);
+                    },
+                    onerror: (err) => {
+                        console.warn("Falling back to real-time retro synthesis drivers.", err);
+                        mp3Loaded = false;
+                        if (mp3Player) {
+                            mp3Player.dispose();
+                            mp3Player = null;
+                        }
+                        startBtn.disabled = false;
+                        updateMenuStyling();
+                        resolve(false);
+                    }
+                }).toDestination();
+            });
+        }
+
+        function initAudio() {
+            if (!synth) {
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.set({
+                    oscillator: { type: "square" }, 
+                    envelope: { attack: 0.005, decay: 0.12, sustain: 0.25, release: 0.15 }
+                });
+                synth.volume.value = -7;
+            }
+            if (!bassSynth) {
+                bassSynth = new Tone.MonoSynth().toDestination();
+                bassSynth.set({
+                    oscillator: { type: "triangle" },
+                    filter: { Q: 1, type: "lowpass", frequency: 550 },
+                    envelope: { attack: 0.01, decay: 0.15, sustain: 0.6, release: 0.2 }
+                });
+                bassSynth.volume.value = -11;
+            }
+        }
+
+        function setupBackingGroove() {
+            if (bassLoop) {
+                bassLoop.dispose();
+            }
+            if (activeTransportEvent) {
+                Tone.Transport.clear(activeTransportEvent);
+                activeTransportEvent = null;
+            }
+
+            const currentSong = SONGS[selectedSongIndex];
+            Tone.Transport.bpm.value = currentSong.bpm;
+
+            if (currentSong.isMp3 && mp3Loaded) {
+                activeTransportEvent = Tone.Transport.scheduleRepeat((time) => {
+                    if (isPlaying) {
+                        Tone.Draw.schedule(() => {
+                            spawnTile();
+                        }, time);
+                    }
+                }, "4n"); 
+            } else {
+                const bassNotes = currentSong.bassNotes || ["D3", "D3", "D2", "D3"];
+                let bassIndex = 0;
+
+                bassLoop = new Tone.Loop((time) => {
+                    const note = bassNotes[bassIndex];
+                    if (note && isPlaying) {
+                        bassSynth.triggerAttackRelease(note, "16n", time);
+                    }
+                    bassIndex = (bassIndex + 1) % bassNotes.length;
+                }, "16n");
+            }
+        }
+
+        function getNextNote() {
+            const currentSong = SONGS[selectedSongIndex];
+            if (currentSong.isMp3 && mp3Loaded) {
+                const standardChimes = ["C5", "D5", "E5", "G5", "A5"];
+                const note = standardChimes[noteSpawnIndex % standardChimes.length];
+                noteSpawnIndex++;
+                return note;
+            }
+
+            const hasIntro = currentSong.introNotes && currentSong.introNotes.length > 0;
+            let note;
+
+            if (noteSpawnIntroActive && hasIntro) {
+                note = currentSong.introNotes[noteSpawnIndex];
+                noteSpawnIndex++;
+                if (noteSpawnIndex >= currentSong.introNotes.length) {
+                    noteSpawnIntroActive = false;
+                    noteSpawnIndex = 0;
+                }
+            } else {
+                const melody = currentSong.melodyNotes || ["C5", "E5", "G5", "C6"];
+                note = melody[noteSpawnIndex];
+                noteSpawnIndex = (noteSpawnIndex + 1) % melody.length;
+            }
+            return note || "D5"; 
+        }
+
+        function playErrorSound() {
+            if (synth) {
+                synth.triggerAttackRelease(["C2", "B1"], "8n"); 
+            }
+        }
+
+        function resizeCanvas() {
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+            colWidth = width / COLS;
+            hitLineY = height - hitZoneHeight - 20; 
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, color, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 12;
+                this.vy = (Math.random() - 0.5) * 12 - 2; 
+                this.life = 1.0;
+                this.decay = Math.random() * 0.04 + 0.025;
+                this.color = color;
+                this.size = Math.random() * 6 + 3;
+                this.type = type || 'square';
+                this.rot = Math.random() * Math.PI;
+                this.rotSpeed = (Math.random() - 0.5) * 0.15;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rot += this.rotSpeed;
+                this.life -= this.decay;
+                
+                if (this.type === 'bubble') {
+                    this.vy -= 0.18; 
+                    this.vx += Math.sin(this.life * 12) * 0.35;
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rot);
+
+                if (this.type === 'bubble') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size + 1.5, 0, Math.PI * 2);
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else if (this.type === 'cross') {
+                    const sz = this.size;
+                    ctx.fillRect(-sz, -sz/3, sz*2, sz/1.5);
+                    ctx.fillRect(-sz/3, -sz, sz/1.5, sz*2);
+                } else if (this.type === 'ghost') {
+                    ctx.beginPath();
+                    ctx.arc(0, -this.size/2, this.size, Math.PI, 0, false);
+                    ctx.lineTo(this.size, this.size);
+                    ctx.lineTo(this.size/2, this.size/2);
+                    ctx.lineTo(0, this.size);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                }
+                ctx.restore();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function spawnParticles(x, y, colors, type, count = 16) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)], type));
+            }
+        }
+
+        function triggerBattleText(x, y, type, detail = "") {
+            const currentSong = SONGS[selectedSongIndex];
+            let msg = type;
+            let color = "#fff";
+            
+            if (type === "PERFECT") {
+                msg = currentSong.hud.barType === "heal" ? "💖 PERFECT HEAL! 💖" : "⭐ CRITICAL HIT! ⭐";
+                color = "#fbbf24"; 
+            } else if (type === "GREAT") {
+                msg = currentSong.hud.barType === "heal" ? "✨ SUPER HEAL! ✨" : "🔥 SUPER EFFECTIVE! 🔥";
+                color = "#f97316"; 
+            } else if (type === "GOOD") {
+                msg = currentSong.hud.barType === "heal" ? "RESTORING!" : "HIT!";
+                color = "#3b82f6"; 
+            } else if (type === "BATTLE") {
+                msg = detail;
+                color = currentSong.visual.glowColor; 
+            }
+
+            const textEl = document.createElement("div");
+            textEl.className = "battle-text";
+            textEl.innerText = msg;
+            textEl.style.left = `${Math.min(Math.max(x - 80, 20), width - 160)}px`;
+            textEl.style.top = `${y}px`;
+            textEl.style.color = color;
+
+            battleTextContainer.appendChild(textEl);
+
+            setTimeout(() => {
+                textEl.remove();
+            }, 800);
+        }
+
+        function updateHPBars() {
+            const song = SONGS[selectedSongIndex];
+            const hud = song.hud;
+
+            const enemyPercent = Math.max(0, (enemyHP / maxEnemyHP) * 100);
+            enemyHPBar.style.width = `${enemyPercent}%`;
+
+            if (hud.barType === "heal") {
+                enemyHPText.innerText = `RECOVERY: ${enemyPercent.toFixed(0)}%`;
+                enemyHPBar.className = "bg-pink-500 h-full transition-all duration-200 animate-pulse";
+            } else {
+                enemyHPText.innerText = `HP: ${enemyHP}/${maxEnemyHP}`;
+                if (enemyPercent < 30) {
+                    enemyHPBar.className = "bg-red-500 h-full transition-all duration-200";
+                } else if (enemyPercent < 60) {
+                    enemyHPBar.className = "bg-yellow-500 h-full transition-all duration-200";
+                } else {
+                    enemyHPBar.className = "bg-emerald-500 h-full transition-all duration-200";
+                }
+            }
+
+            const playerPercent = Math.max(0, (playerHP / maxPlayerHP) * 100);
+            playerHPBar.style.width = `${playerPercent}%`;
+            playerHPText.innerText = `HP: ${playerHP}/${maxPlayerHP}`;
+
+            if (playerPercent < 30) {
+                playerHPBar.className = "bg-red-500 h-full transition-all duration-200";
+            } else if (playerPercent < 60) {
+                playerHPBar.className = "bg-yellow-500 h-full transition-all duration-200";
+            } else {
+                playerHPBar.className = "bg-emerald-500 h-full transition-all duration-200";
+            }
+        }
+
+        function triggerDamageShake() {
+            container.classList.add('shake');
+            setTimeout(() => {
+                container.classList.remove('shake');
+            }, 300);
+        }
+
+        function resetGame() {
+            const currentSong = SONGS[selectedSongIndex];
+            const hud = currentSong.hud;
+
+            // Apply dynamic visual background gradient to container
+            container.style.background = currentSong.visual.bgGradient;
+            container.style.borderColor = currentSong.visual.glowColor + "40";
+            
+            // Render Pokémon Arena Images
+            stageEnemySprite.src = currentSong.visual.enemySprite;
+            stagePlayerSprite.src = currentSong.visual.playerSprite;
+
+            // Render on-field trainers
+            stageEnemyTrainer.src = currentSong.visual.enemyTrainer;
+            stagePlayerTrainer.src = currentSong.visual.playerTrainer;
+
+            // Morph battle terrain circles
+            enemyTerrain.className = `isometric-terrain absolute bottom-2 w-44 h-12 rounded-full border shadow-lg flex items-center justify-center ${currentSong.visual.terrainClass}`;
+            playerTerrain.className = `isometric-terrain absolute bottom-2 w-40 h-12 rounded-full border shadow-lg flex items-center justify-center ${currentSong.visual.terrainClass}`;
+
+            // Adjust BPM bounce animation duration
+            const bounceDuration = 60 / currentSong.bpm;
+            stagePlayerSprite.style.animationDuration = `${bounceDuration}s`;
+            stagePlayerTrainer.style.animationDuration = `${bounceDuration}s`;
+
+            // Reset image flash status classes with valid Tailwind sizing parameters
+            stageEnemySprite.className = "w-24 h-24 object-contain enemy-float drop-shadow-[0_8px_16px_rgba(0,0,0,0.65)] transition-all duration-300 relative z-20";
+            stagePlayerSprite.className = "w-16 h-16 sm:w-20 sm:h-20 object-contain rhythm-bounce drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)] transition-all duration-300 relative z-20";
+
+            // Build dynamic text tags
+            enemyPanel.className = `flex items-center justify-between bg-black/75 border ${hud.panelColor} p-2 rounded-lg transition-all duration-500`;
+            playerPanel.className = `flex items-center justify-between bg-black/75 border ${hud.playerColor} p-2 rounded-lg transition-all duration-500`;
+            
+            enemyHUDIcon.innerHTML = hud.enemyIcon;
+            enemyHUDName.innerText = hud.enemyName;
+            enemyHUDLevel.innerText = hud.enemyLevel;
+
+            playerHUDIcon.innerHTML = hud.playerIcon;
+            playerHUDName.innerText = hud.playerName;
+            playerHUDLevel.innerText = hud.playerLevel;
+            
+            score = 0;
+            combo = 0;
+
+            // Set physics properties, speeding up for Hard Mode
+            currentSpeed = isHardMode ? currentSong.baseSpeed * 1.45 : currentSong.baseSpeed;
+            spawnGap = isHardMode ? 110 : 160;
+
+            noteSpawnIndex = 0;
+            noteSpawnIntroActive = (currentSong.introNotes && currentSong.introNotes.length > 0);
+            tiles = [];
+            particles = [];
+            columnGlows = [0, 0, 0, 0];
+            activeInputs = [false, false, false, false];
+            
+            // Setup custom HUD HP properties
+            maxEnemyHP = hud.enemyMaxHP;
+            maxPlayerHP = hud.playerMaxHP;
+            playerHP = maxPlayerHP;
+
+            if (hud.barType === "heal") {
+                enemyHP = 0; 
+            } else {
+                enemyHP = maxEnemyHP;
+            }
+
+            updateHPBars();
+            
+            scoreDisplay.innerText = "0";
+            comboDisplay.style.opacity = "0";
+            battleTextContainer.innerHTML = '';
+            
+            let trackLabel = currentSong.name.toUpperCase();
+            if (currentSong.isMp3 && !mp3Loaded) {
+                trackLabel += " (SYNTH REMIX)";
+            }
+            if (isHardMode) {
+                trackLabel = "🔥 HARD: " + trackLabel;
+                hardModeBadge.classList.remove('hidden');
+            } else {
+                hardModeBadge.classList.add('hidden');
+            }
+            currentTrackLabel.innerText = trackLabel;
+            
+            themeIcon.className = currentSong.visual.headerColor;
+            themeIcon.innerHTML = currentSong.icon;
+
+            // Spawn initial tiles
+            let currentY = -TILE_HEIGHT;
+            while (currentY > -height) {
+                spawnTile(currentY);
+                currentY -= spawnGap;
+            }
+        }
+
+        function spawnTile(overrideY = null) {
+            const col = Math.floor(Math.random() * COLS);
+            let y = overrideY !== null ? overrideY : -TILE_HEIGHT;
+            
+            if (tiles.length > 0) {
+                const highestTile = tiles[tiles.length - 1];
+                const buffer = highestTile.isHold ? highestTile.holdLength : 0;
+                if (highestTile.y <= -TILE_HEIGHT + spawnGap + buffer) {
+                    y = highestTile.y - spawnGap - buffer;
+                }
+            }
+
+            const note = getNextNote();
+            // 28% probability that the spawned note behaves as a continuous Hold Note
+            const isHold = Math.random() < 0.28;
+            const holdLength = isHold ? (Math.random() * 140 + 160) : 0;
+
+            tiles.push({
+                col: col,
+                y: y,
+                height: TILE_HEIGHT,
+                isHold: isHold,
+                holdLength: holdLength,
+                initialHoldLength: holdLength,
+                holding: false,
+                holdTimer: 0,
+                hit: false,
+                missed: false,
+                note: note
+            });
+        }
+
+        function drawBackground() {
+            const song = SONGS[selectedSongIndex];
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw falling column background indicators
+            for (let i = 0; i < COLS; i++) {
+                if (columnGlows[i] > 0 || activeInputs[i]) {
+                    const opacityMultiplier = activeInputs[i] ? 0.35 : columnGlows[i] * 0.22;
+                    ctx.fillStyle = `rgba(${hexToRgb(song.visual.glowColor)}, ${opacityMultiplier})`;
+                    ctx.fillRect(i * colWidth, 0, colWidth, height);
+                    if (!activeInputs[i]) {
+                        columnGlows[i] -= 0.05;
+                    }
+                }
+            }
+
+            // Draw line lanes separator 
+            for (let i = 1; i < COLS; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * colWidth, 0);
+                ctx.lineTo(i * colWidth, height);
+                ctx.strokeStyle = `rgba(${hexToRgb(song.visual.glowColor)}, 0.12)`; 
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // Draw target hit container
+            ctx.fillStyle = `rgba(${hexToRgb(song.visual.glowColor)}, 0.06)`;
+            ctx.fillRect(0, hitLineY, width, hitZoneHeight);
+
+            // Draw visual helper arrows for Keyboard arrow key mapping
+            const arrowSymbols = ["←", "↓", "↑", "→"];
+            for (let i = 0; i < COLS; i++) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${activeInputs[i] ? 1.0 : 0.22})`;
+                ctx.font = "bold 24px 'Inter', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(arrowSymbols[i], (i * colWidth) + (colWidth / 2), hitLineY + (hitZoneHeight / 2));
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(0, hitLineY);
+            ctx.lineTo(width, hitLineY);
+            ctx.strokeStyle = song.visual.borderLine; 
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, hitLineY + 6);
+            ctx.lineTo(width, hitLineY + 6);
+            ctx.strokeStyle = song.visual.subLine; 
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Bottom UI safety fade gradient
+            const gradient = ctx.createLinearGradient(0, height - 120, 0, height);
+            gradient.addColorStop(0, "rgba(6, 8, 20, 0)");
+            gradient.addColorStop(1, "rgba(6, 8, 20, 0.95)");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, height - 120, width, 120);
+        }
+
+        function hexToRgb(hex) {
+            const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+            hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '239, 68, 68';
+        }
+
+        function drawTiles() {
+            const song = SONGS[selectedSongIndex];
+            const margin = 6;
+
+            for (let tile of tiles) {
+                const x = tile.col * colWidth;
+
+                // 1. Draw hold trail first if it's a Hold Note so that it layers cleanly behind the Pokéball head
+                if (tile.isHold && tile.holdLength > 0 && !tile.missed) {
+                    ctx.save();
+                    
+                    const tailColor = song.visual.glowColor;
+                    const grad = ctx.createLinearGradient(0, tile.y, 0, tile.y + TILE_HEIGHT);
+                    
+                    if (tile.holding) {
+                        // Brilliant gold visual indicator when actively holding
+                        grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+                        grad.addColorStop(0.5, "rgba(251, 191, 36, 0.75)");
+                        grad.addColorStop(1, "rgba(251, 191, 36, 0.25)");
+                    } else {
+                        // Match song profile's standard chiptune color
+                        grad.addColorStop(0, `rgba(${hexToRgb(tailColor)}, 0.1)`);
+                        grad.addColorStop(0.5, `rgba(${hexToRgb(tailColor)}, 0.5)`);
+                        grad.addColorStop(1, `rgba(${hexToRgb(tailColor)}, 0.8)`);
+                    }
+                    
+                    ctx.fillStyle = grad;
+                    
+                    // Render trail bounding block
+                    ctx.beginPath();
+                    ctx.roundRect(x + margin + 8, tile.y - tile.holdLength + 10, colWidth - (margin * 2) - 16, tile.holdLength, 8);
+                    ctx.fill();
+                    
+                    // Trail outline contouring
+                    ctx.strokeStyle = tile.holding ? "#fbbf24" : tailColor;
+                    ctx.lineWidth = tile.holding ? 4 : 2;
+                    ctx.stroke();
+                    
+                    // Draw helpful "HOLD" indicator text on unheld trails
+                    if (tile.holdLength > 100 && !tile.holding) {
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+                        ctx.font = "bold 9px 'Press Start 2P', monospace";
+                        ctx.textAlign = "center";
+                        ctx.fillText("HOLD", x + colWidth / 2, tile.y - (tile.holdLength / 2));
+                    }
+                    
+                    ctx.restore();
+                }
+
+                // Skip drawing the note head if it was already resolved
+                if (tile.hit && !tile.isHold) continue; 
+                if (tile.isHold && tile.holdLength <= 0 && tile.hit) continue;
+
+                const y = tile.y;
+                const h = tile.height;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(x + margin, y, colWidth - (margin * 2), h, 14); 
+                ctx.clip();
+
+                // Dynamic Pokéball skins triggered based on score milestones
+                let colorTop = "#EF4444"; 
+                let colorBottom = "#F3F4F6"; 
+                let hasMiddleStripe = false;
+                let middleStripeColor = "#1F2937";
+                let decorationLeft = false;
+                let ballLabel = "";
+
+                if (score >= 60) {
+                    colorTop = "#7c3aed"; 
+                    colorBottom = "#F5F3FF";
+                    decorationLeft = true; 
+                    ballLabel = "M";
+                } else if (score >= 35) {
+                    colorTop = "#1F2937"; 
+                    colorBottom = "#FBBF24";
+                    hasMiddleStripe = true;
+                    middleStripeColor = "#FBBF24"; 
+                    ballLabel = "U";
+                } else if (score >= 15) {
+                    colorTop = "#2563eb"; 
+                    colorBottom = "#F3F4F6";
+                    hasMiddleStripe = true;
+                    middleStripeColor = "#EF4444"; 
+                    ballLabel = "G";
+                }
+
+                ctx.fillStyle = colorTop;
+                ctx.fillRect(x, y, colWidth, h/2);
+
+                ctx.fillStyle = colorBottom;
+                ctx.fillRect(x, y + h/2, colWidth, h/2);
+
+                if (hasMiddleStripe) {
+                    ctx.fillStyle = middleStripeColor;
+                    ctx.fillRect(x + colWidth * 0.22, y, colWidth * 0.12, h/2);
+                    ctx.fillRect(x + colWidth * 0.66, y, colWidth * 0.12, h/2);
+                }
+
+                if (decorationLeft) {
+                    ctx.fillStyle = "#EC4899";
+                    ctx.beginPath();
+                    ctx.arc(x + colWidth * 0.25, y + h * 0.22, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x + colWidth * 0.75, y + h * 0.22, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = "#111827";
+                ctx.fillRect(x, y + h/2 - 4, colWidth, 8);
+
+                ctx.beginPath();
+                ctx.arc(x + colWidth/2, y + h/2, 16, 0, Math.PI * 2);
+                ctx.fillStyle = "#111827";
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(x + colWidth/2, y + h/2, 10, 0, Math.PI * 2);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fill();
+
+                ctx.fillStyle = "#1F2937";
+                ctx.font = "bold 11px 'Inter', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("♫", x + colWidth/2, y + h/2);
+
+                if (ballLabel !== "") {
+                    ctx.fillStyle = score >= 35 ? "#FBBF24" : "#2563eb";
+                    ctx.font = "bold 8px 'Press Start 2P', monospace";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(ballLabel, x + colWidth/2, y + h/4);
+                }
+
+                if (tile.missed) {
+                    ctx.fillStyle = "rgba(239, 68, 68, 0.65)";
+                    ctx.fillRect(x, y, colWidth, h);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            const currentSong = SONGS[selectedSongIndex];
+            const hud = currentSong.hud;
+
+            for (let i = 0; i < tiles.length; i++) {
+                let tile = tiles[i];
+
+                // Continuous hold note frame tick scoring & visual consumption logic
+                if (tile.isHold && tile.holding) {
+                    tile.holdTimer++;
+                    
+                    // Emit particles matching lane targets while holding down the key
+                    if (tile.holdTimer % 3 === 0) {
+                        spawnParticles(tile.col * colWidth + colWidth/2, hitLineY, currentSong.visual.particles, currentSong.visual.pType, 3);
+                    }
+
+                    // Continuous reward accumulation: Adds +1 score & performs battle actions every 8 frames
+                    if (tile.holdTimer % 8 === 0) {
+                        score += 1;
+                        scoreDisplay.innerText = score;
+                        
+                        // Slowly regenerate player HP while successfully maintaining a hold!
+                        playerHP = Math.min(maxPlayerHP, playerHP + 1);
+                        
+                        if (hud.barType === "heal") {
+                            enemyHP = Math.min(maxEnemyHP, enemyHP + 2);
+                            stagePlayerSprite.classList.add('flash-hit');
+                            setTimeout(() => stagePlayerSprite.classList.remove('flash-hit'), 80);
+                        } else {
+                            enemyHP = Math.max(0, enemyHP - 2);
+                            stageEnemySprite.classList.add('flash-damage');
+                            setTimeout(() => stageEnemySprite.classList.remove('flash-damage'), 80);
+                        }
+                        updateHPBars();
+                        
+                        if (synth) {
+                            synth.triggerAttackRelease(tile.note, "32n");
+                        }
+                    }
+
+                    // Shrink remaining hold trail size dynamically based on song speed
+                    tile.holdLength -= currentSpeed;
+
+                    // Perfect Hold Completed successfully!
+                    if (tile.holdLength <= 0) {
+                        tile.hit = true;
+                        tile.holding = false;
+                        
+                        // Bonus completion payout
+                        score += 5;
+                        combo++;
+                        scoreDisplay.innerText = score;
+                        
+                        if (combo > 4) {
+                            comboDisplay.innerText = `Combo x${combo}`;
+                            comboDisplay.style.opacity = "1";
+                        }
+                        
+                        spawnParticles(tile.col * colWidth + colWidth/2, hitLineY, currentSong.visual.particles, currentSong.visual.pType, 22);
+                        triggerBattleText(tile.col * colWidth + colWidth/2, hitLineY - 30, "PERFECT", "HOLD COMPLETE!");
+
+                        if (hud.barType === "heal") {
+                            if (enemyHP >= maxEnemyHP) {
+                                gameOver(true); 
+                                return;
+                            }
+                        } else {
+                            if (enemyHP <= 0) {
+                                gameOver(true); 
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (tile.hit) continue;
+
+                tile.y += currentSpeed;
+
+                // Handle misses (takes into account tail trailing buffer length on hold notes)
+                const checkBoundaryY = tile.isHold ? (tile.y - tile.holdLength) : tile.y;
+
+                if (!tile.missed && checkBoundaryY > height) {
+                    tile.missed = true;
+                    combo = 0;
+                    comboDisplay.style.opacity = "0";
+                    
+                    // Balance check: reduced miss penalty from 12 to 6 so health feels much more fair
+                    playerHP = Math.max(0, playerHP - 6);
+                    updateHPBars();
+                    triggerDamageShake();
+
+                    // Flash player sprite red on miss
+                    stagePlayerSprite.classList.add('flash-damage');
+                    stagePlayerTrainer.classList.add('flash-damage');
+                    setTimeout(() => {
+                        stagePlayerSprite.classList.remove('flash-damage');
+                        stagePlayerTrainer.classList.remove('flash-damage');
+                    }, 250);
+                    
+                    const missLabel = hud.barType === "heal" ? "MISS! ENER. DRAIN!" : "MISS! TAKE DMG!";
+                    triggerBattleText(tile.col * colWidth + colWidth/2, hitLineY, "BATTLE", missLabel);
+
+                    if (playerHP <= 0) {
+                        gameOver(false); 
+                        return;
+                    }
+                }
+            }
+
+            // Flush out-of-boundary resolved items
+            tiles = tiles.filter(tile => {
+                const boundaryLimit = tile.isHold ? (tile.y - tile.holdLength) : tile.y;
+                return boundaryLimit < height + 80 && !tile.hit;
+            });
+
+            if (!currentSong.isMp3 || !mp3Loaded) {
+                if (tiles.length === 0 || tiles[tiles.length - 1].y > -TILE_HEIGHT + spawnGap) {
+                     spawnTile();
+                }
+            }
+
+            particles.forEach(p => p.update());
+            particles = particles.filter(p => p.life > 0);
+
+            drawBackground();
+            drawTiles();
+            
+            particles.forEach(p => p.draw(ctx));
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function triggerColInput(colClicked) {
+            columnGlows[colClicked] = 1.0;
+
+            let targetTile = null;
+            let lowestY = -Infinity;
+
+            for (let tile of tiles) {
+                if (!tile.hit && !tile.missed && tile.col === colClicked) {
+                    if (tile.y > lowestY) {
+                        lowestY = tile.y;
+                        targetTile = tile;
+                    }
+                }
+            }
+
+            if (targetTile) {
+                const tileBottom = targetTile.y + targetTile.height;
+                const tileTop = targetTile.y;
+                
+                // Hit check in validation windows
+                if (tileBottom > hitLineY - 50 && tileTop < height) {
+                    
+                    const song = SONGS[selectedSongIndex];
+                    const hud = song.hud;
+
+                    // If it is a hold tile, lock active hold progress
+                    if (targetTile.isHold) {
+                        targetTile.holding = true;
+                        targetTile.holdTimer = 0;
+
+                        if (synth) {
+                            synth.triggerAttackRelease(targetTile.note, "8n");
+                        }
+
+                        spawnParticles((targetTile.col * colWidth) + (colWidth / 2), hitLineY, song.visual.particles, song.visual.pType, 12);
+                        triggerBattleText((targetTile.col * colWidth) + (colWidth / 2), hitLineY - 30, "GOOD", "HOLDING...");
+                        return;
+                    }
+
+                    // Otherwise, process as a standard instant note tap
+                    targetTile.hit = true;
+                    const hitOffset = Math.abs(tileBottom - hitLineY);
+                    let scoreBonus = 1;
+                    let amountValue = 4;
+                    let rating = "GOOD";
+
+                    if (hitOffset < 20) {
+                        rating = "PERFECT";
+                        scoreBonus = 3;
+                        amountValue = 15; 
+                    } else if (hitOffset < 44) {
+                        rating = "GREAT";
+                        scoreBonus = 2;
+                        amountValue = 8;
+                    }
+
+                    // Reward player health regeneration on Great and Perfect hits!
+                    let hpRecover = 0;
+                    if (rating === "PERFECT") hpRecover = 6;
+                    else if (rating === "GREAT") hpRecover = 3;
+                    else if (rating === "GOOD") hpRecover = 1;
+                    playerHP = Math.min(maxPlayerHP, playerHP + hpRecover);
+
+                    score += scoreBonus;
+                    combo++;
+                    scoreDisplay.innerText = score;
+
+                    // Update dynamic healing or damage values
+                    if (hud.barType === "heal") {
+                        enemyHP = Math.min(maxEnemyHP, enemyHP + amountValue);
+                        stagePlayerSprite.classList.add('flash-hit');
+                        stagePlayerTrainer.classList.add('flash-hit');
+                        setTimeout(() => {
+                            stagePlayerSprite.classList.remove('flash-hit');
+                            stagePlayerTrainer.classList.remove('flash-hit');
+                        }, 150);
+                    } else {
+                        enemyHP = Math.max(0, enemyHP - amountValue);
+                        stageEnemySprite.classList.add('flash-damage');
+                        stageEnemyTrainer.classList.add('flash-damage');
+                        setTimeout(() => {
+                            stageEnemySprite.classList.remove('flash-damage');
+                            stageEnemyTrainer.classList.remove('flash-damage');
+                        }, 250);
+                        
+                        stagePlayerSprite.classList.add('flash-hit');
+                        stagePlayerTrainer.classList.add('flash-hit');
+                        setTimeout(() => {
+                            stagePlayerSprite.classList.remove('flash-hit');
+                            stagePlayerTrainer.classList.remove('flash-hit');
+                        }, 150);
+                    }
+                    
+                    updateHPBars();
+                    
+                    if (combo > 4) {
+                        comboDisplay.innerText = `Combo x${combo}`;
+                        comboDisplay.style.opacity = "1";
+                    }
+
+                    // Accelerate speed periodically based on score
+                    if (score % 6 === 0) {
+                        currentSpeed += isHardMode ? 0.45 : 0.35;
+                        spawnGap = Math.max(isHardMode ? 70 : 85, spawnGap - 4); 
+                    }
+
+                    const pX = (targetTile.col * colWidth) + (colWidth / 2);
+                    const pY = targetTile.y + (targetTile.height / 2);
+
+                    let particleColors = song.visual.particles;
+                    const particleCount = rating === "PERFECT" ? 25 : rating === "GREAT" ? 16 : 9;
+                    spawnParticles(pX, pY, particleColors, song.visual.pType, particleCount);
+                    
+                    triggerBattleText(pX, pY - 30, rating);
+
+                    if (synth) {
+                        synth.triggerAttackRelease(targetTile.note, "8n");
+                    }
+
+                    // Win condition logic
+                    if (hud.barType === "heal") {
+                        if (enemyHP >= maxEnemyHP) {
+                            gameOver(true); 
+                            return;
+                        }
+                    } else {
+                        if (enemyHP <= 0) {
+                            gameOver(true); 
+                            return;
+                        }
+                    }
+                    
+                    if (score > 0 && score % 10 === 0) {
+                        let flavorMsg = "SUPER EFFECTIVE!";
+                        if (song.id === "battle") flavorMsg = "CRITICAL STRIKE!";
+                        else if (song.id === "center") flavorMsg = "HEALTH PROGRESSING!";
+                        else if (song.id === "lavender") flavorMsg = "EXORCISM CAST!";
+                        triggerBattleText(pX, pY - 60, "BATTLE", flavorMsg);
+                    }
+                } else {
+                    handleMisstep();
+                }
+            } else {
+                handleMisstep();
+            }
+        }
+
+        function handleMouseDown(event) {
+            if (!isPlaying) return;
+            event.preventDefault(); 
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const colClicked = Math.floor(x / colWidth);
+            if (colClicked >= 0 && colClicked < COLS) {
+                activeInputs[colClicked] = true;
+                triggerColInput(colClicked);
+            }
+        }
+
+        function handleMouseUp(event) {
+            activeInputs = [false, false, false, false];
+            for (let tile of tiles) {
+                if (tile.holding) {
+                    tile.holding = false;
+                    // Check if released early
+                    if (tile.holdLength > 20) {
+                        tile.missed = true;
+                        handleHoldBreak(tile);
+                    }
+                }
+            }
+        }
+
+        function handleTouchStart(event) {
+            if (!isPlaying) return;
+            event.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            
+            for (let i = 0; i < event.changedTouches.length; i++) {
+                const touch = event.changedTouches[i];
+                const x = touch.clientX - rect.left;
+                const colClicked = Math.floor(x / colWidth);
+                if (colClicked >= 0 && colClicked < COLS) {
+                    activeInputs[colClicked] = true;
+                    triggerColInput(colClicked);
+                }
+            }
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            activeInputs = [false, false, false, false];
+            
+            if (event.touches) {
+                for (let i = 0; i < event.touches.length; i++) {
+                    const touch = event.touches[i];
+                    const x = touch.clientX - rect.left;
+                    const col = Math.floor(x / colWidth);
+                    if (col >= 0 && col < COLS) {
+                        activeInputs[col] = true;
+                    }
+                }
+            }
+            
+            for (let tile of tiles) {
+                if (tile.holding && !activeInputs[tile.col]) {
+                    tile.holding = false;
+                    if (tile.holdLength > 20) {
+                        tile.missed = true;
+                        handleHoldBreak(tile);
+                    }
+                }
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (!isPlaying) return;
+            let colClicked = -1;
+            
+            if (event.key === "ArrowLeft") colClicked = 0;
+            else if (event.key === "ArrowDown") colClicked = 1;
+            else if (event.key === "ArrowUp") colClicked = 2;
+            else if (event.key === "ArrowRight") colClicked = 3;
+
+            if (colClicked !== -1) {
+                event.preventDefault(); 
+                if (!activeInputs[colClicked]) {
+                    activeInputs[colClicked] = true;
+                    triggerColInput(colClicked);
+                }
+            }
+        }
+
+        function handleKeyUp(event) {
+            if (!isPlaying) return;
+            let colReleased = -1;
+            
+            if (event.key === "ArrowLeft") colReleased = 0;
+            else if (event.key === "ArrowDown") colReleased = 1;
+            else if (event.key === "ArrowUp") colReleased = 2;
+            else if (event.key === "ArrowRight") colReleased = 3;
+
+            if (colReleased !== -1) {
+                event.preventDefault();
+                activeInputs[colReleased] = false;
+                
+                for (let tile of tiles) {
+                    if (tile.col === colReleased && tile.holding) {
+                        tile.holding = false;
+                        if (tile.holdLength > 20) {
+                            tile.missed = true;
+                            handleHoldBreak(tile);
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleHoldBreak(tile) {
+            combo = 0;
+            comboDisplay.style.opacity = "0";
+            playErrorSound();
+            // Balance check: reduced hold break penalty from 8 down to 4
+            playerHP = Math.max(0, playerHP - 4);
+            updateHPBars();
+            triggerDamageShake();
+
+            stagePlayerSprite.classList.add('flash-damage');
+            stagePlayerTrainer.classList.add('flash-damage');
+            setTimeout(() => {
+                stagePlayerSprite.classList.remove('flash-damage');
+                stagePlayerTrainer.classList.remove('flash-damage');
+            }, 250);
+
+            triggerBattleText(tile.col * colWidth + colWidth/2, hitLineY - 30, "BATTLE", "HOLD BROKEN!");
+
+            if (playerHP <= 0) {
+                gameOver(false);
+            }
+        }
+
+        function handleMisstep() {
+            combo = 0;
+            comboDisplay.style.opacity = "0";
+            playErrorSound();
+            // Balance check: reduced misstep penalty from 5 down to 2
+            playerHP = Math.max(0, playerHP - 2);
+            updateHPBars();
+            triggerDamageShake();
+
+            // Flash active player sprite red on fault
+            stagePlayerSprite.classList.add('flash-damage');
+            stagePlayerTrainer.classList.add('flash-damage');
+            setTimeout(() => {
+                stagePlayerSprite.classList.remove('flash-damage');
+                stagePlayerTrainer.classList.remove('flash-damage');
+            }, 250);
+
+            if (playerHP <= 0) {
+                gameOver(false);
+            }
+        }
+
+        function updateMenuStyling() {
+            songSelectorList.innerHTML = '';
+            SONGS.forEach((song, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between ${
+                    selectedSongIndex === idx 
+                    ? 'bg-slate-900 border-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.4)]' 
+                    : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                }`;
+                btn.onclick = () => {
+                    selectedSongIndex = idx;
+                    updateMenuStyling();
+                };
+                
+                let sourceLabel = song.origin;
+                if (song.isMp3) {
+                    sourceLabel += " (MP3 Available)";
+                }
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">${song.icon}</span>
+                        <div>
+                            <div class="font-bold text-[9px] pixel-font ${selectedSongIndex === idx ? 'text-red-500' : 'text-slate-200'}">${song.name}</div>
+                            <div class="text-[8px] text-slate-500">${sourceLabel}</div>
+                        </div>
+                    </div>
+                    <span class="text-[7px] pixel-font text-slate-500">${song.bpm} BPM</span>
+                `;
+                songSelectorList.appendChild(btn);
+            });
+
+            // Sync visual glass frame with current index configuration style
+            const currentVisual = SONGS[selectedSongIndex].visual;
+            const menuGlass = document.getElementById('menuGlass');
+            menuGlass.style.borderColor = currentVisual.glowColor;
+            
+            const menuBall = document.getElementById('menuBall');
+            menuBall.style.backgroundColor = currentVisual.glowColor;
+        }
+
+        async function startGame() {
+            const currentSong = SONGS[selectedSongIndex];
+            
+            // Read active Hard Mode toggle state
+            isHardMode = hardModeToggle.checked;
+
+            if (currentSong.isMp3 && !mp3Loaded) {
+                const resolvedUrl = getAbsoluteAudioUrl(currentSong.audioUrl);
+                const isAvailable = await checkMp3Availability(resolvedUrl);
+                
+                if (isAvailable) {
+                    const loaded = await loadMp3Track(currentSong.audioUrl);
+                    if (!loaded) {
+                        console.warn("Bypassing loading. Switching to synthetic mode.");
+                    }
+                } else {
+                    mp3Loaded = false;
+                }
+            }
+
+            initAudio(); 
+            await Tone.start(); 
+            Tone.Transport.start();
+            
+            setupBackingGroove();
+            
+            if (currentSong.isMp3 && mp3Player && mp3Loaded) {
+                mp3Player.start();
+            } else if (bassLoop) {
+                bassLoop.start(0);
+            }
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            resetGame();
+            isPlaying = true;
+            
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function gameOver(isVictory = false) {
+            isPlaying = false;
+            cancelAnimationFrame(animationId);
+            
+            if (mp3Player && mp3Loaded) {
+                mp3Player.stop();
+            }
+            if (bassLoop) {
+                bassLoop.stop();
+            }
+            Tone.Transport.stop();
+
+            const currentSong = SONGS[selectedSongIndex];
+            
+            if (isVictory) {
+                // Play Classic Pokémon Victory Jingle
+                if (synth) {
+                    const now = Tone.now();
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("D5", "16n", now + 0.1);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.2);
+                    synth.triggerAttackRelease("F5", "16n", now + 0.3);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.4);
+                    synth.triggerAttackRelease("A5", "8n", now + 0.6);
+                    synth.triggerAttackRelease("B5", "8n", now + 0.8);
+                    synth.triggerAttackRelease("C6", "2n", now + 1.0);
+                }
+                
+                document.getElementById('gameOverHeading').innerText = currentSong.visual.victoryHeading;
+                document.getElementById('gameOverHeading').className = "pixel-font text-emerald-400 text-xs mb-4 drop-shadow-[0_2px_4px_rgba(16,185,129,0.5)]";
+                victoryIcon.innerHTML = `<i class="fa-solid fa-trophy text-yellow-400 animate-bounce"></i>`;
+                ctx.fillStyle = "rgba(16, 185, 129, 0.45)";
+            } else {
+                playErrorSound();
+                document.getElementById('gameOverHeading').innerText = currentSong.visual.defeatHeading;
+                document.getElementById('gameOverHeading').className = "pixel-font text-red-500 text-xs mb-4 drop-shadow-[0_2px_4px_rgba(239,68,68,0.5)]";
+                victoryIcon.innerHTML = `<i class="fa-solid fa-skull-crossbones text-red-500"></i>`;
+                ctx.fillStyle = "rgba(239, 68, 68, 0.45)";
+            }
+
+            finalScoreDisplay.innerText = score;
+            
+            // Set dynamic card border on game over panel
+            document.getElementById('gameOverGlass').style.borderColor = currentSong.visual.glowColor;
+            
+            gameOverScreen.classList.remove('hidden');
+            comboDisplay.style.opacity = "0";
+            
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        // Event bindings for keyboard hold locks, mouse drags and multitouch arrays
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd);
+        
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        menuBtn.addEventListener('click', () => {
+            gameOverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            updateMenuStyling();
+        });
+
+        window.onload = () => {
+            updateMenuStyling();
+            drawBackground();
+        };
+    </script>
+</body>
+</html>

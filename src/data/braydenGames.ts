@@ -27,6 +27,15 @@ const braydenGames: Game[] = [
     status: "playable",
     playUrl: "/games/brayden/metropolis_street_racer/metropolis_street_racer.html",
     thumbnailUrl: null
+  },
+  {
+    id: "pokemon_rhythm_jukebox",
+    title: "Pokemon Rhythm Jukebox",
+    description: "Battle to the beat with rhythm and arena moves.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/pokemon_rhythm_jukebox/pokemon_rhythm_jukebox.html",
+    thumbnailUrl: null
   }
 ];
 
