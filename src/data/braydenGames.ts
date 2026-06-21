@@ -41,6 +41,14 @@ const braydenGameDetails: Array<Pick<Game, "id" | "title" | "description" | "typ
     type: "html",
     status: "playable",
     playUrl: "/games/brayden/pokemon_rhythm_jukebox/pokemon_rhythm_jukebox.html"
+  },
+  {
+    id: "tower-defense-mania",
+    title: "Tower Defense Mania",
+    description: "Place towers and stop the waves from getting through.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/tower-defense-mania/index.html"
   }
 ];
 
