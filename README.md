@@ -108,4 +108,52 @@ Delete the game's folder from `public/games/dylan/` or `public/games/brayden/`, 
 - Dylan games are auto-discovered during the Vercel build.
 - Folder names become play URLs, so use simple names like `tower-defense-starters`.
 - Optional thumbnails can be named `thumbnail.png`, `thumbnail.jpg`, `thumbnail.jpeg`, `thumbnail.webp`, or `thumbnail.gif`.
-- No database, login, admin page, CMS, blog, or extra branches are needed.
+- No login, admin page, CMS, blog, or extra branches are needed.
+
+## Global play counts with Supabase
+
+The launcher can show global play counts if Supabase is configured. If Supabase is not configured yet, the site still works and shows `0 plays`.
+
+Create this table and function in the Supabase SQL editor:
+
+```sql
+create table if not exists public.game_play_counts (
+  kid text not null,
+  game_id text not null,
+  play_count bigint not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (kid, game_id)
+);
+
+create or replace function public.increment_play_count(
+  target_kid text,
+  target_game_id text
+)
+returns bigint
+language plpgsql
+security definer
+as $$
+declare
+  new_count bigint;
+begin
+  insert into public.game_play_counts (kid, game_id, play_count)
+  values (target_kid, target_game_id, 1)
+  on conflict (kid, game_id)
+  do update set
+    play_count = public.game_play_counts.play_count + 1,
+    updated_at = now()
+  returning play_count into new_count;
+
+  return new_count;
+end;
+$$;
+```
+
+Add these environment variables in Vercel:
+
+```text
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+The service role key must stay server-side. Do not put it in game files or browser code.

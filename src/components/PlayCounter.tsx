@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { Kid } from "@/src/data/types";
-import { playCountKey, readPlayCounts, writePlayCounts } from "./playCounts";
+import { incrementSharedPlayCount } from "./playCounts";
 
 type PlayCounterProps = {
   kid: Kid;
@@ -11,10 +11,7 @@ type PlayCounterProps = {
 
 export default function PlayCounter({ kid, gameId }: PlayCounterProps) {
   useEffect(() => {
-    const counts = readPlayCounts();
-    const key = playCountKey(kid, gameId);
-    counts[key] = (counts[key] || 0) + 1;
-    writePlayCounts(counts);
+    void incrementSharedPlayCount(kid, gameId);
   }, [gameId, kid]);
 
   return null;

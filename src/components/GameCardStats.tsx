@@ -2,7 +2,12 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import type { Kid } from "@/src/data/types";
-import { playCountKey, playCountsChangedEvent, playCountsStorageKey } from "./playCounts";
+import {
+  getEmptyPlayCountsSnapshot,
+  getPlayCountsSnapshot,
+  playCountKey,
+  subscribeToPlayCounts
+} from "./playCounts";
 
 type GameCardStatsProps = {
   kid: Kid;
@@ -18,17 +23,9 @@ function formatPlayCount(count: number) {
 
 export default function GameCardStats({ kid, gameId, gameIds, isNew, variant }: GameCardStatsProps) {
   const countsSnapshot = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("storage", onStoreChange);
-      window.addEventListener(playCountsChangedEvent, onStoreChange);
-
-      return () => {
-        window.removeEventListener("storage", onStoreChange);
-        window.removeEventListener(playCountsChangedEvent, onStoreChange);
-      };
-    },
-    () => window.localStorage.getItem(playCountsStorageKey) || "{}",
-    () => "{}"
+    subscribeToPlayCounts,
+    getPlayCountsSnapshot,
+    getEmptyPlayCountsSnapshot
   );
 
   const counts = useMemo(() => {
