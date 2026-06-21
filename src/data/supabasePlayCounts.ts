@@ -4,6 +4,11 @@ type SupabasePlayCountRow = {
   play_count: number;
 };
 
+function getRestUrl(url: string) {
+  const trimmedUrl = url.replace(/\/$/, "");
+  return trimmedUrl.endsWith("/rest/v1") ? trimmedUrl : `${trimmedUrl}/rest/v1`;
+}
+
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -13,7 +18,7 @@ function getSupabaseConfig() {
   }
 
   return {
-    restUrl: `${url.replace(/\/$/, "")}/rest/v1`,
+    restUrl: getRestUrl(url),
     serviceKey
   };
 }
@@ -22,9 +27,14 @@ export function getSupabasePlayCountStatus() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   let urlHost: string | null = null;
+  let restPath: string | null = null;
 
   try {
-    urlHost = url ? new URL(url).host : null;
+    if (url) {
+      const restUrl = new URL(getRestUrl(url));
+      urlHost = restUrl.host;
+      restPath = restUrl.pathname;
+    }
   } catch {
     urlHost = "invalid-url";
   }
@@ -32,7 +42,8 @@ export function getSupabasePlayCountStatus() {
   return {
     hasUrl: Boolean(url),
     hasServiceRoleKey: Boolean(serviceKey),
-    urlHost
+    urlHost,
+    restPath
   };
 }
 
