@@ -19,6 +19,14 @@ const braydenGameDetails: Array<Pick<Game, "id" | "title" | "description" | "typ
     playUrl: "/games/brayden/ice_jump/ice_jump.html"
   },
   {
+    id: "cavern_crawler",
+    title: "Cavern Crawler",
+    description: "Run through the cave and dodge the danger.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/cavern_crawler/cavern_crawler.html"
+  },
+  {
     id: "metropolis_street_racer",
     title: "Metropolis Street Racer",
     description: "Race through the city with speed boosts and power boxes.",
