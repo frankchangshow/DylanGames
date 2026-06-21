@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PlayCounter from "@/src/components/PlayCounter";
 import { getGameForKid, getPlayableGames, isKid } from "@/src/data/games";
 import ReactGamePlayer from "@/src/react-games/ReactGamePlayer";
 
@@ -72,6 +73,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
 
   return (
     <main className="playPage">
+      <PlayCounter kid={kid} gameId={game.id} />
       <div className="playBar">
         <Link href={`/${kid}`} className="backButton" aria-label={`Back to ${kid} games`}>
           ←

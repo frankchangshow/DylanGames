@@ -352,6 +352,38 @@ a {
   -webkit-line-clamp: 2;
 }
 
+.braydenPlayCount {
+  color: #7b8390;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.braydenBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.braydenBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.braydenNewBadge {
+  background: #2563eb;
+}
+
+.braydenPopularBadge {
+  background: #f59e0b;
+}
+
 .braydenPlayButton {
   display: inline-flex;
   align-items: center;
@@ -731,6 +763,40 @@ a {
   line-height: 1.3;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.dylanPlayCount {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.dylanBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 26px;
+}
+
+.dylanBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border: 2px solid #172033;
+  border-radius: 999px;
+  color: #172033;
+  font-size: 0.72rem;
+  font-weight: 950;
+  box-shadow: 2px 2px 0 #172033;
+}
+
+.dylanNewBadge {
+  background: #ffdf4d;
+}
+
+.dylanPopularBadge {
+  background: #39d39b;
 }
 
 .dylanPlayButton {

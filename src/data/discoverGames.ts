@@ -1,5 +1,5 @@
 import { existsSync } from "fs";
-import { readdir, readFile } from "fs/promises";
+import { readdir, readFile, stat } from "fs/promises";
 import path from "path";
 import type { Game, GameType, Kid } from "./types";
 
@@ -84,6 +84,7 @@ export async function discoverGames(kid: Kid): Promise<Game[]> {
       .map(async (entry) => {
         const id = entry.name;
         const folderPath = path.join(gamesDirectory, id);
+        const folderStats = await stat(folderPath);
         const config = await readGameJson(folderPath);
         const type = isGameType(config?.type) ? config.type : "html";
         const title = config?.title?.trim() || titleFromName(id);
@@ -99,7 +100,8 @@ export async function discoverGames(kid: Kid): Promise<Game[]> {
             description: config.description?.trim() || "Ready to play.",
             type,
             playUrl: config.url,
-            thumbnailUrl: getThumbnail(folderPath, kid, id, config)
+            thumbnailUrl: getThumbnail(folderPath, kid, id, config),
+            uploadedAt: folderStats.mtimeMs
           };
         }
 
@@ -115,12 +117,19 @@ export async function discoverGames(kid: Kid): Promise<Game[]> {
           description: config?.description?.trim() || "Jump in and play.",
           type,
           playUrl: `/games/${kid}/${id}/${htmlFile}`,
-          thumbnailUrl: getThumbnail(folderPath, kid, id, config)
+          thumbnailUrl: getThumbnail(folderPath, kid, id, config),
+          uploadedAt: folderStats.mtimeMs
         };
       })
   );
 
-  return games
-    .filter((game): game is Game => Boolean(game))
-    .sort((a, b) => a.title.localeCompare(b.title));
+  const playableGames: Game[] = [];
+
+  for (const game of games) {
+    if (game) {
+      playableGames.push(game);
+    }
+  }
+
+  return playableGames.sort((a, b) => a.title.localeCompare(b.title));
 }

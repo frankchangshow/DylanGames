@@ -1,3 +1,5 @@
+import { stat } from "fs/promises";
+import path from "path";
 import { discoverGames } from "./discoverGames";
 import type { Game } from "./types";
 
@@ -20,9 +22,22 @@ const reactGames: Game[] = [
   }
 ];
 
+async function addUploadedAt(game: Game) {
+  try {
+    const folderStats = await stat(path.join(process.cwd(), "public", "games", "dylan", game.id));
+    return { ...game, uploadedAt: folderStats.mtimeMs };
+  } catch {
+    return game;
+  }
+}
+
 export async function getDylanGames() {
-  const htmlGames = await discoverGames("dylan");
-  return [...reactGames, ...htmlGames].sort((a, b) => a.title.localeCompare(b.title));
+  const [htmlGames, reactGamesWithDates] = await Promise.all([
+    discoverGames("dylan"),
+    Promise.all(reactGames.map(addUploadedAt))
+  ]);
+
+  return [...reactGamesWithDates, ...htmlGames].sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export async function getDylanGame(gameId: string) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GameCardStats from "@/src/components/GameCardStats";
 import { getDylanGames } from "@/src/data/dylanGames";
 
 function GameThumbnail({
@@ -24,6 +25,8 @@ function GameThumbnail({
 
 export default async function DylanPage() {
   const games = await getDylanGames();
+  const playableGameIds = games.filter((game) => (game.status || "playable") === "playable").map((game) => game.id);
+  const newestUploadedAt = Math.max(0, ...games.map((game) => game.uploadedAt || 0));
 
   return (
     <main className="dylanDiscoveryPage">
@@ -63,6 +66,13 @@ export default async function DylanPage() {
                     <div className="dylanCardBody">
                       <h3>{game.title}</h3>
                       <p>{game.description}</p>
+                      <GameCardStats
+                        kid="dylan"
+                        gameId={game.id}
+                        gameIds={playableGameIds}
+                        isNew={(game.uploadedAt || 0) === newestUploadedAt && newestUploadedAt > 0}
+                        variant="dylan"
+                      />
                       <span className="tilePlayButton dylanPlayButton">Play</span>
                     </div>
                 </Link>

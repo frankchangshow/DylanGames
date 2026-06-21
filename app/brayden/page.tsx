@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GameCardStats from "@/src/components/GameCardStats";
 import { getBraydenGames } from "@/src/data/braydenGames";
 import type { Game } from "@/src/data/types";
 
@@ -35,6 +36,8 @@ function BraydenThumbnail({
 
 export default async function BraydenPage() {
   const games = await getBraydenGames();
+  const playableGameIds = games.filter((game) => (game.status || "playable") === "playable").map((game) => game.id);
+  const newestUploadedAt = Math.max(0, ...games.map((game) => game.uploadedAt || 0));
 
   return (
     <main className="braydenDiscoveryPage">
@@ -77,6 +80,13 @@ export default async function BraydenPage() {
                 <div className="braydenCardBody">
                   <h3>{game.title}</h3>
                   <p>{game.description}</p>
+                  <GameCardStats
+                    kid="brayden"
+                    gameId={game.id}
+                    gameIds={playableGameIds}
+                    isNew={(game.uploadedAt || 0) === newestUploadedAt && newestUploadedAt > 0}
+                    variant="brayden"
+                  />
                   <span className="braydenPlayButton">{isComingSoon ? "Coming Soon" : "Play"}</span>
                 </div>
               </Link>

@@ -11,4 +11,5 @@ export type Game = {
   status?: GameStatus;
   playUrl: string;
   thumbnailUrl: string | null;
+  uploadedAt?: number;
 };
