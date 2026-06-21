@@ -1,4 +1,4 @@
-export type Kid = "dylan" | "brayden";
+export type Kid = "dylan" | "brayden" | "daddy";
 
 export type GameType = "html" | "scratch" | "external" | "placeholder" | "react" | "nextjs" | "other";
 export type GameStatus = "playable" | "coming-soon";

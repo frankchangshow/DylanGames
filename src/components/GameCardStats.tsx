@@ -14,7 +14,7 @@ type GameCardStatsProps = {
   gameId: string;
   gameIds: string[];
   isNew: boolean;
-  variant: "brayden" | "dylan";
+  variant: "brayden" | "daddy" | "dylan";
 };
 
 function formatPlayCount(count: number) {

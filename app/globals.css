@@ -78,9 +78,9 @@ a {
 
 .kidButtons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
-  width: min(620px, 100%);
+  width: min(920px, 100%);
 }
 
 .kidButton {
@@ -111,6 +111,10 @@ a {
 
 .braydenButton {
   background: linear-gradient(135deg, var(--orange), var(--pink));
+}
+
+.daddyButton {
+  background: linear-gradient(135deg, #111827, #7f1d1d 54%, #d97706);
 }
 
 .braydenDiscoveryPage {
@@ -449,6 +453,323 @@ a {
 .braydenGameCard.isComingSoon .braydenPlayButton {
   background: #d8dde5;
   color: #555d6b;
+}
+
+.daddyGamesPage {
+  min-height: 100vh;
+  padding: 28px clamp(14px, 4vw, 46px) 52px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 18% 10%, rgba(220, 38, 38, 0.28), transparent 30rem),
+    radial-gradient(circle at 86% 4%, rgba(217, 119, 6, 0.24), transparent 28rem),
+    #111318;
+  background-size: 34px 34px, 34px 34px, auto, auto, auto;
+  color: #f8fafc;
+}
+
+.daddyHeader {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1180px;
+  min-height: 176px;
+  margin: 0 auto 34px;
+  padding: 30px clamp(20px, 4vw, 42px);
+  overflow: hidden;
+  border: 1px solid rgba(248, 250, 252, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(120deg, rgba(127, 29, 29, 0.82), rgba(17, 24, 39, 0.94) 46%, rgba(3, 7, 18, 0.98)),
+    #111827;
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.daddyHeader::before {
+  content: "";
+  position: absolute;
+  inset: auto -8% 24px 42%;
+  height: 5px;
+  background: linear-gradient(90deg, transparent, #facc15 14%, #ef4444 58%, transparent);
+  transform: skewX(-28deg);
+}
+
+.daddyHeader::after {
+  content: "ROUND 1";
+  position: absolute;
+  right: clamp(22px, 5vw, 58px);
+  bottom: 24px;
+  color: rgba(248, 250, 252, 0.09);
+  font-size: clamp(3rem, 9vw, 7rem);
+  font-weight: 950;
+  line-height: 0.8;
+}
+
+.daddyHeader > div,
+.daddyHomeLink {
+  position: relative;
+  z-index: 1;
+}
+
+.daddyHeader p {
+  margin: 0 0 8px;
+  color: #facc15;
+  font-size: 0.92rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.daddyHeader h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.9rem, 7vw, 5.1rem);
+  line-height: 0.95;
+}
+
+.daddyHeader span {
+  display: inline-block;
+  margin-top: 10px;
+  color: #cbd5e1;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  font-weight: 800;
+}
+
+.daddyHomeLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  border-radius: 10px;
+  background: rgba(250, 204, 21, 0.12);
+  color: #fef3c7;
+  font-weight: 950;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.daddyHomeLink:hover,
+.daddyHomeLink:focus-visible {
+  background: rgba(250, 204, 21, 0.2);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.daddyGamesSection {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.daddySectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.daddySectionHeader h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.daddySectionHeader span {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.daddyGameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 22px;
+}
+
+.daddyGameCard {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(248, 250, 252, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.32);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.daddyGameCard:hover,
+.daddyGameCard:focus-visible {
+  border-color: rgba(250, 204, 21, 0.6);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.42),
+    0 0 0 4px rgba(220, 38, 38, 0.16);
+  outline: none;
+  transform: translateY(-5px);
+}
+
+.daddyGameCard.isComingSoon {
+  opacity: 0.9;
+}
+
+.daddyThumbWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #020617;
+}
+
+.daddyTileImage {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  background: #020617;
+}
+
+.daddyTileImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.daddyGameCard:hover .daddyTileImage img,
+.daddyGameCard:focus-visible .daddyTileImage img {
+  transform: scale(1.04);
+}
+
+.daddyPlaceholderTile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, transparent 0 42%, rgba(250, 204, 21, 0.9) 42% 46%, transparent 46%),
+    radial-gradient(circle at 24% 24%, rgba(239, 68, 68, 0.7), transparent 28%),
+    linear-gradient(135deg, #111827, #450a0a 54%, #0f172a);
+}
+
+.daddyPlaceholderMark {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  color: rgba(255, 255, 255, 0.14);
+  font-size: 3.6rem;
+  font-weight: 950;
+}
+
+.daddyPlaceholderInitial {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 950;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.36);
+}
+
+.daddyTypeBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #facc15;
+  font-size: 0.72rem;
+  font-weight: 950;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+}
+
+.daddyCardBody {
+  display: grid;
+  gap: 8px;
+}
+
+.daddyCardBody h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 2.25em;
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  line-height: 1.12;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.daddyCardBody p {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 2.45em;
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.daddyPlayCount {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.daddyBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.daddyBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #111827;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.daddyNewBadge {
+  background: #facc15;
+}
+
+.daddyPopularBadge {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.daddyPlayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #dc2626, #f59e0b);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 950;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
+}
+
+.daddyGameCard.isComingSoon .daddyPlayButton {
+  background: #334155;
+  color: #cbd5e1;
+  box-shadow: none;
 }
 
 .launcherHero {

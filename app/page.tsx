@@ -13,6 +13,9 @@ export default function Home() {
           <Link className="kidButton braydenButton" href="https://braydengames.com/">
             <span>Brayden Games</span>
           </Link>
+          <Link className="kidButton daddyButton" href="/daddy">
+            <span>Daddy Games</span>
+          </Link>
         </div>
       </section>
     </main>

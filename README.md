@@ -7,6 +7,7 @@ A simple Next.js game launcher for two kids.
 - `/` shows a landing page with buttons for Dylan Games and Brayden Games.
 - `/dylan` shows Dylan's game launcher.
 - `/brayden` shows Brayden's placeholder launcher.
+- `/daddy` shows Daddy's game launcher.
 - `/play/[kid]/[game]` plays a game in a full-page iframe.
 
 ## Game folders
@@ -21,6 +22,12 @@ Brayden games live here:
 
 ```text
 public/games/brayden/
+```
+
+Daddy games live here:
+
+```text
+public/games/daddy/
 ```
 
 React/TSX Dylan games live here:
@@ -72,6 +79,22 @@ The play route renders React games directly. HTML games still run in an iframe.
 2. Add an HTML file.
 3. Update `src/data/braydenGames.ts` to use discovery instead of the placeholder.
 4. Commit to `main`.
+
+## Add a Daddy HTML game
+
+1. Create a folder in `public/games/daddy/`.
+2. Add an HTML file.
+3. Commit to `main`.
+
+Example:
+
+```text
+public/games/daddy/arcade-fighter/
+  index.html
+  thumbnail.png
+```
+
+The Daddy launcher appears at `/daddy`.
 
 ## Add a Scratch or external game
 
