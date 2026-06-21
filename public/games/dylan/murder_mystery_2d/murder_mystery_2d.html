@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Murder Mystery 2D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a2e; /* Dark theme */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Prevent default touch actions on mobile */
+        }
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to canvas unless specific elements have pointer-events: auto */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .ui-panel {
+            pointer-events: auto;
+            background: rgba(26, 26, 46, 0.85);
+            border: 2px solid #4a4e69;
+            border-radius: 12px;
+            padding: 20px;
+            color: #f8f9fa;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        
+        /* Lobby Styles */
+        #lobbyUI {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            min-width: 300px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* In-Game HUD Styles */
+        #hud {
+            display: none; /* Hidden until game starts */
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .hud-item {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+        
+        #roleReveal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+        }
+
+        #endScreen {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            min-width: 350px;
+        }
+
+        /* Role specific colors */
+        .color-murderer { color: #ff4757; }
+        .color-sheriff { color: #1e90ff; }
+        .color-innocent { color: #ffffff; }
+        
+        /* Message Log */
+        #messageLog {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            pointer-events: none;
+        }
+        .log-msg {
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            animation: fadeOut 5s forwards;
+            opacity: 1;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Mobile Controls (Hidden on desktop) */
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+        .joystick-zone {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            pointer-events: auto;
+            position: relative;
+        }
+        .joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .action-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            #mobileControls { display: flex; }
+            .hud-item { font-size: 14px; padding: 8px 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="uiLayer">
+    <!-- Lobby UI -->
+    <div id="lobbyUI" class="ui-panel">
+        <h1 class="text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500">MM2D</h1>
+        <p class="text-gray-300 mb-6">Murder Mystery Top-Down</p>
+        
+        <div class="text-left mb-6 bg-black bg-opacity-30 p-4 rounded">
+            <h3 class="font-bold mb-2">How to Play:</h3>
+            <ul class="text-sm space-y-2">
+                <li><span class="color-murderer font-bold">Murderer:</span> Eliminate everyone. Use Left Click / Action to stab. Press SPACE to throw. <b>Your identity is hidden until you attack!</b></li>
+                <li><span class="color-sheriff font-bold">Sheriff:</span> Find and shoot the Murderer. Use Mouse/Tap to aim, Left Click/Action to shoot.</li>
+                <li><span class="color-innocent font-bold">Innocent:</span> Survive and collect coins. If Sheriff dies, pick up the gun!</li>
+                <li class="mt-2 text-xs text-gray-400">Controls: WASD/Arrows to move. Mouse to aim. Mobile uses on-screen controls.</li>
+            </ul>
+        </div>
+
+        <button id="startBtn" class="btn w-full">Start Game</button>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+        <div class="hud-top">
+            <div class="flex flex-col gap-2">
+                <div class="hud-item" id="roleDisplay">
+                    Role: <span id="currentRole">Unknown</span>
+                </div>
+                <div class="hud-item" id="timerDisplay">
+                    Time: <span id="timeLeft">03:00</span>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 items-end">
+                <div class="hud-item text-yellow-400">
+                    🪙 <span id="coinCount">0</span>
+                </div>
+                <div class="hud-item text-gray-300 text-sm">
+                    Alive: <span id="aliveCount">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Reveal Animation -->
+    <div id="roleReveal"></div>
+
+    <!-- End Screen -->
+    <div id="endScreen" class="ui-panel">
+        <h2 id="endTitle" class="text-3xl font-black mb-4">Game Over</h2>
+        <p id="endReason" class="text-lg mb-6">...</p>
+        
+        <div class="mb-6 bg-black bg-opacity-30 p-4 rounded text-left">
+            <p>Coins Collected: <span id="endCoins" class="text-yellow-400 font-bold">0</span></p>
+            <p id="endStats" class="mt-2 text-sm text-gray-400"></p>
+        </div>
+
+        <button id="restartBtn" class="btn w-full">Back to Lobby</button>
+    </div>
+
+    <!-- Message Log -->
+    <div id="messageLog"></div>
+
+    <!-- Mobile Controls -->
+    <div id="mobileControls">
+        <div class="joystick-zone" id="joystickZone">
+            <div class="joystick-knob" id="joystickKnob"></div>
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <div class="action-btn" id="throwBtn" style="display: none; background: rgba(220, 53, 69, 0.4); border-color: rgba(220, 53, 69, 0.6);">🗡️</div>
+            <div class="action-btn" id="actionBtn">🎯</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI Elements
+const lobbyUI = document.getElementById('lobbyUI');
+const startBtn = document.getElementById('startBtn');
+const hud = document.getElementById('hud');
+const roleDisplay = document.getElementById('currentRole');
+const timeLeftDisplay = document.getElementById('timeLeft');
+const coinCountDisplay = document.getElementById('coinCount');
+const aliveCountDisplay = document.getElementById('aliveCount');
+const roleReveal = document.getElementById('roleReveal');
+const endScreen = document.getElementById('endScreen');
+const endTitle = document.getElementById('endTitle');
+const endReason = document.getElementById('endReason');
+const endCoins = document.getElementById('endCoins');
+const restartBtn = document.getElementById('restartBtn');
+const messageLog = document.getElementById('messageLog');
+const throwBtn = document.getElementById('throwBtn');
+
+// Game State
+let gameState = 'LOBBY'; // LOBBY, PLAYING, END
+let gameTimer = 180; // 3 minutes
+let lastTime = 0;
+let animationId;
+
+// Physics & Map
+const mapSize = { width: 2000, height: 2000 };
+let camera = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+
+// Resize handling
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    camera.width = window.innerWidth;
+    camera.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Input State
+const keys = { w: false, a: false, s: false, d: false, space: false };
+const mouse = { x: 0, y: 0, isDown: false };
+let actionTriggered = false; // For mobile action button or mouse click
+
+// Mobile Joystick State
+const joystick = { active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dirX: 0, dirY: 0 };
+
+const ROLES = {
+    INNOCENT: 'Innocent',
+    SHERIFF: 'Sheriff',
+    MURDERER: 'Murderer',
+    HERO: 'Hero' // Innocent who picks up gun
+};
+
+const BOT_NAMES = [
+    "BaconHair", "Guest 666", "NoobSlayer", "xX_Pro_Xx", 
+    "ShadowNinja", "Builderman", "JaneDoe", "JohnDoe", 
+    "EpicGamer", "Robloxian", "DarkKnight", "KittenLover"
+];
+
+const COLORS = {
+    [ROLES.INNOCENT]: '#ffffff',
+    [ROLES.SHERIFF]: '#1e90ff',
+    [ROLES.MURDERER]: '#ff4757',
+    [ROLES.HERO]: '#eccc68',
+    PLAYER: '#ffffff',
+    BOT: '#ffffff',
+    COIN: '#f1c40f',
+    GUN: '#95a5a6',
+    KNIFE: '#c0392b',
+    WALL: '#2c3e50',
+    FLOOR: '#34495e'
+};
+
+class Entity {
+    constructor(x, y, radius) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 250; // pixels per second
+    }
+
+    update(dt) {
+        // Apply velocity
+        let nextX = this.x + this.vx * dt;
+        let nextY = this.y + this.vy * dt;
+
+        // Simple wall collision
+        let collision = false;
+        for (let wall of walls) {
+            // AABB vs Circle rough collision
+            let testX = nextX;
+            let testY = nextY;
+
+            if (nextX < wall.x) testX = wall.x;
+            else if (nextX > wall.x + wall.w) testX = wall.x + wall.w;
+            if (nextY < wall.y) testY = wall.y;
+            else if (nextY > wall.y + wall.h) testY = wall.y + wall.h;
+
+            let distX = nextX - testX;
+            let distY = nextY - testY;
+            let distance = Math.sqrt((distX*distX) + (distY*distY));
+
+            if (distance <= this.radius) {
+                collision = true;
+                // Basic slide response
+                if (Math.abs(distX) > Math.abs(distY)) {
+                    this.vx = 0;
+                    nextX = this.x; // Revert X
+                } else {
+                    this.vy = 0;
+                    nextY = this.y; // Revert Y
+                }
+            }
+        }
+
+        // Map bounds
+        if (nextX - this.radius < 0) nextX = this.radius;
+        if (nextX + this.radius > mapSize.width) nextX = mapSize.width - this.radius;
+        if (nextY - this.radius < 0) nextY = this.radius;
+        if (nextY + this.radius > mapSize.height) nextY = mapSize.height - this.radius;
+
+        this.x = nextX;
+        this.y = nextY;
+    }
+}
+
+class Player extends Entity {
+    constructor(x, y, isLocal, name) {
+        super(x, y, 20);
+        this.isLocal = isLocal;
+        this.name = name || "Player";
+        this.role = ROLES.INNOCENT;
+        this.alive = true;
+        this.coins = 0;
+        this.angle = 0;
+        this.color = isLocal ? COLORS.PLAYER : COLORS.BOT;
+        this.weaponCooldown = 0;
+        this.throwCooldown = 0;
+        this.isBot = !isLocal;
+        
+        // Bot AI states
+        this.target = null;
+        this.stateTimer = 0;
+        
+        // New mechanics
+        this.isExposed = false; // Reveals role to everyone when attacking/shooting
+        this.lastX = x;
+        this.lastY = y;
+        this.stuckTimer = 0;
+        this.overrideAngle = null;
+        this.overrideTimer = 0;
+        this.exposedTimer = 0;
+    }
+
+    update(dt) {
+        super.update(dt);
+        // Automatically hide weapon and identity if you haven't attacked recently
+        if (this.exposedTimer > 0) {
+            this.exposedTimer -= dt;
+            this.isExposed = true;
+        } else {
+            this.isExposed = false;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.alive) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        // Draw character body
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        
+        // ALL players (including you) are white to perfectly blend in!
+        let drawColor = '#ffffff'; 
+        
+        // Only reveal color changes at the very end of the game
+        if (gameState === 'END') {
+            if (this.role === ROLES.MURDERER) drawColor = COLORS[ROLES.MURDERER];
+            else if (this.role === ROLES.SHERIFF || this.role === ROLES.HERO) drawColor = COLORS[ROLES.SHERIFF];
+        }
+
+        ctx.fillStyle = drawColor;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#000';
+        ctx.stroke();
+
+        // Draw visual direction indicator (nose/eyes)
+        ctx.beginPath();
+        ctx.fillStyle = '#000';
+        ctx.arc(10, -5, 3, 0, Math.PI * 2);
+        ctx.arc(10, 5, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // The ONLY way to know who the murderer/sheriff is during the game 
+        // is by seeing the weapon in their hand when they are exposed!
+        let showWeapon = this.isExposed || gameState === 'END';
+        
+        if (this.role === ROLES.MURDERER && showWeapon) {
+            // Knife
+            ctx.fillStyle = COLORS.KNIFE;
+            ctx.fillRect(5, 12, 20, 5);
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(25, 10, 15, 9); // blade
+            
+            // Stab animation visual
+            if (this.weaponCooldown > 0.5) {
+                ctx.translate(15, 15);
+                ctx.rotate(Math.PI/4);
+                ctx.translate(-15, -15);
+            }
+        } else if ((this.role === ROLES.SHERIFF || this.role === ROLES.HERO) && showWeapon) {
+            // Gun
+            ctx.fillStyle = '#333';
+            ctx.fillRect(10, 12, 15, 6); // barrel
+            ctx.fillRect(5, 12, 6, 12);  // handle
+        }
+
+        ctx.restore();
+        
+        // Draw Name/Status
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        
+        let label = this.name;
+        if (this.isLocal) {
+            label = this.name + " (" + this.role + ")";
+        }
+        
+        if (!this.alive) label += " (Dead)";
+        ctx.fillText(label, this.x, this.y - this.radius - 8);
+    }
+
+    updateBot(dt) {
+        if (!this.isBot || !this.alive) return;
+        
+        this.stateTimer -= dt;
+        
+        // Find closest entities
+        let closestPlayer = null;
+        let closestDist = Infinity;
+        let closestCoin = null;
+        let closestCoinDist = Infinity;
+
+        players.forEach(p => {
+            if (p !== this && p.alive) {
+                let d = Math.hypot(p.x - this.x, p.y - this.y);
+                if (d < closestDist) { closestDist = d; closestPlayer = p; }
+            }
+        });
+
+        coins.forEach(c => {
+            if (c.active) {
+                let d = Math.hypot(c.x - this.x, c.y - this.y);
+                if (d < closestCoinDist) { closestCoinDist = d; closestCoin = c; }
+            }
+        });
+
+        // Bot Logic based on role
+        let moveX = 0, moveY = 0;
+
+        if (this.role === ROLES.MURDERER) {
+            // Chase closest player relentlessly
+            if (closestPlayer) {
+                this.target = closestPlayer;
+                let angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                moveX = Math.cos(angle);
+                moveY = Math.sin(angle);
+                this.angle = angle;
+
+                // Attack range
+                if (closestDist < 75 && this.weaponCooldown <= 0) {
+                    attemptStab(this);
+                } else if (closestDist >= 75 && closestDist < 250 && this.throwCooldown <= 0) {
+                    // Try to throw a knife if in line of sight/close enough
+                    let spread = (Math.random() - 0.5) * 0.1;
+                    throwKnife(this, angle + spread);
+                }
+            }
+        } else if (this.role === ROLES.SHERIFF || this.role === ROLES.HERO) {
+            let murderer = players.find(p => p.role === ROLES.MURDERER && p.alive);
+            let hunting = false;
+
+            // Sheriff only knows who the murderer is IF they are currently exposed!
+            if (murderer && murderer.isExposed) {
+                hunting = true;
+                // Aim and shoot
+                let dist = Math.hypot(murderer.x - this.x, murderer.y - this.y);
+                let angle = Math.atan2(murderer.y - this.y, murderer.x - this.x);
+                this.angle = angle;
+                
+                if (dist > 150) {
+                    moveX = Math.cos(angle);
+                    moveY = Math.sin(angle);
+                } else if (dist < 100) {
+                    // Back away slowly while aiming
+                    moveX = -Math.cos(angle) * 0.6;
+                    moveY = -Math.sin(angle) * 0.6;
+                }
+                
+                if (this.weaponCooldown <= 0 && dist < 300) {
+                    // Random spread for bots to be fair
+                    let spread = (Math.random() - 0.5) * 0.15;
+                    shoot(this, angle + spread);
+                }
+            }
+
+            if (!hunting) {
+                let w = this.wanderAI(dt, closestCoin);
+                moveX = w.x; moveY = w.y;
+            }
+
+        } else {
+            // Innocent: Wander, collect coins, run from known exposed murderer
+            let murderer = players.find(p => p.role === ROLES.MURDERER && p.alive);
+            if (murderer && murderer.isExposed && Math.hypot(murderer.x - this.x, murderer.y - this.y) < 300) {
+                // Run from known murderer
+                let angle = Math.atan2(this.y - murderer.y, this.x - murderer.x);
+                moveX = Math.cos(angle);
+                moveY = Math.sin(angle);
+                this.angle = angle;
+            } else {
+                let w = this.wanderAI(dt, closestCoin);
+                moveX = w.x; moveY = w.y;
+            }
+        }
+
+        // Apply bot movement & unstuck logic
+        let mag = Math.hypot(moveX, moveY);
+        if (mag > 0) {
+            moveX /= mag;
+            moveY /= mag;
+        }
+
+        if (Math.hypot(this.x - this.lastX, this.y - this.lastY) < 15 * dt && mag > 0) {
+            this.stuckTimer += dt;
+            if (this.stuckTimer > 0.4) {
+                this.overrideAngle = Math.random() * Math.PI * 2;
+                this.overrideTimer = 0.8; // Move in a random direction to get unstuck
+                this.stuckTimer = 0;
+            }
+        } else {
+            this.stuckTimer = 0;
+        }
+
+        if (this.overrideTimer > 0) {
+            this.overrideTimer -= dt;
+            moveX = Math.cos(this.overrideAngle);
+            moveY = Math.sin(this.overrideAngle);
+            this.angle = this.overrideAngle;
+        }
+
+        this.lastX = this.x;
+        this.lastY = this.y;
+
+        this.vx = moveX * (this.role === ROLES.MURDERER ? this.speed * 1.15 : this.speed * 0.9); // Make murderer slightly faster to catch people
+        this.vy = moveY * (this.role === ROLES.MURDERER ? this.speed * 1.15 : this.speed * 0.9);
+    }
+
+    wanderAI(dt, closestCoin) {
+        if (this.stateTimer <= 0) {
+            this.stateTimer = 1 + Math.random() * 2;
+            if (Math.random() > 0.3 && closestCoin) {
+                this.target = closestCoin;
+            } else {
+                // Random point
+                this.target = {
+                    x: this.x + (Math.random() - 0.5) * 300,
+                    y: this.y + (Math.random() - 0.5) * 300
+                };
+            }
+        }
+
+        if (this.target) {
+            let angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+            this.angle = angle;
+            return { x: Math.cos(angle), y: Math.sin(angle) };
+        }
+        return {x:0, y:0};
+    }
+}
+
+class Projectile {
+    constructor(x, y, angle, owner, type = 'bullet') {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        let speed = type === 'bullet' ? 800 : 600; // knives travel slightly slower
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.owner = owner;
+        this.radius = type === 'bullet' ? 4 : 8;
+        this.active = true;
+        this.life = 2.0; // Seconds before disappearing
+        this.rotation = angle;
+    }
+
+    update(dt) {
+        if (!this.active) return;
+        this.life -= dt;
+        if (this.life <= 0) this.active = false;
+
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+
+        // Wall collision
+        for (let wall of walls) {
+            if (this.x > wall.x && this.x < wall.x + wall.w &&
+                this.y > wall.y && this.y < wall.y + wall.h) {
+                this.active = false;
+                return;
+            }
+        }
+
+        // Player hit detection
+        for (let p of players) {
+            if (p !== this.owner && p.alive) {
+                let dist = Math.hypot(p.x - this.x, p.y - this.y);
+                if (dist < p.radius + this.radius + 15) { // More forgiving hitbox
+                    this.active = false;
+                    let method = this.type === 'bullet' ? 'shot' : 'stabbed';
+                    handleKill(p, this.owner, method);
+                    return;
+                }
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+        
+        if (this.type === 'bullet') {
+            ctx.beginPath();
+            ctx.fillStyle = '#f1c40f'; // Bullet color
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Trail
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(241, 196, 15, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
+            ctx.stroke();
+        } else if (this.type === 'knife') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            // Spin the knife while it travels
+            this.rotation += 0.4; 
+            ctx.rotate(this.rotation);
+            
+            // Draw throwing knife
+            ctx.fillStyle = COLORS.KNIFE;
+            ctx.fillRect(-10, -2, 15, 4); // Handle
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(5, -3, 12, 6);   // Blade
+            
+            ctx.restore();
+        }
+    }
+}
+
+class Coin {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 8;
+        this.active = true;
+        this.animOffset = Math.random() * Math.PI * 2;
+    }
+    
+    draw(ctx, time) {
+        if (!this.active) return;
+        let yOffset = Math.sin(time * 3 + this.animOffset) * 5;
+        
+        ctx.beginPath();
+        ctx.fillStyle = COLORS.COIN;
+        ctx.arc(this.x, this.y + yOffset, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#d4ac0d';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Inner detail
+        ctx.beginPath();
+        ctx.fillStyle = '#f9e79f';
+        ctx.arc(this.x - 2, this.y + yOffset - 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+class DroppedGun {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.active = true;
+        this.radius = 15;
+    }
+    draw(ctx, time) {
+        if (!this.active) return;
+        let yOffset = Math.sin(time * 4) * 5;
+        
+        ctx.save();
+        ctx.translate(this.x, this.y + yOffset);
+        ctx.rotate(time);
+        
+        // Glow
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = COLORS[ROLES.SHERIFF];
+        
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-10, -5, 20, 8); // barrel
+        ctx.fillRect(-10, -5, 8, 15);  // handle
+        
+        ctx.restore();
+    }
+}
+
+let players = [];
+let player = null; // Local player
+let walls = [];
+let projectiles = [];
+let coins = [];
+let droppedGun = null;
+
+function generateMap() {
+    walls = [];
+    coins = [];
+    
+    // Outer bounds walls
+    const thick = 50;
+    walls.push({x: -thick, y: -thick, w: mapSize.width + thick*2, h: thick}); // Top
+    walls.push({x: -thick, y: mapSize.height, w: mapSize.width + thick*2, h: thick}); // Bottom
+    walls.push({x: -thick, y: 0, w: thick, h: mapSize.height}); // Left
+    walls.push({x: mapSize.width, y: 0, w: thick, h: mapSize.height}); // Right
+
+    // Interior Obstacles (Rooms, crates)
+    const numObstacles = 25;
+    for (let i = 0; i < numObstacles; i++) {
+        let w = 100 + Math.random() * 200;
+        let h = 100 + Math.random() * 200;
+        let x = 100 + Math.random() * (mapSize.width - w - 200);
+        let y = 100 + Math.random() * (mapSize.height - h - 200);
+        walls.push({x, y, w, h});
+    }
+
+    // Spawn coins
+    spawnCoins(40);
+}
+
+function spawnCoins(amount) {
+    for (let i = 0; i < amount; i++) {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 50) {
+            let cx = Math.random() * (mapSize.width - 40) + 20;
+            let cy = Math.random() * (mapSize.height - 40) + 20;
+            
+            // Check wall collision
+            let inWall = false;
+            for(let w of walls) {
+                if (cx > w.x - 10 && cx < w.x + w.w + 10 &&
+                    cy > w.y - 10 && cy < w.y + w.h + 10) {
+                    inWall = true; break;
+                }
+            }
+            if (!inWall) {
+                coins.push(new Coin(cx, cy));
+                placed = true;
+            }
+            attempts++;
+        }
+    }
+}
+
+function getRandomSpawn() {
+    let placed = false;
+    let spawn = {x:0, y:0};
+    while (!placed) {
+        spawn.x = 50 + Math.random() * (mapSize.width - 100);
+        spawn.y = 50 + Math.random() * (mapSize.height - 100);
+        let inWall = false;
+        for(let w of walls) {
+            if (spawn.x > w.x - 30 && spawn.x < w.x + w.w + 30 &&
+                spawn.y > w.y - 30 && spawn.y < w.y + w.h + 30) {
+                inWall = true; break;
+            }
+        }
+        if (!inWall) placed = true;
+    }
+    return spawn;
+}
+
+function logMessage(msg, colorClass = '') {
+    const el = document.createElement('div');
+    el.className = `log-msg ${colorClass}`;
+    // Simple sanitization
+    el.innerText = msg;
+    messageLog.appendChild(el);
+    setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+    }, 5000);
+}
+
+function startGame() {
+    lobbyUI.style.display = 'none';
+    endScreen.style.display = 'none';
+    hud.style.display = 'block';
+    
+    generateMap();
+    players = [];
+    projectiles = [];
+    droppedGun = null;
+    gameTimer = 180;
+    
+    // Shuffle names for bots
+    let availableNames = [...BOT_NAMES].sort(() => Math.random() - 0.5);
+    
+    // Create Local Player
+    let pSpawn = getRandomSpawn();
+    player = new Player(pSpawn.x, pSpawn.y, true, "You");
+    players.push(player);
+
+    // Create Bots (Total 10 players)
+    for (let i = 0; i < 9; i++) {
+        let bSpawn = getRandomSpawn();
+        players.push(new Player(bSpawn.x, bSpawn.y, false, availableNames.pop() || "Bot"));
+    }
+
+    // Assign Roles
+    // Fisher-Yates shuffle players array to pick roles
+    let shuffledIndices = [...Array(players.length).keys()].sort(() => Math.random() - 0.5);
+    
+    let murdererIndex = shuffledIndices[0];
+    let sheriffIndex = shuffledIndices[1];
+
+    players[murdererIndex].role = ROLES.MURDERER;
+    players[sheriffIndex].role = ROLES.SHERIFF;
+
+    // UI Updates
+    roleDisplay.innerText = player.role;
+    roleDisplay.className = '';
+    if (player.role === ROLES.MURDERER) {
+        roleDisplay.classList.add('color-murderer');
+        throwBtn.style.display = 'flex';
+    } else if (player.role === ROLES.SHERIFF) {
+        roleDisplay.classList.add('color-sheriff');
+        throwBtn.style.display = 'none';
+    } else {
+        roleDisplay.classList.add('color-innocent');
+        throwBtn.style.display = 'none';
+    }
+
+    coinCountDisplay.innerText = "0";
+    
+    // Role Reveal Animation
+    roleReveal.innerText = `YOU ARE ${player.role === ROLES.INNOCENT ? 'AN ' : 'THE '}${player.role}`;
+    roleReveal.style.color = COLORS[player.role] || 'white';
+    roleReveal.style.opacity = '1';
+    
+    setTimeout(() => {
+        roleReveal.style.opacity = '0';
+    }, 3000);
+
+    logMessage("Game started! Find the murderer.", "text-white");
+
+    gameState = 'PLAYING';
+    lastTime = performance.now();
+    if (!animationId) {
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+function endGame(reason, winningRole) {
+    gameState = 'END';
+    hud.style.display = 'none';
+    endScreen.style.display = 'block';
+    
+    endTitle.innerText = `${winningRole} Wins!`;
+    endTitle.style.color = COLORS[winningRole] || 'white';
+    endReason.innerText = reason;
+    endCoins.innerText = player.coins;
+    
+    // Count stats
+    let deadInnocents = players.filter(p => p.role === ROLES.INNOCENT && !p.alive).length;
+    let totalInnocents = players.filter(p => p.role === ROLES.INNOCENT).length;
+    
+    document.getElementById('endStats').innerHTML = `
+        Role: ${player.role}<br>
+        Survived: ${player.alive ? 'Yes' : 'No'}<br>
+        Innocents Killed: ${deadInnocents}/${totalInnocents}
+    `;
+}
+
+function shoot(shooter, angle) {
+    if (shooter.weaponCooldown > 0 || !shooter.alive) return;
+    
+    shooter.exposedTimer = 4.0; // Expose sheriff for 4 seconds when they shoot
+    shooter.isExposed = true; 
+
+    // Create bullet
+    let bulletX = shooter.x + Math.cos(angle) * 30;
+    let bulletY = shooter.y + Math.sin(angle) * 30;
+    projectiles.push(new Projectile(bulletX, bulletY, angle, shooter));
+    
+    shooter.weaponCooldown = 1.0; // 1 second reload
+    if (shooter.isLocal) {
+        logMessage("BANG!", "color-sheriff");
+    }
+}
+
+function throwKnife(attacker, angle) {
+    if (attacker.throwCooldown > 0 || !attacker.alive) return;
+    
+    attacker.exposedTimer = 4.0; // Expose murderer for 4 seconds when they throw
+    attacker.isExposed = true; 
+    attacker.throwCooldown = 2.0; // 2 second cooldown for throws
+    
+    // Spawn knife projectile
+    let projX = attacker.x + Math.cos(angle) * 30;
+    let projY = attacker.y + Math.sin(angle) * 30;
+    projectiles.push(new Projectile(projX, projY, angle, attacker, 'knife'));
+    
+    if (attacker.isLocal) {
+        logMessage("SWOOSH!", "color-murderer");
+    }
+}
+
+function attemptStab(attacker) {
+    if (attacker.weaponCooldown > 0 || !attacker.alive) return;
+    
+    attacker.exposedTimer = 4.0; // Expose murderer for 4 seconds when they stab
+    attacker.isExposed = true; 
+    attacker.weaponCooldown = 0.6; // Faster attack recovery
+    
+    // Check hit arc
+    let hitRadius = 90; // Increased range (was 60)
+    let hitArc = Math.PI * 0.8; // Wider ~144 degree cone (was 90)
+    
+    let hitSomeone = false;
+    for (let p of players) {
+        if (p !== attacker && p.alive) {
+            let dist = Math.hypot(p.x - attacker.x, p.y - attacker.y);
+            if (dist < hitRadius) {
+                // Angle check
+                let angleToTarget = Math.atan2(p.y - attacker.y, p.x - attacker.x);
+                let angleDiff = Math.abs(attacker.angle - angleToTarget);
+                // Normalize angleDiff
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                angleDiff = Math.abs(angleDiff);
+
+                if (angleDiff < hitArc / 2) {
+                    handleKill(p, attacker, 'stabbed');
+                    hitSomeone = true;
+                }
+            }
+        }
+    }
+    if (attacker.isLocal && !hitSomeone) {
+        // Just visual feedback
+    }
+}
+
+function handleKill(victim, attacker, method) {
+    if (!victim.alive) return;
+    victim.alive = false;
+    victim.vx = 0;
+    victim.vy = 0;
+
+    let vName = victim.name;
+    let aName = attacker.name;
+
+    if (method === 'stabbed') {
+        logMessage(`${vName} was eliminated.`, "color-murderer");
+    } else if (method === 'shot') {
+        // Determine if shot was valid
+        if (victim.role === ROLES.MURDERER) {
+            logMessage(`The Murderer (${vName}) was shot!`, "color-sheriff");
+            endGame("Sheriff eliminated the Murderer.", ROLES.SHERIFF);
+        } else {
+            // Sheriff shot an innocent! Sheriff dies too (classic MM2 rule)
+            logMessage(`${aName} shot an Innocent! Sheriff penalty.`, "color-murderer");
+            attacker.alive = false; // Kill sheriff
+            dropGun(attacker.x, attacker.y);
+        }
+    }
+
+    // Drop gun if Sheriff/Hero dies (not by shooting innocent penalty, handled above, but if stabbed)
+    if (method === 'stabbed' && (victim.role === ROLES.SHERIFF || victim.role === ROLES.HERO)) {
+        dropGun(victim.x, victim.y);
+        logMessage("The gun was dropped!", "color-sheriff");
+    }
+
+    checkWinConditions();
+}
+
+function dropGun(x, y) {
+    droppedGun = new DroppedGun(x, y);
+}
+
+function checkWinConditions() {
+    if (gameState !== 'PLAYING') return;
+
+    let murderer = players.find(p => p.role === ROLES.MURDERER);
+    let innocentsAlive = players.filter(p => (p.role === ROLES.INNOCENT || p.role === ROLES.SHERIFF || p.role === ROLES.HERO) && p.alive).length;
+
+    if (!murderer.alive) {
+        // Handled in handleKill, but catch-all
+        endGame("Murderer was stopped.", ROLES.SHERIFF);
+    } else if (innocentsAlive === 0) {
+        endGame("Murderer eliminated everyone.", ROLES.MURDERER);
+    }
+}
+
+function collectItem(p) {
+    if (!p.alive) return;
+
+    // Coins
+    for (let c of coins) {
+        if (c.active) {
+            let dist = Math.hypot(c.x - p.x, c.y - p.y);
+            if (dist < p.radius + c.radius) {
+                c.active = false;
+                p.coins++;
+                if (p.isLocal) {
+                    coinCountDisplay.innerText = p.coins;
+                }
+            }
+        }
+    }
+
+    // Dropped Gun
+    if (droppedGun && droppedGun.active && p.role === ROLES.INNOCENT) {
+        let dist = Math.hypot(droppedGun.x - p.x, droppedGun.y - p.y);
+        if (dist < p.radius + droppedGun.radius) {
+            droppedGun.active = false;
+            p.role = ROLES.HERO;
+            if (p.isLocal) {
+                roleDisplay.innerText = "Hero";
+                roleDisplay.className = 'hud-item color-sheriff';
+                logMessage("You picked up the gun!", "color-sheriff");
+            } else {
+                logMessage("Someone picked up the gun!", "text-yellow-400");
+            }
+        }
+    }
+}
+
+window.addEventListener('keydown', e => {
+    let k = e.key.toLowerCase();
+    if (keys.hasOwnProperty(k)) keys[k] = true;
+    if (e.key === 'ArrowUp') keys.w = true;
+    if (e.key === 'ArrowLeft') keys.a = true;
+    if (e.key === 'ArrowDown') keys.s = true;
+    if (e.key === 'ArrowRight') keys.d = true;
+    if (e.key === ' ' || e.code === 'Space') {
+        keys.space = true;
+        if (gameState === 'PLAYING' && player && player.alive && player.role === ROLES.MURDERER) {
+            throwKnife(player, player.angle);
+        }
+    }
+    
+    // Press '1' to quickly hide your weapon!
+    if (e.key === '1') {
+        if (gameState === 'PLAYING' && player && player.alive) {
+            player.exposedTimer = 0;
+            player.isExposed = false;
+            if (player.role !== ROLES.INNOCENT) {
+                logMessage("Weapon stashed.", "text-gray-400");
+            }
+        }
+    }
+});
+
+window.addEventListener('keyup', e => {
+    let k = e.key.toLowerCase();
+    if (keys.hasOwnProperty(k)) keys[k] = false;
+    if (e.key === 'ArrowUp') keys.w = false;
+    if (e.key === 'ArrowLeft') keys.a = false;
+    if (e.key === 'ArrowDown') keys.s = false;
+    if (e.key === 'ArrowRight') keys.d = false;
+    if (e.key === ' ' || e.code === 'Space') keys.space = false;
+});
+
+canvas.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
+canvas.addEventListener('mousedown', e => {
+    mouse.isDown = true;
+    if (gameState === 'PLAYING' && player.alive) {
+        triggerPlayerAction();
+    }
+});
+
+canvas.addEventListener('mouseup', e => {
+    mouse.isDown = false;
+});
+
+// Mobile Joystick Logic
+const joyZone = document.getElementById('joystickZone');
+const joyKnob = document.getElementById('joystickKnob');
+const actBtn = document.getElementById('actionBtn');
+
+function handleTouchStart(e, isJoystick) {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (isJoystick) {
+        joystick.active = true;
+        joystick.id = touch.identifier;
+        let rect = joyZone.getBoundingClientRect();
+        joystick.startX = rect.left + rect.width / 2;
+        joystick.startY = rect.top + rect.height / 2;
+        updateJoystick(touch.clientX, touch.clientY);
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (!joystick.active) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystick.id) {
+            updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+            break;
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystick.id) {
+            joystick.active = false;
+            joystick.id = null;
+            joystick.dirX = 0;
+            joystick.dirY = 0;
+            joyKnob.style.transform = `translate(-50%, -50%)`;
+            break;
+        }
+    }
+}
+
+function updateJoystick(x, y) {
+    let dx = x - joystick.startX;
+    let dy = y - joystick.startY;
+    let dist = Math.hypot(dx, dy);
+    let maxDist = 40; // Max knob travel
+
+    if (dist > maxDist) {
+        dx = (dx / dist) * maxDist;
+        dy = (dy / dist) * maxDist;
+    }
+
+    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    
+    // Normalize direction
+    joystick.dirX = dx / maxDist;
+    joystick.dirY = dy / maxDist;
+}
+
+joyZone.addEventListener('touchstart', e => handleTouchStart(e, true), {passive: false});
+document.addEventListener('touchmove', handleTouchMove, {passive: false});
+document.addEventListener('touchend', handleTouchEnd, {passive: false});
+document.addEventListener('touchcancel', handleTouchEnd, {passive: false});
+
+actBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (gameState === 'PLAYING' && player.alive) {
+        triggerPlayerAction();
+    }
+}, {passive: false});
+
+throwBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (gameState === 'PLAYING' && player && player.alive && player.role === ROLES.MURDERER) {
+        throwKnife(player, player.angle);
+    }
+}, {passive: false});
+
+function triggerPlayerAction() {
+    if (player.role === ROLES.MURDERER) {
+        attemptStab(player);
+    } else if (player.role === ROLES.SHERIFF || player.role === ROLES.HERO) {
+        shoot(player, player.angle);
+    }
+}
+
+function update(dt) {
+    if (gameState !== 'PLAYING') return;
+
+    // Timer
+    gameTimer -= dt;
+    if (gameTimer <= 0) {
+        endGame("Time ran out! Innocents survived.", ROLES.INNOCENT);
+        return;
+    }
+    
+    let mins = Math.floor(gameTimer / 60);
+    let secs = Math.floor(gameTimer % 60);
+    timeLeftDisplay.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    // Alive count
+    let alive = players.filter(p => p.alive).length;
+    aliveCountDisplay.innerText = alive;
+
+    // Camera Tracking Update
+    if (player) {
+        let targetCamX = player.x - camera.width / 2;
+        let targetCamY = player.y - camera.height / 2;
+        
+        // Clamp camera to map edges
+        if (targetCamX < 0) targetCamX = 0;
+        if (targetCamY < 0) targetCamY = 0;
+        if (targetCamX > mapSize.width - camera.width) targetCamX = mapSize.width - camera.width;
+        if (targetCamY > mapSize.height - camera.height) targetCamY = mapSize.height - camera.height;
+
+        camera.x = targetCamX;
+        camera.y = targetCamY;
+    }
+
+    // Player Local Input update
+    if (player.alive) {
+        let dirX = 0, dirY = 0;
+
+        // Keyboard
+        if (keys.a) dirX -= 1;
+        if (keys.d) dirX += 1;
+        if (keys.w) dirY -= 1;
+        if (keys.s) dirY += 1;
+
+        // Mobile Joystick overrides keyboard if active
+        if (joystick.active) {
+            dirX = joystick.dirX;
+            dirY = joystick.dirY;
+        }
+
+        // Normalize
+        let mag = Math.hypot(dirX, dirY);
+        if (mag > 0) {
+            dirX /= mag;
+            dirY /= mag;
+        }
+
+        player.vx = dirX * player.speed;
+        player.vy = dirY * player.speed;
+
+        // Aiming
+        if (!joystick.active) {
+            // Mouse aiming using world coordinates (Fixes aiming at edges of map)
+            let mouseWorldX = mouse.x + camera.x;
+            let mouseWorldY = mouse.y + camera.y;
+            player.angle = Math.atan2(mouseWorldY - player.y, mouseWorldX - player.x);
+        } else {
+            // If moving with joystick, face movement direction. If standing still, keep last angle.
+            if (mag > 0.1) {
+                player.angle = Math.atan2(dirY, dirX);
+            }
+        }
+    }
+
+    // Update all entities
+    players.forEach(p => {
+        if (p.weaponCooldown > 0) p.weaponCooldown -= dt;
+        if (p.throwCooldown > 0) p.throwCooldown -= dt;
+        p.updateBot(dt);
+        p.update(dt);
+        collectItem(p);
+    });
+
+    projectiles.forEach(p => p.update(dt));
+    projectiles = projectiles.filter(p => p.active);
+    
+    // Periodically spawn coins if below limit
+    if (Math.random() < 0.01 && coins.filter(c=>c.active).length < 20) {
+        spawnCoins(1);
+    }
+}
+
+function render() {
+    // Clear canvas
+    ctx.fillStyle = '#1a1a2e'; // Background space
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState === 'LOBBY') return; // Draw nothing, HTML UI handles it
+
+    // Camera setup
+    ctx.save();
+    
+    // Apply pre-calculated camera position
+    ctx.translate(-camera.x, -camera.y);
+
+    // Draw Floor Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    const gridSize = 100;
+    for(let x = 0; x <= mapSize.width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, mapSize.height); ctx.stroke();
+    }
+    for(let y = 0; y <= mapSize.height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(mapSize.width, y); ctx.stroke();
+    }
+
+    // Draw Walls
+    ctx.fillStyle = COLORS.WALL;
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 3;
+    walls.forEach(w => {
+        ctx.fillRect(w.x, w.y, w.w, w.h);
+        ctx.strokeRect(w.x, w.y, w.w, w.h);
+    });
+
+    let now = performance.now() / 1000;
+
+    // Draw Coins
+    coins.forEach(c => c.draw(ctx, now));
+
+    // Draw Dropped Gun
+    if (droppedGun) droppedGun.draw(ctx, now);
+
+    // Draw Dead Players (bodies)
+    players.filter(p => !p.alive).forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#666';
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // Draw Active Entities
+    projectiles.forEach(p => p.draw(ctx));
+    
+    // Draw alive players (bots first, then local player on top)
+    players.filter(p => p.alive && !p.isLocal).forEach(p => p.draw(ctx));
+    if (player.alive) player.draw(ctx);
+
+    ctx.restore();
+}
+
+function gameLoop(timestamp) {
+    let dt = (timestamp - lastTime) / 1000;
+    if (dt > 0.1) dt = 0.1; // Cap delta time to prevent huge physics jumps on lag
+    lastTime = timestamp;
+
+    update(dt);
+    render();
+
+    animationId = requestAnimationFrame(gameLoop);
+}
+
+// Event Listeners for UI
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', () => {
+    endScreen.style.display = 'none';
+    lobbyUI.style.display = 'block';
+    gameState = 'LOBBY';
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear last frame
+});
+
+// Initial Setup
+// Draw initial background before game starts
+ctx.fillStyle = '#1a1a2e';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
