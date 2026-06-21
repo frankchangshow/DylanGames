@@ -26,14 +26,14 @@ export async function generateMetadata({ params }: PlayPageProps) {
 
   if (!isKid(kid)) {
     return {
-      title: "Game | Chang Brother Games"
+      title: "Game | Chang Family Games"
     };
   }
 
   const game = await getGameForKid(kid, gameId);
 
   return {
-    title: game ? `${game.title} | Chang Brother Games` : "Game | Chang Brother Games"
+    title: game ? `${game.title} | Chang Family Games` : "Game | Chang Family Games"
   };
 }
 

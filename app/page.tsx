@@ -5,7 +5,7 @@ export default function Home() {
     <main className="landingPage">
       <section className="landingHero" aria-labelledby="site-title">
         <p className="eyebrow">Pick a player</p>
-        <h1 id="site-title">Chang Brother Games</h1>
+        <h1 id="site-title">Chang Family Games</h1>
         <div className="kidButtons" aria-label="Game launchers">
           <Link className="kidButton dylanButton" href="https://dylan-games.com/">
             <span>Dylan Games</span>

@@ -1,4 +1,4 @@
-# Chang Brother Games
+# Chang Family Games
 
 A simple Next.js game launcher for two kids.
 
