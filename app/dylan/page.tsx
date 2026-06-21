@@ -38,7 +38,7 @@ export default async function DylanPage() {
           <h1>Dylan Games</h1>
           <p>Pick a game and start playing!</p>
         </div>
-        <Link className="homeLink dylanHeaderHome" href="/">
+        <Link className="homeLink dylanHeaderHome" href="https://chang-games.vercel.app/">
           Home
         </Link>
       </header>

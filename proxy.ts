@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const domainRedirects: Record<string, string> = {
+const domainHomePages: Record<string, string> = {
   "braydengames.com": "/brayden",
   "www.braydengames.com": "/brayden",
   "dylan-games.com": "/dylan",
@@ -9,17 +9,27 @@ const domainRedirects: Record<string, string> = {
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0].toLowerCase();
-  const redirectPath = host ? domainRedirects[host] : null;
+  const homePage = host ? domainHomePages[host] : null;
 
-  if (!redirectPath || request.nextUrl.pathname !== "/") {
+  if (!homePage) {
     return NextResponse.next();
   }
 
   const url = request.nextUrl.clone();
-  url.pathname = redirectPath;
-  return NextResponse.redirect(url);
+
+  if (request.nextUrl.pathname === "/") {
+    url.pathname = homePage;
+    return NextResponse.rewrite(url);
+  }
+
+  if (request.nextUrl.pathname === homePage) {
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: "/"
+  matcher: ["/", "/brayden", "/dylan"]
 };

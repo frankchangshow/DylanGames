@@ -42,7 +42,7 @@ export default async function BraydenPage() {
   return (
     <main className="braydenDiscoveryPage">
       <header className="braydenDiscoveryHeader">
-        <Link className="braydenHomeLink" href="/">
+        <Link className="braydenHomeLink" href="https://chang-games.vercel.app/">
           Home
         </Link>
         <div>
