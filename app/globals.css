@@ -646,16 +646,17 @@ a {
 }
 
 .dylanDiscoveryPage .discoveryGrid {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  gap: 18px;
 }
 
 .dylanGameCard {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0;
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: 10px;
   aspect-ratio: auto;
-  padding: 10px;
+  padding: 8px;
   background:
     radial-gradient(circle at top left, rgba(255, 216, 77, 0.18), transparent 36%),
     #ffffff;
@@ -672,7 +673,7 @@ a {
 .dylanCardMedia {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 10;
   border: 3px solid #172033;
   border-radius: 13px;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(40, 199, 111, 0.08));
@@ -702,17 +703,16 @@ a {
 .dylanCardBody {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 8px;
   align-content: start;
-  min-height: 158px;
-  padding: 14px 4px 0;
+  min-height: 0;
+  padding: 0 4px 2px;
   background: #ffffff;
 }
 
 .dylanCardBody h3 {
   display: -webkit-box;
   overflow: hidden;
-  min-height: 2.3em;
   margin: 0;
   color: #172033;
   font-size: 1.08rem;
@@ -724,7 +724,6 @@ a {
 .dylanCardBody p {
   display: -webkit-box;
   overflow: hidden;
-  min-height: 2.6em;
   margin: 0;
   color: #24304a;
   font-size: 0.9rem;
@@ -735,9 +734,10 @@ a {
 }
 
 .dylanPlayButton {
+  grid-area: auto;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
+  min-height: 40px;
   border-radius: 13px;
   background: #28c76f;
   color: #ffffff;
@@ -1152,6 +1152,7 @@ a {
   }
 
   .dylanGameCard {
+    gap: 8px;
     padding: 7px;
     border-radius: 14px;
   }
@@ -1170,25 +1171,26 @@ a {
   }
 
   .dylanCardBody {
-    min-height: 138px;
-    gap: 7px;
-    padding: 10px 2px 0;
+    min-height: 0;
+    gap: 6px;
+    padding: 0 2px 1px;
   }
 
   .dylanCardBody h3 {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
   }
 
   .dylanCardBody p {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
   }
 
   .dylanPlayButton {
+    grid-area: auto;
     width: 100%;
     min-width: 0;
-    min-height: 36px;
+    min-height: 34px;
     border-radius: 10px;
-    font-size: 0.86rem;
+    font-size: 0.82rem;
   }
 
   .launcherHero {
