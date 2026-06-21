@@ -47,21 +47,24 @@ export default async function DylanPage() {
             {games.map((game) => {
               const href = game.type === "external" ? game.playUrl : `/play/dylan/${game.id}`;
 
-              return (
-                <Link
-                  className="discoveryCard"
-                  href={href}
-                  key={game.id}
-                  aria-label={`Play ${game.title}`}
-                  target={game.type === "external" ? "_blank" : undefined}
-                  rel={game.type === "external" ? "noreferrer" : undefined}
-                >
-                  <GameThumbnail title={game.title} thumbnailUrl={game.thumbnailUrl} />
-                  <div className="discoveryCardBody">
-                    <h3>{game.title}</h3>
-                    <p>{game.description}</p>
-                    <span className="tilePlayButton">Play</span>
-                  </div>
+                return (
+                  <Link
+                    className="discoveryCard dylanGameCard"
+                    href={href}
+                    key={game.id}
+                    aria-label={`Play ${game.title}`}
+                    target={game.type === "external" ? "_blank" : undefined}
+                    rel={game.type === "external" ? "noreferrer" : undefined}
+                  >
+                    <div className="dylanCardMedia">
+                      <GameThumbnail title={game.title} thumbnailUrl={game.thumbnailUrl} />
+                      <span className="dylanTypeBadge">{game.type === "react" ? "React" : game.type === "html" ? "HTML" : game.type}</span>
+                    </div>
+                    <div className="dylanCardBody">
+                      <h3>{game.title}</h3>
+                      <p>{game.description}</p>
+                      <span className="tilePlayButton dylanPlayButton">Play</span>
+                    </div>
                 </Link>
               );
             })}
