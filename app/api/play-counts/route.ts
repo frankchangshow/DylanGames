@@ -1,19 +1,39 @@
 import { NextResponse } from "next/server";
-import { fetchPlayCounts, incrementPlayCount, isSupabasePlayCountsConfigured } from "@/src/data/supabasePlayCounts";
+import {
+  fetchPlayCounts,
+  getSupabasePlayCountStatus,
+  incrementPlayCount,
+  isSupabasePlayCountsConfigured
+} from "@/src/data/supabasePlayCounts";
 import { getGameForKid, isKid } from "@/src/data/games";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const debug = new URL(request.url).searchParams.get("debug") === "1";
+  const status = getSupabasePlayCountStatus();
+
   if (!isSupabasePlayCountsConfigured()) {
-    return NextResponse.json({ counts: {}, configured: false });
+    return NextResponse.json({ counts: {}, configured: false, ...(debug ? { status } : {}) });
   }
 
   try {
     const counts = await fetchPlayCounts();
-    return NextResponse.json({ counts, configured: true });
-  } catch {
-    return NextResponse.json({ counts: {}, configured: true }, { status: 502 });
+    return NextResponse.json({ counts, configured: true, ...(debug ? { status } : {}) });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        counts: {},
+        configured: true,
+        ...(debug
+          ? {
+              status,
+              error: error instanceof Error ? error.message : "Unknown Supabase error"
+            }
+          : {})
+      },
+      { status: 502 }
+    );
   }
 }
 

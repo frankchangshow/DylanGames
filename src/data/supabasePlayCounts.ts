@@ -18,6 +18,24 @@ function getSupabaseConfig() {
   };
 }
 
+export function getSupabasePlayCountStatus() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let urlHost: string | null = null;
+
+  try {
+    urlHost = url ? new URL(url).host : null;
+  } catch {
+    urlHost = "invalid-url";
+  }
+
+  return {
+    hasUrl: Boolean(url),
+    hasServiceRoleKey: Boolean(serviceKey),
+    urlHost
+  };
+}
+
 function getHeaders(serviceKey: string) {
   return {
     apikey: serviceKey,
@@ -43,7 +61,8 @@ export async function fetchPlayCounts() {
   });
 
   if (!response.ok) {
-    throw new Error(`Could not load play counts: ${response.status}`);
+    const message = await response.text();
+    throw new Error(`Could not load play counts: ${response.status} ${message}`);
   }
 
   const rows = (await response.json()) as SupabasePlayCountRow[];
@@ -72,7 +91,8 @@ export async function incrementPlayCount(kid: string, gameId: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Could not increment play count: ${response.status}`);
+    const message = await response.text();
+    throw new Error(`Could not increment play count: ${response.status} ${message}`);
   }
 
   return Number(await response.json()) || 0;
