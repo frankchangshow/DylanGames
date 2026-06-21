@@ -1,6 +1,6 @@
 import type { Kid } from "@/src/data/types";
 
-export const playCountsChangedEvent = "chang-brother-games:play-counts-changed";
+export const playCountsChangedEvent = "chang-family-games:play-counts-changed";
 
 let countsSnapshot = "{}";
 let hasLoadedCounts = false;
