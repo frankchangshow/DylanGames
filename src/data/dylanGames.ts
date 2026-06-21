@@ -8,7 +8,7 @@ const reactGames: Game[] = [
     description: "A React fighting adventure.",
     type: "react",
     playUrl: "",
-    thumbnailUrl: null
+    thumbnailUrl: "/games/dylan/blox_figther_2d/thumbnail.png"
   },
   {
     id: "may_plane_update",
@@ -16,7 +16,7 @@ const reactGames: Game[] = [
     description: "A React flying game.",
     type: "react",
     playUrl: "",
-    thumbnailUrl: null
+    thumbnailUrl: "/games/dylan/may_plane_update/thumbnail.png"
   }
 ];
 
