@@ -7,10 +7,10 @@ export default function Home() {
         <p className="eyebrow">Pick a player</p>
         <h1 id="site-title">Chang Brother Games</h1>
         <div className="kidButtons" aria-label="Game launchers">
-          <Link className="kidButton dylanButton" href="/dylan">
+          <Link className="kidButton dylanButton" href="https://dylan-games.com/">
             <span>Dylan Games</span>
           </Link>
-          <Link className="kidButton braydenButton" href="/brayden">
+          <Link className="kidButton braydenButton" href="https://braydengames.com/">
             <span>Brayden Games</span>
           </Link>
         </div>
