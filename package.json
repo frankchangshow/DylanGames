@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "sync:pokemon-monopoly": "node scripts/sync-pokemon-monopoly.mjs",
     "lint": "eslint ."
   },
   "dependencies": {

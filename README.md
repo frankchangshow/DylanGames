@@ -1,6 +1,6 @@
 # Chang Family Games
 
-A simple Next.js game launcher for two kids.
+A simple Next.js game launcher for the Chang family.
 
 ## Pages
 
@@ -95,6 +95,40 @@ public/games/daddy/arcade-fighter/
 ```
 
 The Daddy launcher appears at `/daddy`.
+
+## Sync Pokemon Monopoly
+
+Pokemon Monopoly is maintained in its own repo:
+
+```text
+https://github.com/frankchangshow/pokemon_monopoly
+```
+
+To update the copy used by this website, run:
+
+```bash
+npm run sync:pokemon-monopoly
+```
+
+By default, the script syncs from this local folder when it exists:
+
+```text
+/Users/frank.chang/Documents/Antigravity_Project/Pokemon_Monopoly
+```
+
+If that folder does not exist, it clones the latest GitHub copy instead. The script copies the playable web files into:
+
+```text
+public/games/daddy/pokemon-monopoly/
+```
+
+It also recreates `game.json` and `thumbnail.png`, and skips development-only folders like `PokemonBattleEngine`, `logs`, and `output`.
+
+After syncing, commit and push this website repo so Vercel redeploys.
+
+There is also a manual GitHub Action in this repo named `Sync Pokemon Monopoly`. Run it from the GitHub Actions tab to pull the latest `pokemon_monopoly` repo into this launcher and auto-commit the copied game files.
+
+For fully automatic sync, the `pokemon_monopoly` repo can send a `repository_dispatch` event named `sync-pokemon-monopoly` to this launcher repo after each push.
 
 ## Add a Scratch or external game
 

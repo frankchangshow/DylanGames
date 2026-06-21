@@ -1,0 +1,30 @@
+name: Sync Pokemon Monopoly
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [sync-pokemon-monopoly]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out launcher
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync game files
+        run: node scripts/sync-pokemon-monopoly.mjs
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Sync Pokemon Monopoly game
+          file_pattern: public/games/daddy/pokemon-monopoly

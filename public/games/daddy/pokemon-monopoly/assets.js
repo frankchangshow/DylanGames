@@ -652,7 +652,112 @@ export const PokemonDB = {
   Glimmora: { name: "Glimmora", type: "Rock", hp: 140, moves: [{ name: "Power Gem", type: "Rock", power: 38, text: "CRYSTAL LASER!" }, { name: "Sludge Wave", type: "Poison", power: 34, text: "TOXIC BLOOM!" }], speed: 86 },
   Farigiraf: { name: "Farigiraf", type: "Psychic", hp: 150, moves: [{ name: "Twin Beam", type: "Psychic", power: 36, text: "DOUBLE MIND RAY!" }, { name: "Stomp", type: "Normal", power: 28, text: "Hoof stomp!" }], speed: 60 },
   Dudunsparce: { name: "Dudunsparce", type: "Normal", hp: 160, moves: [{ name: "Hyper Drill", type: "Normal", power: 40, text: "GOOFY DRILL BURST!" }, { name: "Glare", type: "Normal", power: 24, text: "Awkward stare!" }], speed: 55 },
-  Maushold: { name: "Maushold", type: "Normal", hp: 120, moves: [{ name: "Population Bomb", type: "Normal", power: 42, text: "FAMILY COMBO!" }, { name: "Play Rough", type: "Fairy", power: 30, text: "Tiny chaos!" }], speed: 111 }
+  Maushold: { name: "Maushold", type: "Normal", hp: 120, moves: [{ name: "Population Bomb", type: "Normal", power: 42, text: "FAMILY COMBO!" }, { name: "Play Rough", type: "Fairy", power: 30, text: "Tiny chaos!" }], speed: 111 },
+  Oinkologne: { name: "Oinkologne", type: "Normal", hp: 135, moves: [{ name: "Tackle", type: "Normal", power: 15, text: "Chubby slam!" }, { name: "Body Slam", type: "Normal", power: 32, text: "Heavy body drop!" }, { name: "Double Kick", type: "Fighting", power: 25, text: "2-SHOT!" }], speed: 65 },
+  Spidops: { name: "Spidops", type: "Bug", hp: 120, moves: [{ name: "Bug Bite", type: "Bug", power: 18, text: "Sharp nibble!" }, { name: "Silk Trap", type: "Bug", power: 34, text: "WEB ENTRAPMENT!" }, { name: "Slash", type: "Normal", power: 25, text: "Blade claws!" }], speed: 35 },
+  Dachsbun: { name: "Dachsbun", type: "Fairy", hp: 130, moves: [{ name: "Play Rough", type: "Fairy", power: 24, text: "Dachshund tackle!" }, { name: "Dazzling Gleam", type: "Fairy", power: 35, text: "SUPER GLOW!" }, { name: "Crunch", type: "Dark", power: 28, text: "Baked crunch bite!" }], speed: 95 },
+  Dolliv: { name: "Dolliv", type: "Grass", hp: 105, moves: [{ name: "Absorb", type: "Grass", power: 15, text: "Suck HP!" }, { name: "Razor Leaf", type: "Grass", power: 30, text: "SHARP LEAF SLICE!" }, { name: "Tackle", type: "Normal", power: 18, text: "Cute dash!" }], speed: 50 },
+  Arboliva: { name: "Arboliva", type: "Grass", hp: 140, moves: [{ name: "Mega Drain", type: "Grass", power: 25, text: "Large HP siphon!" }, { name: "Seed Bomb", type: "Grass", power: 35, text: "EXPLOSIVE SEED BOMB!" }, { name: "Petal Blizzard", type: "Grass", power: 45, text: "BLIZZARD OF PETALS!" }], speed: 70 },
+  Naclstack: { name: "Naclstack", type: "Rock", hp: 135, moves: [{ name: "Rock Throw", type: "Rock", power: 20, text: "Salty block toss!" }, { name: "Salt Cure", type: "Rock", power: 32, text: "CORROSIVE SALT SHIELD!" }, { name: "Rock Slide", type: "Rock", power: 28, text: "Avalanche of salt!" }], speed: 35 },
+  Garganacl: { name: "Garganacl", type: "Rock", hp: 170, moves: [{ name: "Salt Cure", type: "Rock", power: 38, text: "CORROSIVE SALT SHIELD!" }, { name: "Stone Edge", type: "Rock", power: 45, text: "SHARP ROCK SPIRES!" }, { name: "Hammer Arm", type: "Fighting", power: 40, text: "HEAVY FIST HAMMER!" }], speed: 55 },
+  Toedscruel: { name: "Toedscruel", type: "Ground", hp: 145, moves: [{ name: "Mud-Slap", type: "Ground", power: 18, text: "Sling muddy water!" }, { name: "Earth Power", type: "Ground", power: 36, text: "TERRA BURST!" }, { name: "Giga Drain", type: "Grass", power: 32, text: "Spore siphon!" }], speed: 85 },
+  Scovillain: { name: "Scovillain", type: "Grass", hp: 130, moves: [{ name: "Bullet Seed", type: "Grass", power: 20, text: "Spit seeds!" }, { name: "Fire Fang", type: "Fire", power: 32, text: "SPICY BITE!" }, { name: "Overheat", type: "Fire", power: 45, text: "APOCALYPSE BURN!" }], speed: 75 },
+  Kilowattrel: { name: "Kilowattrel", type: "Electric", hp: 135, moves: [{ name: "Spark", type: "Electric", power: 18, text: "Fly spark!" }, { name: "Hurricane", type: "Flying", power: 35, text: "WIND BLAST!" }, { name: "Electro Ball", type: "Electric", power: 42, text: "BALL OF ELECTRICITY!" }], speed: 105 },
+  Tinkatuff: { name: "Tinkatuff", type: "Fairy", hp: 110, moves: [{ name: "Play Rough", type: "Fairy", power: 15, text: "Bouncy headbutt!" }, { name: "Metal Claw", type: "Steel", power: 28, text: "Medium hammer swing!" }, { name: "Draining Kiss", type: "Fairy", power: 22, text: "Suck HP!" }], speed: 50 },
+  Armarouge: { name: "Armarouge", type: "Fire", hp: 125, moves: [{ name: "Mystical Fire", type: "Fire", power: 18, text: "Spit magical flames!" }, { name: "Armor Cannon", type: "Fire", power: 42, text: "BOOM! FIRE BURST!" }, { name: "Psychic", type: "Psychic", power: 35, text: "Telekinetic blast!" }], speed: 75 },
+  Tadbulb: { name: "Tadbulb", type: "Electric", hp: 90, moves: [{ name: "Thunder Shock", type: "Electric", power: 12, text: "Tiny tadpole spark!" }, { name: "Spark", type: "Electric", power: 22, text: "Belly charge!" }], speed: 45 },
+  Rookidee: { name: "Rookidee", type: "Flying", hp: 85, moves: [{ name: "Peck", type: "Flying", power: 10, text: "Sharp peck strike!" }, { name: "Pluck", type: "Flying", power: 20, text: "Pluck attack!" }], speed: 60 },
+  Corvisquire: { name: "Corvisquire", type: "Flying", hp: 110, moves: [{ name: "Pluck", type: "Flying", power: 18, text: "Pluck attack!" }, { name: "Drill Peck", type: "Flying", power: 30, text: "Spinning peck!" }], speed: 75 },
+  Finizen: { name: "Finizen", type: "Water", hp: 95, moves: [{ name: "Water Gun", type: "Water", power: 12, text: "Cute dolphin squirt!" }, { name: "Aqua Jet", type: "Water", power: 24, text: "Quick splash dash!" }], speed: 70 },
+  Frigibax: { name: "Frigibax", type: "Dragon", hp: 100, moves: [{ name: "Bite", type: "Dark", power: 12, text: "Teeth clamp!" }, { name: "Icy Wind", type: "Ice", power: 22, text: "Chilly dragon breath!" }], speed: 40 },
+  Arctibax: { name: "Arctibax", type: "Dragon", hp: 130, moves: [{ name: "Dragon Claw", type: "Dragon", power: 22, text: "Sharp claw slash!" }, { name: "Ice Fang", type: "Ice", power: 32, text: "Frozen bite!" }], speed: 60 },
+  Gimmighoul: { name: "Gimmighoul", type: "Ghost", hp: 85, moves: [{ name: "Astonish", type: "Ghost", power: 10, text: "Surprise boo!" }, { name: "Tackle", type: "Normal", power: 15, text: "Chest slam!" }], speed: 15 },
+  Pawniard: { name: "Pawniard", type: "Dark", hp: 90, moves: [{ name: "Scratch", type: "Normal", power: 12, text: "Metal blade scratch!" }, { name: "Metal Claw", type: "Steel", power: 24, text: "Iron claw slash!" }], speed: 60 },
+  Bisharp: { name: "Bisharp", type: "Dark", hp: 125, moves: [{ name: "Slash", type: "Normal", power: 20, text: "Sharp blade slash!" }, { name: "Night Slash", type: "Dark", power: 32, text: "Dark blade cleave!" }, { name: "Iron Head", type: "Steel", power: 30, text: "Steel crown bash!" }], speed: 70 },
+  Mankey: { name: "Mankey", type: "Fighting", hp: 90, moves: [{ name: "Scratch", type: "Normal", power: 12, text: "Furious scratch!" }, { name: "Karate Chop", type: "Fighting", power: 22, text: "Fist chop!" }], speed: 70 },
+  Primeape: { name: "Primeape", type: "Fighting", hp: 125, moves: [{ name: "Karate Chop", type: "Fighting", power: 22, text: "Fist chop!" }, { name: "Rage Fist", type: "Ghost", power: 35, text: "RAGE PUNCH!" }, { name: "Cross Chop", type: "Fighting", power: 38, text: "Furious cross chop!" }], speed: 85 },
+  "Paldean Wooper": { name: "Paldean Wooper", type: "Poison", hp: 90, moves: [{ name: "Poison Sting", type: "Poison", power: 12, text: "Toxic sting!" }, { name: "Mud-Shot", type: "Ground", power: 22, text: "Sling mud!" }], speed: 25 },
+  Glimmet: { name: "Glimmet", type: "Rock", hp: 90, moves: [{ name: "Rock Throw", type: "Rock", power: 12, text: "Crystal toss!" }, { name: "Acid Spray", type: "Poison", power: 22, text: "Toxic spray!" }], speed: 35 },
+  Girafarig: { name: "Girafarig", type: "Psychic", hp: 115, moves: [{ name: "Stomp", type: "Normal", power: 18, text: "Double hoof stomp!" }, { name: "Psybeam", type: "Psychic", power: 28, text: "Glowing mind beam!" }], speed: 85 },
+  Dunsparce: { name: "Dunsparce", type: "Normal", hp: 120, moves: [{ name: "Rollout", type: "Rock", power: 16, text: "Roll and crash!" }, { name: "Drill Run", type: "Ground", power: 26, text: "Spinning drill run!" }], speed: 45 }
+};
+
+export const PokemonBattleStats = {
+  Sprigatito: { types: ["Grass"], stats: { hp: 40, attack: 61, defense: 54, specialAttack: 45, specialDefense: 45, speed: 65 } },
+  Floragato: { types: ["Grass"], stats: { hp: 61, attack: 80, defense: 63, specialAttack: 60, specialDefense: 63, speed: 83 } },
+  Meowscarada: { types: ["Grass", "Dark"], stats: { hp: 76, attack: 110, defense: 70, specialAttack: 81, specialDefense: 70, speed: 123 } },
+  Fuecoco: { types: ["Fire"], stats: { hp: 67, attack: 45, defense: 59, specialAttack: 63, specialDefense: 40, speed: 36 } },
+  Crocalor: { types: ["Fire"], stats: { hp: 81, attack: 55, defense: 78, specialAttack: 90, specialDefense: 58, speed: 49 } },
+  Skeledirge: { types: ["Fire", "Ghost"], stats: { hp: 104, attack: 75, defense: 100, specialAttack: 110, specialDefense: 75, speed: 66 } },
+  Quaxly: { types: ["Water"], stats: { hp: 55, attack: 65, defense: 45, specialAttack: 50, specialDefense: 45, speed: 50 } },
+  Quaxwell: { types: ["Water"], stats: { hp: 70, attack: 85, defense: 65, specialAttack: 65, specialDefense: 60, speed: 65 } },
+  Quaquaval: { types: ["Water", "Fighting"], stats: { hp: 85, attack: 120, defense: 80, specialAttack: 85, specialDefense: 75, speed: 85 } },
+  Pawmi: { types: ["Electric"], stats: { hp: 45, attack: 50, defense: 20, specialAttack: 40, specialDefense: 25, speed: 60 } },
+  Pawmo: { types: ["Electric", "Fighting"], stats: { hp: 60, attack: 75, defense: 40, specialAttack: 50, specialDefense: 40, speed: 85 } },
+  Pawmot: { types: ["Electric", "Fighting"], stats: { hp: 70, attack: 115, defense: 70, specialAttack: 70, specialDefense: 60, speed: 105 } },
+  Lechonk: { types: ["Normal"], stats: { hp: 54, attack: 45, defense: 40, specialAttack: 35, specialDefense: 45, speed: 35 } },
+  Tarountula: { types: ["Bug"], stats: { hp: 35, attack: 41, defense: 45, specialAttack: 29, specialDefense: 40, speed: 20 } },
+  Fidough: { types: ["Fairy"], stats: { hp: 37, attack: 55, defense: 70, specialAttack: 30, specialDefense: 55, speed: 65 } },
+  Smoliv: { types: ["Grass", "Normal"], stats: { hp: 41, attack: 35, defense: 45, specialAttack: 58, specialDefense: 51, speed: 30 } },
+  Tandemaus: { types: ["Normal"], stats: { hp: 50, attack: 50, defense: 45, specialAttack: 40, specialDefense: 45, speed: 75 } },
+  Nacli: { types: ["Rock"], stats: { hp: 55, attack: 55, defense: 75, specialAttack: 35, specialDefense: 35, speed: 25 } },
+  Charcadet: { types: ["Fire"], stats: { hp: 40, attack: 50, defense: 40, specialAttack: 50, specialDefense: 40, speed: 35 } },
+  Orthworm: { types: ["Steel"], stats: { hp: 70, attack: 85, defense: 145, specialAttack: 60, specialDefense: 55, speed: 65 } },
+  Toedscool: { types: ["Ground", "Grass"], stats: { hp: 40, attack: 40, defense: 35, specialAttack: 50, specialDefense: 100, speed: 70 } },
+  Capsakid: { types: ["Grass"], stats: { hp: 50, attack: 62, defense: 40, specialAttack: 62, specialDefense: 40, speed: 50 } },
+  Grafaiai: { types: ["Poison", "Normal"], stats: { hp: 63, attack: 95, defense: 65, specialAttack: 80, specialDefense: 72, speed: 110 } },
+  Shroodle: { types: ["Poison", "Normal"], stats: { hp: 40, attack: 65, defense: 35, specialAttack: 40, specialDefense: 35, speed: 75 } },
+  Tinkatink: { types: ["Fairy", "Steel"], stats: { hp: 50, attack: 45, defense: 45, specialAttack: 35, specialDefense: 64, speed: 58 } },
+  Tinkaton: { types: ["Fairy", "Steel"], stats: { hp: 85, attack: 75, defense: 77, specialAttack: 70, specialDefense: 105, speed: 94 } },
+  Wattrel: { types: ["Electric", "Flying"], stats: { hp: 40, attack: 40, defense: 35, specialAttack: 55, specialDefense: 40, speed: 70 } },
+  Bellibolt: { types: ["Electric"], stats: { hp: 109, attack: 64, defense: 91, specialAttack: 103, specialDefense: 83, speed: 45 } },
+  Dondozo: { types: ["Water"], stats: { hp: 150, attack: 100, defense: 115, specialAttack: 65, specialDefense: 65, speed: 35 } },
+  Tatsugiri: { types: ["Water", "Dragon"], stats: { hp: 68, attack: 50, defense: 60, specialAttack: 120, specialDefense: 95, speed: 82 } },
+  Veluza: { types: ["Water", "Psychic"], stats: { hp: 90, attack: 102, defense: 73, specialAttack: 78, specialDefense: 65, speed: 70 } },
+  Ceruledge: { types: ["Fire", "Ghost"], stats: { hp: 75, attack: 125, defense: 80, specialAttack: 60, specialDefense: 100, speed: 85 } },
+  Koraidon: { types: ["Fighting", "Dragon"], stats: { hp: 100, attack: 135, defense: 115, specialAttack: 85, specialDefense: 100, speed: 135 } },
+  Miraidon: { types: ["Electric", "Dragon"], stats: { hp: 100, attack: 85, defense: 100, specialAttack: 135, specialDefense: 115, speed: 135 } },
+  Corviknight: { types: ["Flying", "Steel"], stats: { hp: 98, attack: 87, defense: 105, specialAttack: 53, specialDefense: 85, speed: 67 } },
+  Rotom: { types: ["Electric", "Ghost"], stats: { hp: 50, attack: 50, defense: 77, specialAttack: 95, specialDefense: 77, speed: 91 } },
+  Palafin: { types: ["Water"], stats: { hp: 100, attack: 70, defense: 72, specialAttack: 53, specialDefense: 62, speed: 100 } },
+  Baxcalibur: { types: ["Dragon", "Ice"], stats: { hp: 115, attack: 145, defense: 92, specialAttack: 75, specialDefense: 86, speed: 87 } },
+  Gholdengo: { types: ["Steel", "Ghost"], stats: { hp: 87, attack: 60, defense: 95, specialAttack: 133, specialDefense: 91, speed: 84 } },
+  Kingambit: { types: ["Dark", "Steel"], stats: { hp: 100, attack: 135, defense: 120, specialAttack: 60, specialDefense: 85, speed: 50 } },
+  Annihilape: { types: ["Fighting", "Ghost"], stats: { hp: 110, attack: 115, defense: 80, specialAttack: 50, specialDefense: 90, speed: 90 } },
+  Clodsire: { types: ["Poison", "Ground"], stats: { hp: 130, attack: 75, defense: 60, specialAttack: 45, specialDefense: 100, speed: 20 } },
+  Cyclizar: { types: ["Dragon", "Normal"], stats: { hp: 70, attack: 95, defense: 65, specialAttack: 85, specialDefense: 65, speed: 121 } },
+  Flamigo: { types: ["Flying", "Fighting"], stats: { hp: 82, attack: 115, defense: 74, specialAttack: 75, specialDefense: 64, speed: 90 } },
+  Glimmora: { types: ["Rock", "Poison"], stats: { hp: 83, attack: 55, defense: 90, specialAttack: 130, specialDefense: 81, speed: 86 } },
+  Farigiraf: { types: ["Normal", "Psychic"], stats: { hp: 120, attack: 90, defense: 70, specialAttack: 110, specialDefense: 70, speed: 60 } },
+  Dudunsparce: { types: ["Normal"], stats: { hp: 125, attack: 100, defense: 80, specialAttack: 85, specialDefense: 75, speed: 55 } },
+  Maushold: { types: ["Normal"], stats: { hp: 74, attack: 75, defense: 70, specialAttack: 65, specialDefense: 75, speed: 111 } },
+  Oinkologne: { types: ["Normal"], stats: { hp: 75, attack: 100, defense: 75, specialAttack: 59, specialDefense: 75, speed: 65 } },
+  Spidops: { types: ["Bug"], stats: { hp: 60, attack: 79, defense: 92, specialAttack: 52, specialDefense: 86, speed: 35 } },
+  Dachsbun: { types: ["Fairy"], stats: { hp: 60, attack: 80, defense: 115, specialAttack: 50, specialDefense: 80, speed: 95 } },
+  Dolliv: { types: ["Grass", "Normal"], stats: { hp: 52, attack: 53, defense: 60, specialAttack: 78, specialDefense: 78, speed: 33 } },
+  Arboliva: { types: ["Grass", "Normal"], stats: { hp: 78, attack: 69, defense: 90, specialAttack: 125, specialDefense: 109, speed: 39 } },
+  Naclstack: { types: ["Rock"], stats: { hp: 60, attack: 60, defense: 100, specialAttack: 35, specialDefense: 65, speed: 35 } },
+  Garganacl: { types: ["Rock"], stats: { hp: 100, attack: 100, defense: 130, specialAttack: 45, specialDefense: 90, speed: 35 } },
+  Toedscruel: { types: ["Ground", "Grass"], stats: { hp: 80, attack: 70, defense: 65, specialAttack: 80, specialDefense: 120, speed: 100 } },
+  Scovillain: { types: ["Grass", "Fire"], stats: { hp: 65, attack: 108, defense: 65, specialAttack: 108, specialDefense: 65, speed: 75 } },
+  Kilowattrel: { types: ["Electric", "Flying"], stats: { hp: 70, attack: 70, defense: 60, specialAttack: 105, specialDefense: 60, speed: 125 } },
+  Tinkatuff: { types: ["Fairy", "Steel"], stats: { hp: 65, attack: 55, defense: 55, specialAttack: 45, specialDefense: 82, speed: 78 } },
+  Armarouge: { types: ["Fire", "Psychic"], stats: { hp: 85, attack: 60, defense: 100, specialAttack: 125, specialDefense: 80, speed: 75 } },
+  Tadbulb: { types: ["Electric"], stats: { hp: 44, attack: 31, defense: 41, specialAttack: 59, specialDefense: 35, speed: 45 } },
+  Rookidee: { types: ["Flying"], stats: { hp: 38, attack: 47, defense: 35, specialAttack: 33, specialDefense: 35, speed: 57 } },
+  Corvisquire: { types: ["Flying"], stats: { hp: 68, attack: 67, defense: 55, specialAttack: 43, specialDefense: 55, speed: 77 } },
+  Finizen: { types: ["Water"], stats: { hp: 50, attack: 45, defense: 54, specialAttack: 45, specialDefense: 45, speed: 75 } },
+  Frigibax: { types: ["Dragon", "Ice"], stats: { hp: 65, attack: 75, defense: 45, specialAttack: 35, specialDefense: 45, speed: 40 } },
+  Arctibax: { types: ["Dragon", "Ice"], stats: { hp: 90, attack: 95, defense: 66, specialAttack: 45, specialDefense: 65, speed: 62 } },
+  Gimmighoul: { types: ["Ghost"], stats: { hp: 45, attack: 30, defense: 70, specialAttack: 75, specialDefense: 70, speed: 10 } },
+  Pawniard: { types: ["Dark", "Steel"], stats: { hp: 45, attack: 85, defense: 70, specialAttack: 40, specialDefense: 40, speed: 60 } },
+  Bisharp: { types: ["Dark", "Steel"], stats: { hp: 65, attack: 125, defense: 100, specialAttack: 60, specialDefense: 70, speed: 70 } },
+  Mankey: { types: ["Fighting"], stats: { hp: 40, attack: 80, defense: 35, specialAttack: 35, specialDefense: 45, speed: 70 } },
+  Primeape: { types: ["Fighting"], stats: { hp: 65, attack: 105, defense: 60, specialAttack: 60, specialDefense: 70, speed: 95 } },
+  "Paldean Wooper": { types: ["Poison", "Ground"], stats: { hp: 55, attack: 45, defense: 45, specialAttack: 25, specialDefense: 25, speed: 15 } },
+  Glimmet: { types: ["Rock", "Poison"], stats: { hp: 48, attack: 35, defense: 42, specialAttack: 105, specialDefense: 60, speed: 60 } },
+  Girafarig: { types: ["Normal", "Psychic"], stats: { hp: 70, attack: 80, defense: 65, specialAttack: 90, specialDefense: 65, speed: 85 } },
+  Dunsparce: { types: ["Normal"], stats: { hp: 100, attack: 70, defense: 70, specialAttack: 65, specialDefense: 65, speed: 45 } }
 };
 
 export const SpecialSVGs = {
@@ -674,7 +779,7 @@ export const SpecialSVGs = {
       
       <!-- Action Bubble Subtext -->
       <rect x="10" y="52" width="56" height="15" rx="5" fill="#F1C40F" stroke="#000" stroke-width="2"/>
-      <text x="14" y="62" font-family="sans-serif" font-size="7.5" font-weight="900" fill="#000">COLLECT ₽200</text>
+      <text x="14" y="62" font-family="sans-serif" font-size="7.5" font-weight="900" fill="#000">COLLECT $200</text>
       
       <!-- Red Movement Arrow -->
       <path d="M 90,82 C 60,82 40,82 15,82" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
@@ -842,12 +947,12 @@ export const SpecialSVGs = {
       <!-- Gold Coin -->
       <g>
         <circle cx="70" cy="66" r="17" fill="#F1C40F" stroke="#000" stroke-width="3.5"/>
-        <text x="64" y="73" font-family="'Luckiest Guy', Impact, sans-serif" font-size="20" font-weight="900" fill="#FFF" stroke="#000" stroke-width="1.5">₽</text>
+        <text x="64" y="73" font-family="'Luckiest Guy', Impact, sans-serif" font-size="20" font-weight="900" fill="#FFF" stroke="#000" stroke-width="1.5">$</text>
       </g>
       
       <!-- Bold TAX starburst -->
       <polygon points="12,12 28,18 35,8 48,18 62,10 65,22 80,18 72,32 82,42 68,42 65,55 52,48 40,55 38,42 22,45 28,32" fill="#E74C3C" stroke="#000" stroke-width="2.5" stroke-linejoin="round" transform="scale(0.8) translate(10, 0)"/>
-      <text x="24" y="28" font-family="'Luckiest Guy', Impact, sans-serif" font-size="12" font-weight="900" fill="#FFF" transform="scale(0.8) translate(10, 0)">TAX ₽200</text>
+      <text x="24" y="28" font-family="'Luckiest Guy', Impact, sans-serif" font-size="12" font-weight="900" fill="#FFF" transform="scale(0.8) translate(10, 0)">TAX $200</text>
     </svg>
   `,
   LeagueAssessmentTax: `
@@ -869,7 +974,7 @@ export const SpecialSVGs = {
       
       <!-- Bold TAX starburst -->
       <polygon points="12,12 28,18 35,8 48,18 62,10 65,22 80,18 72,32 82,42 68,42 65,55 52,48 40,55 38,42 22,45 28,32" fill="#2E4053" stroke="#000" stroke-width="2.5" stroke-linejoin="round" transform="scale(0.8) translate(10, 0)"/>
-      <text x="24" y="28" font-family="'Luckiest Guy', Impact, sans-serif" font-size="12" font-weight="900" fill="#FFF" transform="scale(0.8) translate(10, 0)">TAX ₽100</text>
+      <text x="24" y="28" font-family="'Luckiest Guy', Impact, sans-serif" font-size="12" font-weight="900" fill="#FFF" transform="scale(0.8) translate(10, 0)">TAX $100</text>
     </svg>
   `
 };
@@ -880,7 +985,7 @@ export const BoardSpaces = [
   { id: 2, name: "Tera Raid Chest", type: "raid", cost: 0, rent: 0, group: "card" },
   { id: 3, name: "Poco Path Lighthouse", type: "property", pokemon: "Tarountula", cost: 60, rent: [4, 20, 60, 180, 320, 450], houseCost: 50, group: "brown" },
   { id: 4, name: "Poke Mart Tax", type: "tax", cost: 200, rent: 0, group: "tax" },
-  { id: 5, name: "Flying Taxi - South", type: "station", pokemon: "Corviknight", cost: 200, rent: [25, 50, 100, 200], group: "station" },
+  { id: 5, name: "Flying Taxi - South", type: "station", pokemon: "Rookidee", cost: 200, rent: [25, 50, 100, 200], group: "station" },
   { id: 6, name: "South Province Area One", type: "property", pokemon: "Pawmi", cost: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, group: "light-blue" },
   { id: 7, name: "Academy Class", type: "academy", cost: 0, rent: 0, group: "card" },
   { id: 8, name: "South Province Area Two", type: "property", pokemon: "Fidough", cost: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, group: "light-blue" },
@@ -890,7 +995,7 @@ export const BoardSpaces = [
   { id: 12, name: "Rotom Phone Tower", type: "utility", pokemon: "Rotom", cost: 150, rent: [4, 10], group: "utility" },
   { id: 13, name: "Mesagoza South", type: "property", pokemon: "Nacli", cost: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, group: "pink" },
   { id: 14, name: "Mesagoza North", type: "property", pokemon: "Charcadet", cost: 160, rent: [12, 60, 180, 500, 700, 900], houseCost: 100, group: "pink" },
-  { id: 15, name: "Flying Taxi - East", type: "station", pokemon: "Corviknight", cost: 200, rent: [25, 50, 100, 200], group: "station" },
+  { id: 15, name: "Flying Taxi - East", type: "station", pokemon: "Rookidee", cost: 200, rent: [25, 50, 100, 200], group: "station" },
   { id: 16, name: "Asado Desert", type: "property", pokemon: "Orthworm", cost: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, group: "orange" },
   { id: 17, name: "Tera Raid Chest", type: "raid", cost: 0, rent: 0, group: "card" },
   { id: 18, name: "Asado Desert Ruins", type: "property", pokemon: "Toedscool", cost: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, group: "orange" },
@@ -900,9 +1005,9 @@ export const BoardSpaces = [
   { id: 22, name: "Academy Class", type: "academy", cost: 0, rent: 0, group: "card" },
   { id: 23, name: "Tagtree Thicket Woods", type: "property", pokemon: "Shroodle", cost: 220, rent: [18, 90, 250, 700, 875, 1050], houseCost: 150, group: "red" },
   { id: 24, name: "West Province Area Three", type: "property", pokemon: "Tinkatink", cost: 240, rent: [20, 100, 300, 750, 925, 1100], houseCost: 150, group: "red" },
-  { id: 25, name: "Flying Taxi - West", type: "station", pokemon: "Corviknight", cost: 200, rent: [25, 50, 100, 200], group: "station" },
+  { id: 25, name: "Flying Taxi - West", type: "station", pokemon: "Rookidee", cost: 200, rent: [25, 50, 100, 200], group: "station" },
   { id: 26, name: "Levincia Outskirts", type: "property", pokemon: "Wattrel", cost: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, group: "yellow" },
-  { id: 27, name: "Levincia Port", type: "property", pokemon: "Bellibolt", cost: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, group: "yellow" },
+  { id: 27, name: "Levincia Port", type: "property", pokemon: "Tadbulb", cost: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, group: "yellow" },
   { id: 28, name: "LP Charging Station", type: "utility", pokemon: "Rotom", cost: 150, rent: [4, 10], group: "utility" },
   { id: 29, name: "Levincia Gym", type: "property", pokemon: "Pawmot", cost: 280, rent: [24, 120, 360, 850, 1025, 1200], houseCost: 150, group: "yellow" },
   { id: 30, name: "Sent to Clavell's Office", type: "gotojail", cost: 0, rent: 0, group: "corner" },
@@ -910,7 +1015,7 @@ export const BoardSpaces = [
   { id: 32, name: "Casseroya Lake Isles", type: "property", pokemon: "Tatsugiri", cost: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, group: "green" },
   { id: 33, name: "Tera Raid Chest", type: "raid", cost: 0, rent: 0, group: "card" },
   { id: 34, name: "Casseroya Lake Mountain", type: "property", pokemon: "Veluza", cost: 320, rent: [28, 150, 450, 1000, 1200, 1400], houseCost: 200, group: "green" },
-  { id: 35, name: "Flying Taxi - North", type: "station", pokemon: "Corviknight", cost: 200, rent: [25, 50, 100, 200], group: "station" },
+  { id: 35, name: "Flying Taxi - North", type: "station", pokemon: "Rookidee", cost: 200, rent: [25, 50, 100, 200], group: "station" },
   { id: 36, name: "Academy Class", type: "academy", cost: 0, rent: 0, group: "card" },
   { id: 37, name: "Area Zero Gate", type: "property", pokemon: "Ceruledge", cost: 350, rent: [35, 175, 500, 1100, 1300, 1500], houseCost: 200, group: "dark-blue" },
   { id: 38, name: "League Assessment Tax", type: "tax", cost: 100, rent: 0, group: "tax" },
@@ -918,27 +1023,27 @@ export const BoardSpaces = [
 ];
 
 export const AcademyCards = [
-  { text: "Passed home economics class with Jacq! Collect ₽50", action: "money", val: 50 },
+  { text: "Passed home economics class with Jacq! Collect $50", action: "money", val: 50 },
   { text: "Got caught riding Koraidon in hallways. Go directly to Detention!", action: "gotojail" },
-  { text: "Found a lost item on the playground. Collect ₽20", action: "money", val: 20 },
-  { text: "Advanced to GO. Collect ₽200", action: "moveto", val: 0 },
-  { text: "Gym Battle preparation. Pay ₽50 for potions", action: "money", val: -50 },
+  { text: "Found a lost item on the playground. Collect $20", action: "money", val: 20 },
+  { text: "Advanced to GO. Collect $200", action: "moveto", val: 0 },
+  { text: "Gym Battle preparation. Pay $50 for potions", action: "money", val: -50 },
   { text: "Principal Clavell rewards you for clean record! Get Out of Detention Free", action: "jailfree" },
-  { text: "Take a trip to Levincia Gym. If you pass GO, collect ₽200", action: "moveto", val: 29 },
-  { text: "Your Pokemon leveled up! Pay ₽15 per Camp and ₽40 per Gym Station for battle treats", action: "repairs", houseVal: 15, hotelVal: 40 },
-  { text: "Team Star blocked the path! Pay ₽100 toll", action: "money", val: -100 },
-  { text: "Won the Academy Tournament! Collect ₽100", action: "money", val: 100 }
+  { text: "Take a trip to Levincia Gym. If you pass GO, collect $200", action: "moveto", val: 29 },
+  { text: "Your Pokemon leveled up! Pay $15 per Camp and $40 per Gym Station for battle treats", action: "repairs", houseVal: 15, hotelVal: 40 },
+  { text: "Team Star blocked the path! Pay $100 toll", action: "money", val: -100 },
+  { text: "Won the Academy Tournament! Collect $100", action: "money", val: 100 }
 ];
 
 export const TeraRaidCards = [
-  { text: "Successfully cleared a 5-Star Tera Raid! Collect ₽100", action: "money", val: 100 },
-  { text: "Pokemon Center donation fund. Pay ₽50", action: "money", val: -50 },
-  { text: "Tera shards collection refund. Collect ₽25", action: "money", val: 25 },
-  { text: "LP Conversion! Collect ₽150", action: "money", val: 150 },
-  { text: "Your Pokemon fainted in a Tera Raid. Pay ₽50 for revives", action: "money", val: -50 },
+  { text: "Successfully cleared a 5-Star Tera Raid! Collect $100", action: "money", val: 100 },
+  { text: "Pokemon Center donation fund. Pay $50", action: "money", val: -50 },
+  { text: "Tera shards collection refund. Collect $25", action: "money", val: 25 },
+  { text: "LP Conversion! Collect $150", action: "money", val: 150 },
+  { text: "Your Pokemon fainted in a Tera Raid. Pay $50 for revives", action: "money", val: -50 },
   { text: "Get Out of Detention Free card from Geeta", action: "jailfree" },
   { text: "Retreat to Pokemon Center Rest Stop (Free Parking)", action: "moveto", val: 20 },
-  { text: "Raid den collapse! Pay ₽25 per Camp and ₽100 per Gym Station for rebuilding", action: "repairs", houseVal: 25, hotelVal: 100 },
-  { text: "Scholarship reward from Uva/Naranja Academy. Collect ₽200", action: "money", val: 200 },
-  { text: "Inherited Gimmighoul Coins! Collect ₽100", action: "money", val: 100 }
+  { text: "Raid den collapse! Pay $25 per Camp and $100 per Gym Station for rebuilding", action: "repairs", houseVal: 25, hotelVal: 100 },
+  { text: "Scholarship reward from Uva/Naranja Academy. Collect $200", action: "money", val: 200 },
+  { text: "Inherited Gimmighoul Coins! Collect $100", action: "money", val: 100 }
 ];

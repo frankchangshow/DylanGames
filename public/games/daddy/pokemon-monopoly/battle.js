@@ -3,8 +3,146 @@
  * Handles move execution, type matchups, CPU AI, logs, Terastallization, and resolution callbacks.
  */
 
-import { PokemonDB } from './assets.js?v=27';
-import { Sound } from './sound.js?v=27';
+import { PokemonDB, PokemonBattleStats } from './assets.js?v=38';
+import { Sound } from './sound.js?v=38';
+
+const ALL_STATS = ["hp", "attack", "defense", "specialAttack", "specialDefense", "speed"];
+const PLAYER_MIN_MOVE_POWER = 30;
+const PLAYER_DAMAGE_MULTIPLIER = 1.3;
+const ENEMY_DAMAGE_MULTIPLIER = 0.65;
+const PHYSICAL_TYPES = new Set(["Normal", "Fighting", "Flying", "Poison", "Ground", "Rock", "Bug", "Ghost", "Steel"]);
+const SPECIAL_TYPES = new Set(["Fire", "Water", "Electric", "Grass", "Ice", "Psychic", "Dragon", "Dark", "Fairy"]);
+const STATUS_MOVE_NAMES = new Set([
+  "Glare", "Leer", "String Shot", "Hone Claws", "Work Up", "Worry Seed"
+]);
+const STATUS_EFFECTS_BY_MOVE = {
+  "Ember": [{ target: "defender", status: "burn", chance: 0.1 }],
+  "Fire Fang": [{ target: "defender", status: "burn", chance: 0.1 }],
+  "Flame Wheel": [{ target: "defender", status: "burn", chance: 0.1 }],
+  "Glare": [{ target: "defender", status: "paralysis", chance: 1 }],
+  "Gunk Shot": [{ target: "defender", status: "poison", chance: 0.3 }],
+  "Poison Jab": [{ target: "defender", status: "poison", chance: 0.3 }],
+  "Sludge Wave": [{ target: "defender", status: "poison", chance: 0.1 }],
+  "Spark": [{ target: "defender", status: "paralysis", chance: 0.3 }],
+  "Thunder Shock": [{ target: "defender", status: "paralysis", chance: 0.1 }]
+};
+const STAT_EFFECTS_BY_MOVE = {
+  "Acid Spray": [{ target: "defender", stat: "specialDefense", amount: -2, chance: 1 }],
+  "Aqua Step": [{ target: "attacker", stat: "speed", amount: 1, chance: 1 }],
+  "Close Combat": [
+    { target: "attacker", stat: "defense", amount: -1, chance: 1 },
+    { target: "attacker", stat: "specialDefense", amount: -1, chance: 1 }
+  ],
+  "Hone Claws": [
+    { target: "attacker", stat: "attack", amount: 1, chance: 1 },
+    { target: "attacker", stat: "accuracy", amount: 1, chance: 1 }
+  ],
+  "Leer": [{ target: "defender", stat: "defense", amount: -1, chance: 1 }],
+  "Metal Claw": [{ target: "attacker", stat: "attack", amount: 1, chance: 0.1 }],
+  "Mud-Slap": [{ target: "defender", stat: "accuracy", amount: -1, chance: 1 }],
+  "Overheat": [{ target: "attacker", stat: "specialAttack", amount: -2, chance: 1 }],
+  "Play Rough": [{ target: "defender", stat: "attack", amount: -1, chance: 0.1 }],
+  "Shadow Ball": [{ target: "defender", stat: "specialDefense", amount: -1, chance: 0.2 }],
+  "String Shot": [{ target: "defender", stat: "speed", amount: -1, chance: 1 }],
+  "Torch Song": [{ target: "attacker", stat: "specialAttack", amount: 1, chance: 1 }],
+  "Work Up": [
+    { target: "attacker", stat: "attack", amount: 1, chance: 1 },
+    { target: "attacker", stat: "specialAttack", amount: 1, chance: 1 }
+  ]
+};
+const MOVE_CATEGORY_OVERRIDES = {
+  "Absorb": "special",
+  "Acid Spray": "special",
+  "Aqua Jet": "physical",
+  "Aqua Step": "physical",
+  "Bite": "physical",
+  "Bitter Blade": "physical",
+  "Bug Bite": "physical",
+  "Bullet Seed": "physical",
+  "Close Combat": "physical",
+  "Collision Course": "physical",
+  "Dig": "physical",
+  "Double Hit": "physical",
+  "Double Kick": "physical",
+  "Double Shock": "physical",
+  "Dragon Claw": "physical",
+  "Dragon Pulse": "special",
+  "Drain Punch": "physical",
+  "Drill Peck": "physical",
+  "Earth Power": "special",
+  "Earthquake": "physical",
+  "Electro Drift": "special",
+  "Ember": "special",
+  "Fire Fang": "physical",
+  "Flame Wheel": "physical",
+  "Flip Turn": "physical",
+  "Flower Trick": "physical",
+  "Gigaton Hammer": "physical",
+  "Glaive Rush": "physical",
+  "Gunk Shot": "physical",
+  "Hurricane": "special",
+  "Hyper Drill": "physical",
+  "Icicle Crash": "physical",
+  "Iron Head": "physical",
+  "Iron Tail": "physical",
+  "Jet Punch": "physical",
+  "Kowtow Cleave": "physical",
+  "Leafage": "physical",
+  "Liquidation": "physical",
+  "Make It Rain": "special",
+  "Metal Claw": "physical",
+  "Mud-Slap": "special",
+  "Overheat": "special",
+  "Parabolic Charge": "special",
+  "Play Rough": "physical",
+  "Poison Jab": "physical",
+  "Population Bomb": "physical",
+  "Pound": "physical",
+  "Power Gem": "special",
+  "Quick Attack": "physical",
+  "Rage Fist": "physical",
+  "Razor Leaf": "physical",
+  "Scratch": "physical",
+  "Seed Bomb": "physical",
+  "Shadow Ball": "special",
+  "Shadow Claw": "physical",
+  "Slash": "physical",
+  "Sludge Wave": "special",
+  "Spark": "physical",
+  "Stomp": "physical",
+  "Stone Edge": "physical",
+  "Super Fang": "physical",
+  "Tackle": "physical",
+  "Thunder Shock": "special",
+  "Torch Song": "special",
+  "Twin Beam": "special",
+  "Water Gun": "special",
+  "Water Pulse": "special",
+  "Wave Crash": "physical",
+  "Wild Charge": "physical",
+  "Wing Attack": "physical"
+};
+
+const TYPE_CHART = {
+  Normal: { immune: ["Ghost"], resisted: ["Rock", "Steel"], strong: [] },
+  Fire: { immune: [], resisted: ["Fire", "Water", "Rock", "Dragon"], strong: ["Grass", "Ice", "Bug", "Steel"] },
+  Water: { immune: [], resisted: ["Water", "Grass", "Dragon"], strong: ["Fire", "Ground", "Rock"] },
+  Electric: { immune: ["Ground"], resisted: ["Electric", "Grass", "Dragon"], strong: ["Water", "Flying"] },
+  Grass: { immune: [], resisted: ["Fire", "Grass", "Poison", "Flying", "Bug", "Dragon", "Steel"], strong: ["Water", "Ground", "Rock"] },
+  Ice: { immune: [], resisted: ["Fire", "Water", "Ice", "Steel"], strong: ["Grass", "Ground", "Flying", "Dragon"] },
+  Fighting: { immune: ["Ghost"], resisted: ["Poison", "Flying", "Psychic", "Bug", "Fairy"], strong: ["Normal", "Ice", "Rock", "Dark", "Steel"] },
+  Poison: { immune: ["Steel"], resisted: ["Poison", "Ground", "Rock", "Ghost"], strong: ["Grass", "Fairy"] },
+  Ground: { immune: ["Flying"], resisted: ["Grass", "Bug"], strong: ["Fire", "Electric", "Poison", "Rock", "Steel"] },
+  Flying: { immune: [], resisted: ["Electric", "Rock", "Steel"], strong: ["Grass", "Fighting", "Bug"] },
+  Psychic: { immune: ["Dark"], resisted: ["Psychic", "Steel"], strong: ["Fighting", "Poison"] },
+  Bug: { immune: [], resisted: ["Fire", "Fighting", "Poison", "Flying", "Ghost", "Steel", "Fairy"], strong: ["Grass", "Psychic", "Dark"] },
+  Rock: { immune: [], resisted: ["Fighting", "Ground", "Steel"], strong: ["Fire", "Ice", "Flying", "Bug"] },
+  Ghost: { immune: ["Normal"], resisted: ["Dark"], strong: ["Psychic", "Ghost"] },
+  Dragon: { immune: ["Fairy"], resisted: ["Steel"], strong: ["Dragon"] },
+  Dark: { immune: [], resisted: ["Fighting", "Dark", "Fairy"], strong: ["Psychic", "Ghost"] },
+  Steel: { immune: [], resisted: ["Fire", "Water", "Electric", "Steel"], strong: ["Ice", "Rock", "Fairy"] },
+  Fairy: { immune: [], resisted: ["Fire", "Poison", "Steel"], strong: ["Fighting", "Dragon", "Dark"] }
+};
 
 export class BattleEngine {
   constructor() {
@@ -14,7 +152,7 @@ export class BattleEngine {
   }
 
   // Start a new battle
-  startBattle(playerPokemonName, enemyPokemonName, isTrainerBattle, spaceId, challengerIdx, ownerIdx, playerLevel, enemyLevel, playerPowerUpgrades, enemyPowerUpgrades, onComplete, playerMoves = null, enemyMoves = null) {
+  startBattle(playerPokemonName, enemyPokemonName, isTrainerBattle, spaceId, challengerIdx, ownerIdx, playerLevel, enemyLevel, playerPowerUpgrades, enemyPowerUpgrades, onComplete, playerMoves = null, enemyMoves = null, playerTraining = null, enemyTraining = null) {
     const playerBase = PokemonDB[playerPokemonName];
     const enemyBase = PokemonDB[enemyPokemonName];
 
@@ -23,34 +161,37 @@ export class BattleEngine {
       return;
     }
 
-    const pMaxHp = playerBase.hp + (playerLevel - 1) * 15;
-    const eMaxHp = enemyBase.hp + (enemyLevel - 1) * 15;
+    const playerStats = this.createBattleStats(playerBase, playerLevel, playerTraining);
+    const enemyStats = this.createBattleStats(enemyBase, enemyLevel, enemyTraining);
 
     const battleId = ++this.battleSeq;
-
-    const pSpeed = playerBase.speed + (playerLevel - 1) * 2;
-    const eSpeed = enemyBase.speed + (enemyLevel - 1) * 2;
 
     this.activeBattle = {
       id: battleId,
       player: {
         name: playerPokemonName,
-        type: playerBase.type,
-        maxHp: pMaxHp,
-        hp: pMaxHp,
-        moves: Array.isArray(playerMoves) && playerMoves.length >= 2 ? playerMoves : playerBase.moves,
-        speed: pSpeed,
+        type: playerStats.types[0],
+        types: playerStats.types,
+        maxHp: playerStats.hp,
+        hp: playerStats.hp,
+        moves: this.normalizeMoves(Array.isArray(playerMoves) && playerMoves.length >= 2 ? playerMoves : playerBase.moves),
+        stats: playerStats,
+        statStages: this.createStatStages(),
+        status: null,
         level: playerLevel,
         powerUpgrades: playerPowerUpgrades || 0,
         terastallized: false
       },
       enemy: {
         name: enemyPokemonName,
-        type: enemyBase.type,
-        maxHp: eMaxHp,
-        hp: eMaxHp,
-        moves: Array.isArray(enemyMoves) && enemyMoves.length >= 2 ? enemyMoves : enemyBase.moves,
-        speed: eSpeed,
+        type: enemyStats.types[0],
+        types: enemyStats.types,
+        maxHp: enemyStats.hp,
+        hp: enemyStats.hp,
+        moves: this.normalizeMoves(Array.isArray(enemyMoves) && enemyMoves.length >= 2 ? enemyMoves : enemyBase.moves),
+        stats: enemyStats,
+        statStages: this.createStatStages(),
+        status: null,
         level: enemyLevel,
         powerUpgrades: enemyPowerUpgrades || 0,
         terastallized: false
@@ -59,7 +200,9 @@ export class BattleEngine {
       spaceId,
       challengerIdx,
       ownerIdx,
-      turn: pSpeed >= eSpeed ? 0 : 1, // High speed goes first
+      // In this board-game flow, the human side should get the first decision.
+      // Speed still matters through stats/effects, but losing before acting feels bad.
+      turn: 0,
       logs: [],
       onComplete
     };
@@ -70,7 +213,7 @@ export class BattleEngine {
       this.log(`Trainer Battle initiated! Challenge for rent discount!`);
     }
 
-    // If enemy goes first, schedule AI move
+    // Defensive guard if future rules reintroduce enemy opening turns.
     if (this.activeBattle.turn === 1) {
       setTimeout(() => this.executeEnemyTurn(battleId), 1000);
     }
@@ -82,23 +225,248 @@ export class BattleEngine {
     }
   }
 
-  getTypeEffectiveness(attackType, defenseType) {
-    const matchups = {
-      Grass: { Water: 1.5, Fire: 0.5, Grass: 0.5, Ground: 1.5 },
-      Fire: { Grass: 1.5, Water: 0.5, Fire: 0.5, Steel: 1.5 },
-      Water: { Fire: 1.5, Grass: 0.5, Water: 0.5, Ground: 1.5, Rock: 1.5 },
-      Electric: { Water: 1.5, Flying: 1.5, Electric: 0.5, Ground: 0 },
-      Ground: { Fire: 1.5, Electric: 1.5, Grass: 0.5, Poison: 1.5, Rock: 1.5 },
-      Poison: { Grass: 1.5, Poison: 0.5, Ground: 0.5, Fairy: 1.5, Steel: 0 },
-      Fairy: { Fighting: 1.5, Poison: 0.5, Dark: 1.5, Steel: 0.5 },
-      Steel: { Rock: 1.5, Ice: 1.5, Fairy: 1.5, Fire: 0.5, Water: 0.5, Electric: 0.5, Steel: 0.5 },
-      Normal: {}
-    };
+  shouldLogBattleNote(note) {
+    return Boolean(note) && !["physical", "special", "status"].includes(note) && !note.includes("/");
+  }
 
-    if (matchups[attackType] && matchups[attackType][defenseType] !== undefined) {
-      return matchups[attackType][defenseType];
+  createStatStages() {
+    return { attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0, accuracy: 0, evasion: 0 };
+  }
+
+  createBattleStats(base, level, training = null) {
+    const source = PokemonBattleStats[base.name];
+    const rawStats = source?.stats || this.inferBaseStats(base);
+    const types = source?.types || [base.type || "Normal"];
+    const boundedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+    const calculated = {};
+    for (const stat of ALL_STATS) {
+      calculated[stat] = this.calculateStat(rawStats[stat], boundedLevel, stat === "hp");
     }
-    return 1.0;
+    if (training) {
+      calculated.hp += Math.max(0, Number(training.hp) || 0);
+      calculated.attack += Math.max(0, Number(training.attack) || 0);
+      calculated.defense += Math.max(0, Number(training.defense) || 0);
+      calculated.speed += Math.max(0, Number(training.speed) || 0);
+    }
+    calculated.types = types;
+    return calculated;
+  }
+
+  inferBaseStats(base) {
+    const hp = Math.max(1, Math.round((base.hp || 100) * 0.65));
+    const speed = Math.max(1, base.speed || 50);
+    return {
+      hp,
+      attack: Math.max(1, Math.round(55 + ((base.hp || 100) - 100) * 0.25 + (speed - 50) * 0.15)),
+      defense: Math.max(1, Math.round(55 + ((base.hp || 100) - 100) * 0.35 - (speed - 50) * 0.05)),
+      specialAttack: Math.max(1, Math.round(55 + ((base.hp || 100) - 100) * 0.2)),
+      specialDefense: Math.max(1, Math.round(55 + ((base.hp || 100) - 100) * 0.25)),
+      speed
+    };
+  }
+
+  calculateStat(baseStat, level, isHp = false) {
+    const base = Math.max(1, Number(baseStat) || 1);
+    if (isHp) {
+      return Math.floor(((2 * base + 31) * level) / 100) + level + 10;
+    }
+    return Math.floor(((2 * base + 31) * level) / 100) + 5;
+  }
+
+  normalizeMoves(moves = []) {
+    return moves.map(move => ({
+      accuracy: 100,
+      priority: 0,
+      category: this.inferMoveCategory(move),
+      ...move,
+      category: move.category || this.inferMoveCategory(move)
+    }));
+  }
+
+  inferMoveCategory(move) {
+    if (!move || STATUS_MOVE_NAMES.has(move.name) || !move.power || move.power <= 0) return "status";
+    if (move.category) return move.category;
+    if (MOVE_CATEGORY_OVERRIDES[move.name]) return MOVE_CATEGORY_OVERRIDES[move.name];
+    if (PHYSICAL_TYPES.has(move.type)) return "physical";
+    if (SPECIAL_TYPES.has(move.type)) return "special";
+    return "physical";
+  }
+
+  stageMultiplier(stage) {
+    const bounded = Math.max(-6, Math.min(6, Number(stage) || 0));
+    return bounded >= 0 ? (2 + bounded) / 2 : 2 / (2 - bounded);
+  }
+
+  accuracyMultiplier(stage) {
+    const bounded = Math.max(-6, Math.min(6, Number(stage) || 0));
+    return bounded >= 0 ? (3 + bounded) / 3 : 3 / (3 - bounded);
+  }
+
+  getBattleStat(pokemon, stat) {
+    let value = pokemon.stats[stat] || 1;
+    if (pokemon.statStages && stat in pokemon.statStages) {
+      value *= this.stageMultiplier(pokemon.statStages[stat]);
+    }
+    if (stat === "attack" && pokemon.status === "burn") value *= 0.5;
+    if (stat === "speed" && pokemon.status === "paralysis") value *= 0.5;
+    return Math.max(1, Math.floor(value));
+  }
+
+  getDefensiveTypes(pokemon) {
+    if (pokemon.terastallized) return [pokemon.type];
+    return pokemon.types?.length ? pokemon.types : [pokemon.type || "Normal"];
+  }
+
+  getOffensiveTypes(pokemon) {
+    const naturalTypes = pokemon.types?.length ? pokemon.types : [pokemon.type || "Normal"];
+    if (!pokemon.terastallized) return naturalTypes;
+    return [...new Set([...naturalTypes, pokemon.type])];
+  }
+
+  getTypeEffectiveness(attackType, defenseTypes) {
+    const types = Array.isArray(defenseTypes) ? defenseTypes : [defenseTypes];
+    const matchup = TYPE_CHART[attackType] || TYPE_CHART.Normal;
+    let multiplier = 1;
+    for (const defenseType of types) {
+      if (matchup.immune.includes(defenseType)) return 0;
+      if (matchup.strong.includes(defenseType)) multiplier *= 2;
+      if (matchup.resisted.includes(defenseType)) multiplier *= 0.5;
+    }
+    return multiplier;
+  }
+
+  getStabMultiplier(attacker, move) {
+    const offensiveTypes = this.getOffensiveTypes(attacker);
+    if (!attacker.terastallized) return offensiveTypes.includes(move.type) ? 1.5 : 1;
+    if (attacker.type === move.type && offensiveTypes.includes(move.type)) return 2;
+    if (attacker.type === move.type) return 1.5;
+    return offensiveTypes.includes(move.type) ? 1.5 : 1;
+  }
+
+  getAdjustedMovePower(attacker, move) {
+    const rawPower = Math.max(0, Number(move.power) || 0);
+    if (!rawPower) return 0;
+    if (this.activeBattle && attacker === this.activeBattle.player) {
+      return Math.max(rawPower, PLAYER_MIN_MOVE_POWER);
+    }
+    return rawPower;
+  }
+
+  getSideDamageMultiplier(attacker) {
+    if (!this.activeBattle) return 1;
+    if (attacker === this.activeBattle.player) return PLAYER_DAMAGE_MULTIPLIER;
+    if (attacker === this.activeBattle.enemy) return ENEMY_DAMAGE_MULTIPLIER;
+    return 1;
+  }
+
+  calculateDamage(attacker, defender, move) {
+    const category = move.category || this.inferMoveCategory(move);
+    if (category === "status" || !move.power) {
+      return { damage: 0, effectiveness: 1, notes: ["status"] };
+    }
+
+    const attackStatName = category === "special" ? "specialAttack" : "attack";
+    const defenseStatName = category === "special" ? "specialDefense" : "defense";
+    const attack = this.getBattleStat(attacker, attackStatName);
+    const defense = this.getBattleStat(defender, defenseStatName);
+    const effectiveness = this.getTypeEffectiveness(move.type, this.getDefensiveTypes(defender));
+    if (effectiveness === 0) return { damage: 0, effectiveness, notes: ["immune"] };
+
+    const movePower = this.getAdjustedMovePower(attacker, move);
+    const base = (((2 * attacker.level / 5 + 2) * movePower * attack / Math.max(1, defense)) / 50) + 2;
+    let damage = base * this.getStabMultiplier(attacker, move) * effectiveness;
+    if (attacker.powerUpgrades) damage *= (1 + attacker.powerUpgrades * 0.2);
+    if (attacker.terastallized) damage *= 1.15;
+    damage *= this.getSideDamageMultiplier(attacker);
+    const variance = 0.85 + Math.random() * 0.3;
+    damage = Math.max(1, Math.floor(damage * variance));
+    return { damage, effectiveness, notes: [category, `${attackStatName}/${defenseStatName}`] };
+  }
+
+  moveHits(attacker, defender, move) {
+    if (move.accuracy === null || move.accuracy === undefined) return true;
+    const accuracyStage = (attacker.statStages?.accuracy || 0) - (defender.statStages?.evasion || 0);
+    const modified = Math.max(1, Math.min(100, move.accuracy * this.accuracyMultiplier(accuracyStage)));
+    return Math.random() * 100 < modified;
+  }
+
+  applyMoveEffects(attacker, defender, move, effectiveness = 1) {
+    if (effectiveness === 0) return [];
+    const events = [];
+    const resolveTarget = target => target === "attacker" ? attacker : defender;
+    const resolveSide = target => target === "attacker" ? "attacker" : "defender";
+
+    for (const effect of STATUS_EFFECTS_BY_MOVE[move.name] || []) {
+      if (Math.random() > (effect.chance ?? 1)) continue;
+      const target = resolveTarget(effect.target);
+      if (target.status) {
+        events.push({
+          kind: "status-blocked",
+          target: resolveSide(effect.target),
+          targetName: target.name,
+          status: target.status,
+          text: `${target.name} already has a status condition!`
+        });
+        continue;
+      }
+      target.status = effect.status;
+      events.push({
+        kind: "status",
+        target: resolveSide(effect.target),
+        targetName: target.name,
+        status: effect.status,
+        text: `${target.name} was ${this.formatStatusApplied(effect.status)}!`
+      });
+    }
+
+    for (const effect of STAT_EFFECTS_BY_MOVE[move.name] || []) {
+      if (Math.random() > (effect.chance ?? 1)) continue;
+      const target = resolveTarget(effect.target);
+      const current = target.statStages[effect.stat] || 0;
+      const next = Math.max(-6, Math.min(6, current + effect.amount));
+      if (next === current) {
+        events.push({
+          kind: "stat-blocked",
+          target: resolveSide(effect.target),
+          targetName: target.name,
+          stat: effect.stat,
+          amount: 0,
+          text: `${target.name}'s ${this.formatStatName(effect.stat)} won't go ${effect.amount > 0 ? "higher" : "lower"}!`
+        });
+        continue;
+      }
+      target.statStages[effect.stat] = next;
+      events.push({
+        kind: "stat",
+        target: resolveSide(effect.target),
+        targetName: target.name,
+        stat: effect.stat,
+        amount: next - current,
+        text: `${target.name}'s ${this.formatStatName(effect.stat)} ${effect.amount > 0 ? "rose" : "fell"}!`
+      });
+    }
+
+    return events;
+  }
+
+  formatStatusApplied(status) {
+    if (status === "burn") return "burned";
+    if (status === "poison") return "poisoned";
+    if (status === "paralysis") return "paralyzed";
+    return status;
+  }
+
+  formatStatName(stat) {
+    const labels = {
+      attack: "Attack",
+      defense: "Defense",
+      specialAttack: "Sp. Atk",
+      specialDefense: "Sp. Def",
+      speed: "Speed",
+      accuracy: "Accuracy",
+      evasion: "Evasion"
+    };
+    return labels[stat] || stat;
   }
 
   terastallizePlayer() {
@@ -108,10 +476,26 @@ export class BattleEngine {
     Sound.playHitSuperEffective();
   }
 
-  terastallizeEnemy() {
-    if (!this.activeBattle || this.activeBattle.enemy.terastallized) return;
-    this.activeBattle.enemy.terastallized = true;
-    this.log(`✨ Opponent's ${this.activeBattle.enemy.name} Terastallized!`);
+  applyBattleItemToPlayer(item) {
+    if (!this.activeBattle || !item) return { ok: false, message: "No active battle." };
+    const player = this.activeBattle.player;
+    if (item.heal) {
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + item.heal);
+      const healed = player.hp - before;
+      if (healed <= 0) return { ok: false, message: `${player.name} is already at full HP.` };
+      this.log(`🧪 ${player.name} used ${item.name} and restored ${healed} HP!`);
+      return { ok: true, message: `${player.name} restored ${healed} HP!` };
+    }
+
+    const changes = item.stats || (item.stat ? [{ stat: item.stat, amount: item.amount || 1 }] : []);
+    if (!changes.length) return { ok: false, message: `${item.name} cannot be used in battle.` };
+    changes.forEach(change => {
+      player.statStages[change.stat] = Math.max(-6, Math.min(6, (player.statStages[change.stat] || 0) + change.amount));
+    });
+    const label = changes.map(change => `${change.stat} ${change.amount > 0 ? "+" : ""}${change.amount}`).join(", ");
+    this.log(`🧪 ${player.name} used ${item.name}! ${label}`);
+    return { ok: true, message: `${item.name} boosted ${player.name}!` };
   }
 
   executePlayerMove(moveIdx) {
@@ -120,35 +504,20 @@ export class BattleEngine {
     const move = this.activeBattle.player.moves[moveIdx];
     const player = this.activeBattle.player;
     const enemy = this.activeBattle.enemy;
+    if (!move) return;
 
-    // Calculate Damage
-    let damage = move.power;
-    const effectiveness = this.getTypeEffectiveness(move.type, enemy.type);
-    damage *= effectiveness;
-
-    // STAB (Same-Type Attack Bonus)
-    if (move.type === player.type) {
-      damage *= 1.5;
+    if (!this.moveHits(player, enemy, move)) {
+      this.log(`${player.name} used ${move.name}, but it missed!`);
+      if (this.onMoveExecuted) this.onMoveExecuted("player", "enemy", move, 1, 0, { missed: true, effects: [] });
+      this.activeBattle.turn = 1;
+      const battleId = this.activeBattle.id;
+      setTimeout(() => this.executeEnemyTurn(battleId), 1000);
+      return;
     }
 
-    // Level scaling (+10% damage per level)
-    damage *= (1 + (player.level - 1) * 0.1);
-
-    // Power Upgrades (+20% damage per upgrade)
-    if (player.powerUpgrades) {
-      damage *= (1 + player.powerUpgrades * 0.2);
-    }
-
-    // Terastal boost
-    if (player.terastallized) {
-      damage *= 1.5;
-    }
-
-    // Add slight variance
-    const variance = 0.85 + Math.random() * 0.3;
-    damage = Math.max(1, Math.floor(damage * variance));
-
+    const { damage, effectiveness, notes } = this.calculateDamage(player, enemy, move);
     enemy.hp = Math.max(0, enemy.hp - damage);
+    const effectEvents = this.applyMoveEffects(player, enemy, move, effectiveness);
 
     // Play sound effects
     if (effectiveness > 1.0) {
@@ -160,10 +529,11 @@ export class BattleEngine {
     } else {
       this.log(`💥 ${player.name} used ${move.name}! Enemy took ${damage} damage.`);
     }
+    [...notes, ...effectEvents.map(event => event.text)].filter(note => this.shouldLogBattleNote(note)).forEach(note => this.log(`• ${note}`));
 
     // Trigger callback to handle visuals/audio in UI
     if (this.onMoveExecuted) {
-      this.onMoveExecuted("player", "enemy", move, effectiveness, damage);
+      this.onMoveExecuted("player", "enemy", move, effectiveness, damage, { missed: false, effects: effectEvents });
     }
 
     // Check Faint
@@ -185,41 +555,20 @@ export class BattleEngine {
     const enemy = this.activeBattle.enemy;
     const player = this.activeBattle.player;
 
-    // AI logic: 20% chance to Terastallize if HP is below 50%
-    if (!enemy.terastallized && enemy.hp < enemy.maxHp * 0.5 && Math.random() < 0.3) {
-      this.terastallizeEnemy();
-    }
-
     // Choose move (AI favors stronger moves, or pick random)
-    const moveIdx = Math.random() < 0.4 ? 1 : 0;
-    const move = enemy.moves[moveIdx];
+    const move = enemy.moves[Math.floor(Math.random() * enemy.moves.length)];
+    if (!move) return;
 
-    // Calculate Damage
-    let damage = move.power;
-    const effectiveness = this.getTypeEffectiveness(move.type, player.type);
-    damage *= effectiveness;
-
-    // STAB
-    if (move.type === enemy.type) {
-      damage *= 1.5;
+    if (!this.moveHits(enemy, player, move)) {
+      this.log(`Enemy ${enemy.name} used ${move.name}, but it missed!`);
+      if (this.onMoveExecuted) this.onMoveExecuted("enemy", "player", move, 1, 0, { missed: true, effects: [] });
+      this.activeBattle.turn = 0;
+      return;
     }
 
-    // Level scaling (+10% damage per level)
-    damage *= (1 + (enemy.level - 1) * 0.1);
-
-    // Power Upgrades (+20% damage per upgrade)
-    if (enemy.powerUpgrades) {
-      damage *= (1 + enemy.powerUpgrades * 0.2);
-    }
-
-    if (enemy.terastallized) {
-      damage *= 1.5;
-    }
-
-    const variance = 0.85 + Math.random() * 0.3;
-    damage = Math.max(1, Math.floor(damage * variance));
-
+    const { damage, effectiveness, notes } = this.calculateDamage(enemy, player, move);
     player.hp = Math.max(0, player.hp - damage);
+    const effectEvents = this.applyMoveEffects(enemy, player, move, effectiveness);
 
     if (effectiveness > 1.0) {
       this.log(`💥 Enemy ${enemy.name} used ${move.name}! It's super effective! Your Pokemon took ${damage} damage.`);
@@ -230,10 +579,11 @@ export class BattleEngine {
     } else {
       this.log(`💥 Enemy ${enemy.name} used ${move.name}! Your Pokemon took ${damage} damage.`);
     }
+    [...notes, ...effectEvents.map(event => event.text)].filter(note => this.shouldLogBattleNote(note)).forEach(note => this.log(`• ${note}`));
 
     // Trigger callback to handle visuals/audio in UI
     if (this.onMoveExecuted) {
-      this.onMoveExecuted("enemy", "player", move, effectiveness, damage);
+      this.onMoveExecuted("enemy", "player", move, effectiveness, damage, { missed: false, effects: effectEvents });
     }
 
     if (player.hp === 0) {
@@ -264,7 +614,7 @@ export class BattleEngine {
         this.activeBattle = null;
       }
       battle.onComplete(winnerIdx === 0);
-    }, 2500);
+    }, 3000);
   }
 
   reset() {

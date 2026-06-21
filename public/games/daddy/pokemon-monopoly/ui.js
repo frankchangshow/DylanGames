@@ -3,10 +3,10 @@
  * Integrates assets, sounds, Monopoly engine, and Battle engine to render a dynamic comic-book game.
  */
 
-import { PokemonSVGs, PokemonDB, BoardSpaces, SpecialSVGs } from './assets.js?v=27';
-import { Sound } from './sound.js?v=27';
-import { GameEngine } from './game.js?v=27';
-import { Battle } from './battle.js?v=27';
+import { PokemonSVGs, PokemonDB, BoardSpaces, SpecialSVGs } from './assets.js?v=38';
+import { Sound } from './sound.js?v=38';
+import { GameEngine, BattleItems } from './game.js?v=38';
+import { Battle } from './battle.js?v=38';
 
 window.Battle = Battle;
 
@@ -17,7 +17,16 @@ const AVAILABLE_PNGS = [
   "tarountula", "corviknight", "tandemaus", "rotom", "nacli", "orthworm", "toedscool", "capsakid", "grafaiai", "shroodle", "wattrel", "bellibolt",
   "dondozo", "tatsugiri", "veluza",
   "annihilape", "baxcalibur", "clodsire", "cyclizar", "dudunsparce", "farigiraf", "flamigo", "gholdengo", "glimmora", "kingambit", "maushold", "palafin",
+  "oinkologne", "spidops", "dachsbun", "dolliv", "arboliva", "naclstack", "garganacl", "toedscruel", "scovillain", "kilowattrel", "tinkatuff", "armarouge",
+  "tadbulb", "rookidee", "corvisquire", "finizen", "frigibax", "arctibax", "gimmighoul", "pawniard", "bisharp", "mankey", "primeape", "paldean wooper", "glimmet", "girafarig", "dunsparce",
   "sprigatito_tera", "fuecoco_tera", "quaxly_tera", "pawmi_tera",
+  "floragato_tera", "meowscarada_tera", "crocalor_tera", "skeledirge_tera", "quaxwell_tera", "quaquaval_tera", "pawmo_tera", "pawmot_tera",
+  "tinkaton_tera", "ceruledge_tera", "koraidon_tera", "miraidon_tera", "lechonk_tera", "charcadet_tera", "tinkatink_tera", "fidough_tera", "smoliv_tera",
+  "tarountula_tera", "corviknight_tera", "tandemaus_tera", "rotom_tera", "nacli_tera", "orthworm_tera", "toedscool_tera", "capsakid_tera", "grafaiai_tera", "shroodle_tera", "wattrel_tera", "bellibolt_tera",
+  "dondozo_tera", "tatsugiri_tera", "veluza_tera",
+  "annihilape_tera", "baxcalibur_tera", "clodsire_tera", "cyclizar_tera", "dudunsparce_tera", "farigiraf_tera", "flamigo_tera", "gholdengo_tera", "glimmora_tera", "kingambit_tera", "maushold_tera", "palafin_tera",
+  "oinkologne_tera", "spidops_tera", "dachsbun_tera", "dolliv_tera", "arboliva_tera", "naclstack_tera", "garganacl_tera", "toedscruel_tera", "scovillain_tera", "kilowattrel_tera", "tinkatuff_tera", "armarouge_tera",
+  "tadbulb_tera", "rookidee_tera", "corvisquire_tera", "finizen_tera", "frigibax_tera", "arctibax_tera", "gimmighoul_tera", "pawniard_tera", "bisharp_tera", "mankey_tera", "primeape_tera", "paldean wooper_tera", "glimmet_tera", "girafarig_tera", "dunsparce_tera",
   "go_sprite", "jail_sprite", "free_parking_sprite", "go_to_jail_sprite",
   "go_full", "jail_full", "free_parking_full", "go_to_jail_full",
   "tera_raid_chest", "academy_class", "poke_mart_tax", "league_assessment_tax"
@@ -27,25 +36,25 @@ const SAVE_STORAGE_KEY = "pokemonMonopolySaveSlotsV1";
 const SAVE_SLOT_COUNT = 3;
 const MYSTERY_CATCH_SPACE_ID = "__mystery__";
 const MYSTERY_POKEMON_POOL = [
-  { name: "Palafin", title: "HERO SURF SURPRISE!", rarity: "Rare", cost: 260, trigger: "water" },
-  { name: "Baxcalibur", title: "ICE DRAGON RUMBLE!", rarity: "Ultra Rare", cost: 360, trigger: "late" },
-  { name: "Gholdengo", title: "GOLDEN COIN GHOST!", rarity: "Ultra Rare", cost: 380, trigger: "money" },
-  { name: "Kingambit", title: "CHECKMATE CHALLENGE!", rarity: "Rare", cost: 340, trigger: "battle" },
-  { name: "Annihilape", title: "RAGE FROM BEYOND!", rarity: "Rare", cost: 320, trigger: "loss" },
-  { name: "Clodsire", title: "MUDDY PALDEA FRIEND!", rarity: "Rare", cost: 250, trigger: "desert" },
+  { name: "Finizen", title: "HERO SURF SURPRISE!", rarity: "Rare", cost: 260, trigger: "water" },
+  { name: "Frigibax", title: "ICE DRAGON RUMBLE!", rarity: "Ultra Rare", cost: 360, trigger: "late" },
+  { name: "Gimmighoul", title: "GOLDEN COIN GHOST!", rarity: "Ultra Rare", cost: 380, trigger: "money" },
+  { name: "Pawniard", title: "CHECKMATE CHALLENGE!", rarity: "Rare", cost: 340, trigger: "battle" },
+  { name: "Mankey", title: "RAGE FROM BEYOND!", rarity: "Rare", cost: 320, trigger: "loss" },
+  { name: "Paldean Wooper", title: "MUDDY PALDEA FRIEND!", rarity: "Rare", cost: 250, trigger: "desert" },
   { name: "Cyclizar", title: "ROAMING ROADSTER!", rarity: "Rare", cost: 280, trigger: "travel" },
   { name: "Flamigo", title: "FLYING FLOCK FLASH!", rarity: "Rare", cost: 240, trigger: "travel" },
-  { name: "Glimmora", title: "AREA ZERO CRYSTAL!", rarity: "Ultra Rare", cost: 360, trigger: "raid" },
-  { name: "Farigiraf", title: "TWIN-MIND OMEN!", rarity: "Rare", cost: 260, trigger: "academy" },
-  { name: "Dudunsparce", title: "ODD LITTLE LEGEND!", rarity: "Rare", cost: 220, trigger: "weird" },
+  { name: "Glimmet", title: "AREA ZERO CRYSTAL!", rarity: "Ultra Rare", cost: 360, trigger: "raid" },
+  { name: "Girafarig", title: "TWIN-MIND OMEN!", rarity: "Rare", cost: 260, trigger: "academy" },
+  { name: "Dunsparce", title: "ODD LITTLE LEGEND!", rarity: "Rare", cost: 220, trigger: "weird" },
   { name: "Maushold", title: "FAMILY SWARM EVENT!", rarity: "Rare", cost: 240, trigger: "swarm" }
 ];
 const MYSTERY_QUIRKS = [
-  { name: "Lucky", text: "+₽50 when you catch it.", cashBonus: 50 },
+  { name: "Lucky", text: "+$50 when you catch it.", cashBonus: 50 },
   { name: "Brave", text: "Starts battles with +1 saved level.", levelBonus: 1 },
   { name: "Swift", text: "Fast nature: +1 saved level.", levelBonus: 1 },
   { name: "Guardian", text: "Great for defending property.", defenseBonus: 1 },
-  { name: "Greedy", text: "+₽100 when you catch it.", cashBonus: 100 },
+  { name: "Greedy", text: "+$100 when you catch it.", cashBonus: 100 },
   { name: "Tera-born", text: "Carries a Tera sparkle badge.", teraBorn: true },
   { name: "Collector", text: "Raises the next mystery odds.", pityBonus: 2 },
   { name: "Stubborn", text: "Rare collection trophy trait.", trophy: true }
@@ -68,6 +77,9 @@ class UIManager {
     this.setupScreen = document.getElementById("setup-screen");
     this.gameContainer = document.getElementById("game-container");
     this.boardGrid = document.getElementById("board-grid");
+    this.logsSection = document.getElementById("logs-section");
+    this.logsToggleBtn = document.getElementById("logs-toggle-btn");
+    this.logsToggleLabel = document.getElementById("logs-toggle-label");
     this.logsPanel = document.getElementById("logs-panel-box");
     this.trainerList = document.getElementById("trainer-list-box");
     this.statusDialog = document.getElementById("status-dialog");
@@ -110,18 +122,33 @@ class UIManager {
     this.playerPokeTera = document.getElementById("player-poke-tera");
     this.playerHpBar = document.getElementById("player-hp-bar");
     this.playerHpText = document.getElementById("player-hp-text");
+    this.playerBattleStats = document.getElementById("player-battle-stats");
     this.playerBattleSprite = document.getElementById("player-battle-sprite");
     
     this.enemyPokeName = document.getElementById("enemy-poke-name");
     this.enemyPokeTera = document.getElementById("enemy-poke-tera");
     this.enemyHpBar = document.getElementById("enemy-hp-bar");
     this.enemyHpText = document.getElementById("enemy-hp-text");
+    this.enemyBattleStats = document.getElementById("enemy-battle-stats");
     this.enemyBattleSprite = document.getElementById("enemy-battle-sprite");
     
     this.battleMove0 = document.getElementById("move-btn-0");
     this.battleMove1 = document.getElementById("move-btn-1");
+    this.battleMove2 = document.getElementById("move-btn-2");
+    this.battleMove3 = document.getElementById("move-btn-3");
+    this.battleItemBtn = document.getElementById("battle-item-btn");
     this.battleTeraBtn = document.getElementById("terastallize-btn");
     this.battleLogText = document.getElementById("battle-log-text");
+    this.battleStatsToggleBtn = document.getElementById("battle-stats-toggle-btn");
+    this.battleStatsOverlay = document.getElementById("battle-stats-overlay");
+    this.battleStatsCloseBtn = document.getElementById("battle-stats-close-btn");
+    this.battleItemOverlay = document.getElementById("battle-item-overlay");
+    this.battleItemCloseBtn = document.getElementById("battle-item-close-btn");
+    this.battleItemGrid = document.getElementById("battle-item-grid");
+    this.playerBattleStats = document.getElementById("player-battle-stats");
+    this.enemyBattleStats = document.getElementById("enemy-battle-stats");
+    this.playerBattleStatsName = document.getElementById("player-battle-stats-name");
+    this.enemyBattleStatsName = document.getElementById("enemy-battle-stats-name");
 
     // Pokemon Selection Modal DOM
     this.pokemonSelectionOverlay = document.getElementById("pokemon-selection-overlay");
@@ -218,8 +245,8 @@ class UIManager {
     this.setupEventListeners();
 
     // Bind battle callback for combat animations & chiptune audio
-    Battle.onMoveExecuted = (attacker, defender, move, effectiveness, damage) => {
-      this.animateCombatMove(attacker, defender, move, effectiveness, damage);
+    Battle.onMoveExecuted = (attacker, defender, move, effectiveness, damage, effectEvent) => {
+      this.animateCombatMove(attacker, defender, move, effectiveness, damage, effectEvent);
     };
   }
 
@@ -328,9 +355,9 @@ class UIManager {
       const purchaseCost = Math.floor(space.cost * (1 - discount / 100));
       const bought = this.game.buyProperty(player.id, pos, discount);
       if (!bought) {
-        this.setDialogText(`Not enough money to buy ${space.name}. It costs ₽${purchaseCost}, but you only have ₽${player.cash}.`);
-        this.game.log(`${player.name} could not afford ${space.name} (cost ₽${purchaseCost}, cash ₽${player.cash}).`);
-        this.buyBtn.innerText = discount > 0 ? `CLAIM FREE (₽${purchaseCost})` : `BUY AT FULL (₽${space.cost})`;
+        this.setDialogText(`Not enough money to buy ${space.name}. It costs $${purchaseCost}, but you only have $${player.cash}.`);
+        this.game.log(`${player.name} could not afford ${space.name} (cost $${purchaseCost}, cash $${player.cash}).`);
+        this.buyBtn.innerText = discount > 0 ? `CLAIM FREE ($${purchaseCost})` : `BUY AT FULL ($${space.cost})`;
         this.buyBtn.style.display = "inline-block";
         this.endBtn.innerText = "END TURN";
         this.endBtn.style.display = "inline-block";
@@ -357,7 +384,7 @@ class UIManager {
         this.endBtn.innerText = "END TURN";
       }
 
-      this.setDialogText(`You bought ${space.name} (${space.pokemon}) for ₽${purchaseCost}!`);
+      this.setDialogText(`You bought ${space.name} (${space.pokemon}) for $${purchaseCost}!`);
       this.updateUI();
       this.maybeTriggerMysteryEncounter(player, "propertyClaim", () => {
         this.endBtn.style.display = "inline-block";
@@ -444,13 +471,43 @@ class UIManager {
     // Battle options
     this.battleMove0.addEventListener("click", () => this.handlePlayerBattleMove(0));
     this.battleMove1.addEventListener("click", () => this.handlePlayerBattleMove(1));
+    if (this.battleMove2) this.battleMove2.addEventListener("click", () => this.handlePlayerBattleMove(2));
+    if (this.battleMove3) this.battleMove3.addEventListener("click", () => this.handlePlayerBattleMove(3));
+    if (this.battleItemBtn) this.battleItemBtn.addEventListener("click", () => this.showBattleItemMenu());
+    if (this.battleItemCloseBtn) this.battleItemCloseBtn.addEventListener("click", () => this.hideBattleItemMenu());
+    if (this.battleItemOverlay) {
+      this.battleItemOverlay.addEventListener("click", (e) => {
+        if (e.target === this.battleItemOverlay) this.hideBattleItemMenu();
+      });
+    }
     
     this.battleTeraBtn.addEventListener("click", () => {
+      const player = this.getActiveBattlePlayer();
+      if (!player || !this.game.spendTeraCharge(player)) {
+        this.setBattleLog("Your Tera Orb is empty. Recharge at Free Parking, passing GO, or with a Tera Shard.");
+        this.updateBattleHUDs();
+        return;
+      }
       Battle.terastallizePlayer();
       this.playerPokeTera.style.display = "inline-block";
       this.battleTeraBtn.disabled = true;
       this.updateBattleHUDs();
     });
+    if (this.battleStatsToggleBtn) {
+      this.battleStatsToggleBtn.addEventListener("click", () => this.toggleBattleStatsOverlay(true));
+    }
+
+    if (this.logsToggleBtn) {
+      this.logsToggleBtn.addEventListener("click", () => this.toggleAdventureLog());
+    }
+    if (this.battleStatsCloseBtn) {
+      this.battleStatsCloseBtn.addEventListener("click", () => this.toggleBattleStatsOverlay(false));
+    }
+    if (this.battleStatsOverlay) {
+      this.battleStatsOverlay.addEventListener("click", event => {
+        if (event.target === this.battleStatsOverlay) this.toggleBattleStatsOverlay(false);
+      });
+    }
 
     // Catch mini-game ball selectors
     const selectBall = (ballType) => {
@@ -603,7 +660,7 @@ class UIManager {
   formatSaveSummary(save) {
     const summary = save.summary || {};
     const trainerLines = (summary.trainers || []).slice(0, 4).map(t => {
-      return `${this.escapeHTML(t.name)}: ${this.escapeHTML(t.pokemon)} Lv.${t.level}, ₽${t.cash}, ${t.properties} deeds`;
+      return `${this.escapeHTML(t.name)}: ${this.escapeHTML(t.pokemon)} Lv.${t.level}, $${t.cash}, ${t.properties} deeds`;
     });
     const active = summary.activeTrainer ? `Turn: ${this.escapeHTML(summary.activeTrainer)}` : "Turn: Unknown";
     const owned = `Properties: ${summary.totalProperties || 0}`;
@@ -937,13 +994,97 @@ class UIManager {
     setTimeout(() => popup.remove(), 800);
   }
 
-  showCenterActionToast(text, variant = "info", host = null) {
+  showCenterActionToast(text, variant = "info", host = null, durationMs = null) {
     const target = host || document.body;
     const toast = document.createElement("div");
     toast.className = `center-action-toast ${variant}`;
     toast.innerText = text;
+    const duration = durationMs || (String(variant).includes("money") ? 3000 : 1600);
+    toast.style.animationDuration = `${duration}ms`;
     target.appendChild(toast);
-    setTimeout(() => toast.remove(), 1600);
+    setTimeout(() => toast.remove(), duration);
+  }
+
+  formatMoney(amount) {
+    const value = Math.max(0, Math.floor(Number(amount) || 0));
+    return `$${value}`;
+  }
+
+  getRentAmounts(spaceId) {
+    const fullRent = this.game.calculateRent(spaceId);
+    return {
+      fullRent,
+      winRent: Math.floor(fullRent * 0.5),
+      lossRent: Math.floor(fullRent * 1.5)
+    };
+  }
+
+  removeRentPreviewCard() {
+    const card = document.getElementById("rent-preview-card");
+    if (card) card.remove();
+  }
+
+  showRentPreviewCard(spaceId, payer, owner, mode = "payer") {
+    if (!this.actionBox || !payer || !owner) return;
+    this.removeRentPreviewCard();
+
+    const space = this.game.spaces[spaceId];
+    const { fullRent, winRent, lossRent } = this.getRentAmounts(spaceId);
+    const payerName = this.escapeHTML(payer.name);
+    const ownerName = this.escapeHTML(owner.name);
+    const title = mode === "collector" ? "Rent Incoming" : "Rent Due";
+    const safeLabel = mode === "collector" ? "Collect full rent" : "Pay now";
+    const challengeWin = mode === "collector"
+      ? `Win defense: catch Pokémon + collect ${this.formatMoney(fullRent)}`
+      : `Win battle: pay ${this.formatMoney(winRent)} if catch fails`;
+    const challengeLose = mode === "collector"
+      ? "Lose defense: collect $0, keep property"
+      : `Lose battle: pay ${this.formatMoney(lossRent)}`;
+
+    const card = document.createElement("div");
+    card.id = "rent-preview-card";
+    card.className = `rent-preview-card ${mode}`;
+    card.innerHTML = `
+      <div class="rent-preview-header">
+        <span>${title}</span>
+        <strong>${this.formatMoney(fullRent)}</strong>
+      </div>
+      <div class="rent-preview-property">${this.escapeHTML(space.name)} · ${payerName} → ${ownerName}</div>
+      <div class="rent-preview-grid">
+        <div class="rent-preview-option safe">
+          <span>${safeLabel}</span>
+          <strong>${mode === "collector" ? "+" : "-"}${this.formatMoney(fullRent)}</strong>
+        </div>
+        <div class="rent-preview-option win">
+          <span>${challengeWin}</span>
+        </div>
+        <div class="rent-preview-option lose">
+          <span>${challengeLose}</span>
+        </div>
+      </div>
+    `;
+
+    this.actionBox.insertBefore(card, this.actionBox.firstChild);
+  }
+
+  showMoneyTransfer(amount, fromName, toName, message, host = null) {
+    const value = Math.max(0, Math.floor(Number(amount) || 0));
+    if (value <= 0) return;
+
+    const target = host || this.gameContainer || document.body;
+    const duration = 3000;
+    this.showCenterActionToast(message || `${this.formatMoney(value)} paid`, "money", target, duration);
+
+    const burst = document.createElement("div");
+    burst.className = "money-transfer-burst";
+    burst.style.animationDuration = `${duration}ms`;
+    burst.innerHTML = `
+      <span class="money-transfer-amount">-${this.formatMoney(value)}</span>
+      <span class="money-transfer-route">${this.escapeHTML(fromName)} pays ${this.escapeHTML(toName)}</span>
+      <span class="money-transfer-amount gain">+${this.formatMoney(value)}</span>
+    `;
+    target.appendChild(burst);
+    setTimeout(() => burst.remove(), duration);
   }
 
   showDamageNumber(side, damage) {
@@ -1028,7 +1169,7 @@ class UIManager {
       if (space.cost > 0) {
         const price = document.createElement("div");
         price.className = "tile-price";
-        price.innerText = `₽${space.cost}`;
+        price.innerText = `$${space.cost}`;
         content.appendChild(price);
       }
 
@@ -1078,21 +1219,21 @@ class UIManager {
 
     if (space.type === "property") {
       rentInfoHTML = `
-        <div class="deed-info-row"><span>Base Rent (Unimproved):</span><span>₽${space.rent[0]}</span></div>
-        <div class="deed-info-row"><span>With 1 Camp:</span><span>₽${space.rent[1]}</span></div>
-        <div class="deed-info-row"><span>With 2 Camps:</span><span>₽${space.rent[2]}</span></div>
-        <div class="deed-info-row"><span>With 3 Camps:</span><span>₽${space.rent[3]}</span></div>
-        <div class="deed-info-row"><span>With 4 Camps:</span><span>₽${space.rent[4]}</span></div>
-        <div class="deed-info-row"><span>With Gym Station:</span><span>₽${space.rent[5]}</span></div>
-        <div class="deed-info-row bold"><span>Camp Upgrade Cost:</span><span>₽${space.houseCost}</span></div>
+        <div class="deed-info-row"><span>Base Rent (Unimproved):</span><span>$${space.rent[0]}</span></div>
+        <div class="deed-info-row"><span>With 1 Camp:</span><span>$${space.rent[1]}</span></div>
+        <div class="deed-info-row"><span>With 2 Camps:</span><span>$${space.rent[2]}</span></div>
+        <div class="deed-info-row"><span>With 3 Camps:</span><span>$${space.rent[3]}</span></div>
+        <div class="deed-info-row"><span>With 4 Camps:</span><span>$${space.rent[4]}</span></div>
+        <div class="deed-info-row"><span>With Gym Station:</span><span>$${space.rent[5]}</span></div>
+        <div class="deed-info-row bold"><span>Camp Upgrade Cost:</span><span>$${space.houseCost}</span></div>
       `;
     } else if (space.type === "station") {
       colorClass = "station";
       rentInfoHTML = `
-        <div class="deed-info-row"><span>1 Taxi Owned:</span><span>₽${space.rent[0]}</span></div>
-        <div class="deed-info-row"><span>2 Taxis Owned:</span><span>₽${space.rent[1]}</span></div>
-        <div class="deed-info-row"><span>3 Taxis Owned:</span><span>₽${space.rent[2]}</span></div>
-        <div class="deed-info-row"><span>4 Taxis Owned:</span><span>₽${space.rent[3]}</span></div>
+        <div class="deed-info-row"><span>1 Taxi Owned:</span><span>$${space.rent[0]}</span></div>
+        <div class="deed-info-row"><span>2 Taxis Owned:</span><span>$${space.rent[1]}</span></div>
+        <div class="deed-info-row"><span>3 Taxis Owned:</span><span>$${space.rent[2]}</span></div>
+        <div class="deed-info-row"><span>4 Taxis Owned:</span><span>$${space.rent[3]}</span></div>
       `;
     } else if (space.type === "utility") {
       colorClass = "utility";
@@ -1230,8 +1371,8 @@ class UIManager {
       <div style="width: 80px; height: 80px; margin: 0 auto 10px auto;">${pokeImgHTML}</div>
       <div class="deed-pokemon-name">${space.pokemon ? space.pokemon : "Corviknight Flying Taxi"}</div>
       ${statusHTML}
-      <div class="deed-info-row"><span>Purchase Price:</span><span>₽${space.cost}</span></div>
-      <div class="deed-info-row"><span>Mortgage Value:</span><span>₽${Math.floor(space.cost / 2)}</span></div>
+      <div class="deed-info-row"><span>Purchase Price:</span><span>$${space.cost}</span></div>
+      <div class="deed-info-row"><span>Mortgage Value:</span><span>$${Math.floor(space.cost / 2)}</span></div>
       <hr style="margin: 10px 0; border: 0; border-top: 1.5px solid #CCC;"/>
       ${rentInfoHTML}
       
@@ -1367,7 +1508,7 @@ class UIManager {
         } else {
           // Reset price text if not owned
           if (priceTag && space.cost > 0) {
-            priceTag.innerText = `₽${space.cost}`;
+            priceTag.innerText = `$${space.cost}`;
           }
         }
 
@@ -1464,8 +1605,12 @@ class UIManager {
     });
 
     // Update Sidebar logs
-    this.logsPanel.innerHTML = this.game.logs.map(log => `<div class="log-entry">${log}</div>`).join("");
-    this.logsPanel.scrollTop = this.logsPanel.scrollHeight;
+    if (this.logsPanel) {
+      this.logsPanel.innerHTML = this.game.logs.map(log => `<div class="log-entry">${log}</div>`).join("");
+      if (!this.logsSection || !this.logsSection.classList.contains("collapsed")) {
+        this.logsPanel.scrollTop = this.logsPanel.scrollHeight;
+      }
+    }
 
     // Update Sidebar Trainer Cards
     this.trainerList.innerHTML = this.game.players.map(p => {
@@ -1493,7 +1638,7 @@ class UIManager {
               <span class="trainer-card-partner">${p.pokemon} (Lv. ${p.level}) ${p.inJail ? '[DETENTION]' : ''}</span>
             </div>
           </div>
-          <span class="trainer-card-cash">₽${p.cash}</span>
+          <span class="trainer-card-cash">$${p.cash}</span>
         </div>
       `;
     }).join("");
@@ -1518,7 +1663,7 @@ class UIManager {
           // Create floating element
           const floatEl = document.createElement("div");
           floatEl.className = `floating-cash ${diff > 0 ? 'gain' : 'loss'}`;
-          floatEl.innerText = `${diff > 0 ? '+' : '-'}₽${Math.abs(diff)}`;
+          floatEl.innerText = `${diff > 0 ? '+' : '-'}$${Math.abs(diff)}`;
           card.appendChild(floatEl);
 
           // Auto-remove element after animation ends (1200ms)
@@ -1552,6 +1697,15 @@ class UIManager {
     this.game.markFinished(winner.id);
     this.victoryShown = true;
     this.showVictoryScreen(winner);
+  }
+
+  toggleAdventureLog(forceOpen = null) {
+    if (!this.logsSection) return;
+    const shouldOpen = forceOpen === null ? this.logsSection.classList.contains("collapsed") : forceOpen;
+    this.logsSection.classList.toggle("collapsed", !shouldOpen);
+    if (this.logsToggleBtn) this.logsToggleBtn.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+    if (this.logsToggleLabel) this.logsToggleLabel.innerText = shouldOpen ? "HIDE" : "SHOW";
+    if (shouldOpen && this.logsPanel) this.logsPanel.scrollTop = this.logsPanel.scrollHeight;
   }
 
   showVictoryScreen(winner) {
@@ -1599,8 +1753,8 @@ class UIManager {
       ["Turns", stats.turnsCompleted || 0],
       ["Your GO Laps", humanGoPasses],
       ["Total GO Passes", stats.totalPassesGo || 0],
-      ["Final Cash", `₽${winner.cash}`],
-      ["Net Worth", `₽${netWorth}`],
+      ["Final Cash", `$${winner.cash}`],
+      ["Net Worth", `$${netWorth}`],
       ["Properties", propertiesOwned],
       ["Collection", collectionCount],
       ["Partner", `${winner.pokemon} Lv.${winner.level}`],
@@ -1748,6 +1902,7 @@ class UIManager {
       const btn = document.getElementById(id);
       if (btn) btn.remove();
     });
+    this.removeRentPreviewCard();
     this.activePassHandler = null;
     this.endBtn.innerText = "END TURN";
 
@@ -1798,14 +1953,14 @@ class UIManager {
           const player = this.game.getCurrentPlayer();
           const paidFine = this.game.payJailFine(player);
           if (!paidFine) {
-            this.setDialogText("Detention limit reached, but you need ₽50 to pay the escape fine.");
+            this.setDialogText("Detention limit reached, but you need $50 to pay the escape fine.");
             this.rollBtn.style.display = "none";
             this.endBtn.style.display = "inline-block";
             return;
           }
           this.game.movePlayer(player, result.spacesMoved);
           this.updateUI();
-          this.setDialogText("Detention limit reached! Paid ₽50 escape fine.");
+          this.setDialogText("Detention limit reached! Paid $50 escape fine.");
         }
 
         // Animate movement
@@ -1869,7 +2024,14 @@ class UIManager {
       return;
     }
     if (space.type === "parking") {
-      this.setDialogText("Rest stop! Free parking.");
+      const recharged = this.game.rechargeTera(player, "Tera Orb recharged at Free Parking");
+      const itemId = this.game.rollItemDrop(Math.random() < 0.25 ? "rare" : "battle");
+      this.game.addItem(player, itemId, 1);
+      const item = BattleItems[itemId];
+      this.setDialogText(`Free Parking rest stop! ${recharged ? "Tera recharged. " : ""}Found ${item.name}.`);
+      if (!player.isAI) this.showCenterActionToast(`Free Parking: ${item.name}!`, "money", this.gameContainer);
+      this.awardEvolutionPoints(player, player.pokemon, 1, "Free Parking", this.gameContainer);
+      this.updateUI();
       if (player.isAI) {
         setTimeout(() => this.executeAITurnEnd(), 1500);
       } else {
@@ -1901,9 +2063,9 @@ class UIManager {
     // Tax Spaces
     if (space.type === "tax") {
       const taxCost = space.cost;
-      this.game.log(`${player.name} paid ₽${taxCost} for ${space.name}.`);
+      this.game.log(`${player.name} paid $${taxCost} for ${space.name}.`);
       player.cash -= taxCost;
-      this.setDialogText(`Landed on ${space.name}. Paid ₽${taxCost} tax.`);
+      this.setDialogText(`Landed on ${space.name}. Paid $${taxCost} tax.`);
       this.resolveDuesCheck(playerIdx, null, () => {
         this.updateUI();
         if (player.isAI) {
@@ -1964,7 +2126,7 @@ class UIManager {
         this.showEncounterSprite(space.pokemon, "WILD ENCOUNTER!");
         
         // Show battle prompt controls
-        this.buyBtn.innerText = `BUY AT FULL (₽${space.cost})`;
+        this.buyBtn.innerText = `BUY AT FULL ($${space.cost})`;
         this.buyBtn.style.display = "inline-block";
         this.buyBtn.classList.add("btn-buy-small");
         
@@ -2037,21 +2199,23 @@ class UIManager {
       // AI lands on human's property: AI challenges human to a trainer battle!
       if (ownerIdx === 0) { // Owner is Human
         this.rollBtn.style.display = "none";
-        this.setDialogText(`${player.name} challenges you to a Trainer Battle for rent discount on ${space.name}!`);
+        this.setDialogText(`${player.name} landed on your property. Defend to try catching their Pokémon and collect rent, or safely collect rent now.`);
         this.isEncounterActive = true;
         this.showEncounterSprite(player.pokemon, `${player.name} CHALLENGE!`);
+        this.showRentPreviewCard(spaceId, player, owner, "collector");
+        const rentAmounts = this.getRentAmounts(spaceId);
         
         const acceptChallengeBtn = document.createElement("button");
         acceptChallengeBtn.className = "btn-comic btn-roll btn-battle-highlight";
         acceptChallengeBtn.id = "accept-challenge-btn";
-        acceptChallengeBtn.innerText = "DEFEND PROPERTY (Battle!)";
+        acceptChallengeBtn.innerText = `DEFEND PROPERTY (Win: Catch + ${this.formatMoney(rentAmounts.fullRent)})`;
         this.rollBtn.parentNode.appendChild(acceptChallengeBtn);
 
         // Also provide a fallback: pay full rent without battle
         const payRentFallbackBtn = document.createElement("button");
         payRentFallbackBtn.className = "btn-comic btn-buy btn-buy-small";
         payRentFallbackBtn.id = "pay-rent-fallback-btn";
-        payRentFallbackBtn.innerText = `COLLECT FULL RENT (₽${this.game.calculateRent(spaceId)})`;
+        payRentFallbackBtn.innerText = `COLLECT RENT +${this.formatMoney(rentAmounts.fullRent)}`;
         this.rollBtn.parentNode.appendChild(payRentFallbackBtn);
         
         const cleanupChallenge = () => {
@@ -2061,6 +2225,7 @@ class UIManager {
           if (ac) ac.remove();
           const prf = document.getElementById("pay-rent-fallback-btn");
           if (prf) prf.remove();
+          this.removeRentPreviewCard();
         };
 
         acceptChallengeBtn.addEventListener("click", () => {
@@ -2073,8 +2238,9 @@ class UIManager {
         payRentFallbackBtn.addEventListener("click", () => {
           cleanupChallenge();
           // Human owner just collects full rent without battling; AI pays normally
-          this.game.payRent(player.id, spaceId, 0);
-          this.setDialogText(`${player.name} pays full rent ₽${this.game.calculateRent(spaceId)} to you.`);
+          const rentResult = this.game.payRent(player.id, spaceId, 0);
+          this.showMoneyTransfer(rentResult.rent, player.name, owner.name, `${owner.name} collected ${this.formatMoney(rentResult.rent)} rent!`, this.gameContainer);
+          this.setDialogText(`${player.name} paid full rent ${this.formatMoney(rentResult.rent)} to you.`);
           this.resolveDuesCheck(player.id, 0, () => {
             this.updateUI();
             this.executeAITurnEnd();
@@ -2105,17 +2271,19 @@ class UIManager {
       this.setDialogText(`Landed on ${owner.name}'s property. Pay rent or Challenge Trainer to a battle?`);
       this.isEncounterActive = true;
       this.showEncounterSprite(owner.pokemon, "TRAINER CHALLENGE!");
+      this.showRentPreviewCard(spaceId, player, owner, "payer");
+      const rentAmounts = this.getRentAmounts(spaceId);
       
       const challengeBtn = document.createElement("button");
       challengeBtn.className = "btn-comic btn-roll btn-battle-highlight";
       challengeBtn.id = "trainer-battle-btn";
-      challengeBtn.innerText = "CHALLENGE OWNER (50% Rent on win / 1.5x on loss)";
+      challengeBtn.innerText = `CHALLENGE BATTLE (Win: ${this.formatMoney(rentAmounts.winRent)} / Lose: ${this.formatMoney(rentAmounts.lossRent)})`;
       this.buyBtn.parentNode.insertBefore(challengeBtn, this.buyBtn);
 
       const payBtn = document.createElement("button");
       payBtn.className = "btn-comic btn-buy btn-buy-small";
       payBtn.id = "pay-rent-btn";
-      payBtn.innerText = `PAY FULL RENT (₽${this.game.calculateRent(spaceId)})`;
+      payBtn.innerText = `PAY RENT ${this.formatMoney(rentAmounts.fullRent)}`;
       this.buyBtn.parentNode.insertBefore(payBtn, this.buyBtn);
 
       challengeBtn.addEventListener("click", () => {
@@ -2123,6 +2291,7 @@ class UIManager {
         this.hideEncounterSprite();
         challengeBtn.remove();
         payBtn.remove();
+        this.removeRentPreviewCard();
         this.promptPokemonSelection((selectedPoke) => {
           this.initiateTrainerBattle(selectedPoke, owner.pokemon, spaceId, player.id, owner.id);
         });
@@ -2133,8 +2302,10 @@ class UIManager {
         this.hideEncounterSprite();
         challengeBtn.remove();
         payBtn.remove();
-        this.game.payRent(player.id, spaceId, 0);
-        this.setDialogText(`Paid ₽${this.game.calculateRent(spaceId)} rent to ${owner.name}.`);
+        this.removeRentPreviewCard();
+        const rentResult = this.game.payRent(player.id, spaceId, 0);
+        this.showMoneyTransfer(rentResult.rent, player.name, owner.name, `Paid ${this.formatMoney(rentResult.rent)} rent to ${owner.name}`, this.gameContainer);
+        this.setDialogText(`Paid ${this.formatMoney(rentResult.rent)} rent to ${owner.name}. Cash left: ${this.formatMoney(player.cash)}.`);
         this.resolveDuesCheck(player.id, ownerIdx, () => {
           this.updateUI();
           this.endBtn.style.display = "inline-block";
@@ -2209,7 +2380,7 @@ class UIManager {
       // Must liquidate assets
       if (debtorIdx === 0) {
         // Human player: must mortgage things
-        this.setDialogText(`⚠️ You owe a debt of ₽${absoluteDebt}! Mortgage properties or sell Camps to clear balance.`);
+        this.setDialogText(`⚠️ You owe a debt of $${absoluteDebt}! Mortgage properties or sell Camps to clear balance.`);
         
         const resolveDebtBtn = document.createElement("button");
         resolveDebtBtn.className = "btn-comic btn-buy";
@@ -2223,7 +2394,7 @@ class UIManager {
             this.updateUI();
             callback();
           } else {
-            alert(`You are still short by ₽${Math.abs(player.cash)}. Mortgage more properties!`);
+            alert(`You are still short by $${Math.abs(player.cash)}. Mortgage more properties!`);
           }
         };
         resolveDebtBtn.addEventListener("click", checkDebt);
@@ -2556,7 +2727,7 @@ class UIManager {
           </div>
           <div class="mystery-actions">
             <button class="btn-comic mystery-battle">BATTLE & CATCH</button>
-            <button class="btn-comic mystery-bait">TOSS BAIT ₽50</button>
+            <button class="btn-comic mystery-bait">TOSS BAIT $50</button>
             <button class="btn-comic mystery-watch">WATCH CAREFULLY</button>
             <button class="btn-comic mystery-ignore">IGNORE</button>
           </div>
@@ -2631,12 +2802,16 @@ class UIManager {
     this.enemyPokeTera.style.display = encounter.kind === "Tera" ? "inline-block" : "none";
 
     const player = this.game.players[0];
+    this.game.resetBattleItemUse(player);
     const pLevel = this.game.getPokemonLevel(player, playerPoke);
     const eLevel = Math.max(2, Math.floor(encounter.cost / 70) + (encounter.kind === "Titan" ? 2 : 0));
     const pMoves = this.getBattleMovesForPlayer(player, playerPoke);
+    const pTraining = this.game.getPokemonTraining(player, playerPoke);
     Battle.startBattle(playerPoke, encounter.name, false, null, 0, null, pLevel, eLevel, player.powerUpgrades || 0, 0, (won) => {
       Sound.stopBattleBGM();
       this.battleOverlay.style.display = "none";
+      this.awardBattleItemDrop(player, won, encounter.kind === "Titan" || encounter.rarity === "Ultra Rare" ? "rare" : "battle");
+      if (won) this.awardEvolutionPoints(player, playerPoke, 2, "battle win", this.gameContainer);
       if (!won) {
         this.setDialogText(`${encounter.name} escaped after the battle. The board goes quiet again.`);
         this.game.log(`Mystery encounter ${encounter.name} escaped after defeating ${playerPoke}.`);
@@ -2646,6 +2821,7 @@ class UIManager {
       this.initiateMysteryCatchMiniGame(encounter, success => {
         if (success) {
           this.addMysteryPokemonToCollection(encounter);
+          this.awardEvolutionPoints(player, playerPoke, 2, "caught a Pokémon", this.gameContainer);
           this.setDialogText(`${encounter.isShiny ? "Shiny " : ""}${encounter.name} joined your collection with ${encounter.quirk.name}!`);
           this.game.log(`✨ ${player.name} caught ${encounter.isShiny ? "Shiny " : ""}${encounter.name} (${encounter.kind}, ${encounter.quirk.name}).`);
           this.renderCollection();
@@ -2656,7 +2832,7 @@ class UIManager {
         }
         continuation();
       });
-    }, pMoves);
+    }, pMoves, null, pTraining);
 
     this.updateBattleHUDs();
     this.setBattleLog(`${encounter.kind} mystery encounter! ${encounter.name} wants to battle!`);
@@ -2691,7 +2867,7 @@ class UIManager {
     }
     if (encounter.quirk.cashBonus) {
       player.cash += encounter.quirk.cashBonus;
-      this.showCenterActionToast(`+₽${encounter.quirk.cashBonus} ${encounter.quirk.name} quirk!`, "money", this.gameContainer);
+      this.showCenterActionToast(`+$${encounter.quirk.cashBonus} ${encounter.quirk.name} quirk!`, "money", this.gameContainer);
     }
     if (encounter.quirk.pityBonus && this.game.mysteryEncounterState) {
       this.game.mysteryEncounterState.sinceLastEncounter += encounter.quirk.pityBonus;
@@ -2716,10 +2892,14 @@ class UIManager {
     const eLevel = Math.max(1, Math.floor(this.game.spaces[spaceId].cost / 60));
     const pPower = this.game.players[0].powerUpgrades || 0;
     const pMoves = this.getBattleMovesForPlayer(this.game.players[0], playerPoke);
+    const pTraining = this.game.getPokemonTraining(this.game.players[0], playerPoke);
+    this.game.resetBattleItemUse(this.game.players[0]);
 
     Battle.startBattle(playerPoke, enemyPoke, false, spaceId, 0, null, pLevel, eLevel, pPower, 0, (won) => {
       Sound.stopBattleBGM();
       this.battleOverlay.style.display = "none";
+      this.awardBattleItemDrop(this.game.players[0], won, "battle");
+      if (won) this.awardEvolutionPoints(this.game.players[0], playerPoke, 2, "battle win", this.gameContainer);
       if (won) {
         // human wins the battle: transition to the catch mini-game!
         this.initiateCatchMiniGame(spaceId, (success) => {
@@ -2733,6 +2913,7 @@ class UIManager {
               player0.collection.push(space.pokemon);
               player0.collectionMeta.push(null);
             }
+            this.awardEvolutionPoints(player0, playerPoke, 2, "caught a Pokémon", this.gameContainer);
             this.renderCollection();
             this.game.buyProperty(player0.id, spaceId, 100);
             this.setDialogText(`You caught and claimed ${space.name} for FREE!`);
@@ -2751,7 +2932,7 @@ class UIManager {
         const space = this.game.spaces[spaceId];
         this.showFullPriceBuyAfterFailedWildClaim(spaceId, `Defeat! Wild ${enemyPoke} fled. You can still buy ${space.name} at full price.`);
       }
-    }, pMoves);
+    }, pMoves, null, pTraining);
 
     this.updateBattleHUDs();
     this.setBattleLog("A wild Pokémon appeared! Start the battle!");
@@ -2772,7 +2953,7 @@ class UIManager {
     this.hideEncounterSprite();
     this.setDialogText(message);
     this.updateUI();
-    this.buyBtn.innerText = `BUY AT FULL (₽${space.cost})`;
+    this.buyBtn.innerText = `BUY AT FULL ($${space.cost})`;
     this.buyBtn.classList.add("btn-buy-small");
     this.buyBtn.style.display = "inline-block";
     this.endBtn.innerText = "END TURN";
@@ -3044,7 +3225,7 @@ class UIManager {
     // Deduct ball cost
     if (costOfBall > 0) {
       player.cash -= costOfBall;
-      this.game.log(`${player.name} bought a ${this.selectedBall === "great" ? "Great Ball" : "Ultra Ball"} for ₽${costOfBall}.`);
+      this.game.log(`${player.name} bought a ${this.selectedBall === "great" ? "Great Ball" : "Ultra Ball"} for $${costOfBall}.`);
       this.updateUI();
     }
     this.ballCostPaid = true;
@@ -3275,7 +3456,7 @@ class UIManager {
       // Deduct ball cost
       if (costOfBall > 0) {
         player.cash -= costOfBall;
-        this.game.log(`${player.name} bought a ${this.selectedBall === "great" ? "Great Ball" : "Ultra Ball"} for ₽${costOfBall}.`);
+        this.game.log(`${player.name} bought a ${this.selectedBall === "great" ? "Great Ball" : "Ultra Ball"} for $${costOfBall}.`);
         this.updateUI();
       }
     }
@@ -3463,9 +3644,11 @@ class UIManager {
     player.cash += reward;
     const label = this.getCatchQualityRewardLabel(quality);
     const article = label === "Excellent" ? "an" : "a";
-    this.game.log(`${player.name} earned ₽${reward} for ${article} ${label} catch!`);
-    this.setDialogText(`${label} catch bonus! You earned ₽${reward}.`);
-    this.showCenterActionToast(`+₽${reward} ${label} catch!`, "money", this.catchOverlay);
+    this.game.log(`${player.name} earned $${reward} for ${article} ${label} catch!`);
+    this.setDialogText(`${label} catch bonus! You earned $${reward}.`);
+    this.showCenterActionToast(`+$${reward} ${label} catch!`, "money", this.catchOverlay);
+    if (quality === "Excellent") this.awardEvolutionPoints(player, player.pokemon, 2, "Excellent catch", this.catchOverlay);
+    else if (quality === "Great") this.awardEvolutionPoints(player, player.pokemon, 1, "Good catch", this.catchOverlay);
     this.updateUI();
   }
 
@@ -3494,10 +3677,15 @@ class UIManager {
     const ePower = this.game.players[enemySideIdx].powerUpgrades || 0;
     const pMoves = this.getBattleMovesForPlayer(this.game.players[playerSideIdx], playerPoke);
     const eMoves = this.getBattleMovesForPlayer(this.game.players[enemySideIdx], enemyPoke);
+    const pTraining = this.game.getPokemonTraining(this.game.players[playerSideIdx], playerPoke);
+    const eTraining = this.game.getPokemonTraining(this.game.players[enemySideIdx], enemyPoke);
+    this.game.resetBattleItemUse(this.game.players[playerSideIdx]);
 
     Battle.startBattle(playerPoke, enemyPoke, true, spaceId, challengerIdx, ownerIdx, pLevel, eLevel, pPower, ePower, (won) => {
       Sound.stopBattleBGM();
       this.battleOverlay.style.display = "none";
+      this.awardBattleItemDrop(this.game.players[playerSideIdx], won, won ? "battle" : "loss");
+      if (won) this.awardEvolutionPoints(this.game.players[playerSideIdx], playerPoke, 2, "battle win", this.gameContainer);
       
       const activePlayer = this.game.getCurrentPlayer();
       const space = this.game.spaces[spaceId];
@@ -3509,14 +3697,18 @@ class UIManager {
           this.initiateCatchMiniGame(spaceId, (success) => {
             if (success) {
               this.game.transferPropertyOwnership(spaceId, 0);
-              this.setDialogText(`GOTCHA! You caught ${enemyPoke} and claimed ownership of ${space.name} for FREE!`);
+              this.awardEvolutionPoints(this.game.players[0], playerPoke, 2, "caught a Pokémon", this.gameContainer);
+              const savedRent = this.getRentAmounts(spaceId).fullRent;
+              this.showCenterActionToast(`Claimed property and saved ${this.formatMoney(savedRent)} rent!`, "money", this.gameContainer);
+              this.setDialogText(`GOTCHA! You caught ${enemyPoke}, paid $0 rent, and claimed ownership of ${space.name} for FREE!`);
               this.updateUI();
               this.resolveDuesCheck(0, null, () => {
                 this.endBtn.style.display = "inline-block";
               });
             } else {
-              this.setDialogText(`The Pokémon broke free and fled! You must pay 50% rent to ${owner.name}.`);
-              this.game.payRent(0, spaceId, 50);
+              const rentResult = this.game.payRent(0, spaceId, 50);
+              this.showMoneyTransfer(rentResult.rent, this.game.players[0].name, owner.name, `Battle discount rent: ${this.formatMoney(rentResult.rent)}`, this.gameContainer);
+              this.setDialogText(`The Pokémon broke free and fled! You paid discount rent ${this.formatMoney(rentResult.rent)} to ${owner.name}.`);
               this.resolveDuesCheck(0, ownerIdx, () => {
                 this.updateUI();
                 this.endBtn.style.display = "inline-block";
@@ -3524,8 +3716,9 @@ class UIManager {
             }
           });
         } else {
-          this.setDialogText(`Defeat! You lost trainer battle! Pay 1.5x rent penalty.`);
-          this.game.payRent(0, spaceId, -50);
+          const rentResult = this.game.payRent(0, spaceId, -50);
+          this.showMoneyTransfer(rentResult.rent, this.game.players[0].name, owner.name, `Penalty rent paid: ${this.formatMoney(rentResult.rent)}`, this.gameContainer);
+          this.setDialogText(`Defeat! You paid 1.5x penalty rent ${this.formatMoney(rentResult.rent)} to ${owner.name}.`);
           this.resolveDuesCheck(0, ownerIdx, () => {
             this.updateUI();
             this.endBtn.style.display = "inline-block";
@@ -3545,9 +3738,10 @@ class UIManager {
           this.renderCollection();
           this.setDialogText(`Property defended! You caught ${enemyPoke}, and ${activePlayer.name} pays full rent.`);
           this.game.log(`🛡️ Property defended! You caught ${enemyPoke} from ${activePlayer.name}.`);
+          this.awardEvolutionPoints(humanOwner, playerPoke, 2, "property defense", this.gameContainer);
           const rentResult = this.game.payRent(activePlayer.id, spaceId, 0);
           if (rentResult.rent > 0) {
-            this.showCenterActionToast(`Collected ₽${rentResult.rent} rent!`, "money", this.gameContainer);
+            this.showMoneyTransfer(rentResult.rent, activePlayer.name, humanOwner.name, `Defense won: collected ${this.formatMoney(rentResult.rent)} rent!`, this.gameContainer);
           }
           this.isEncounterActive = false;
           this.resolveDuesCheck(activePlayer.id, 0, () => {
@@ -3557,17 +3751,16 @@ class UIManager {
             });
           });
         } else {
-          this.game.degradeProperty(spaceId);
-          this.game.transferPropertyOwnership(spaceId, activePlayer.id);
-          this.setDialogText(`Defense failed! ${activePlayer.name} defeated you and claimed ownership of ${space.name} for FREE!`);
+          this.setDialogText(`Defense failed! ${activePlayer.name} avoided paying rent this time. You keep ${space.name}.`);
+          this.game.log(`Defense failed on ${space.name}. ${activePlayer.name} paid $0 rent, and ${owner.name} kept the property.`);
           this.isEncounterActive = false;
-          this.resolveDuesCheck(activePlayer.id, null, () => {
+          this.resolveDuesCheck(activePlayer.id, 0, () => {
             this.updateUI();
             setTimeout(() => this.executeAITurnEnd(), 800);
           });
         }
       }
-    }, pMoves, eMoves);
+    }, pMoves, eMoves, pTraining, eTraining);
 
     this.updateBattleHUDs();
     this.setBattleLog(`Trainer Battle initiated! Defender vs Challenger.`);
@@ -3577,10 +3770,14 @@ class UIManager {
     this.combatAnimating = false;
     this.battleMove0.disabled = false;
     this.battleMove1.disabled = false;
+    if (this.battleMove2) this.battleMove2.disabled = false;
+    if (this.battleMove3) this.battleMove3.disabled = false;
+    if (this.battleItemBtn) this.battleItemBtn.disabled = false;
     this.playerBattleSprite.classList.remove("strike-player", "strike-enemy", "shake", "tera-active");
     this.enemyBattleSprite.classList.remove("strike-player", "strike-enemy", "shake", "tera-active");
     this.playerBattleSprite.className = "battle-sprite-container";
     this.enemyBattleSprite.className = "battle-sprite-container";
+    this.toggleBattleStatsOverlay(false);
   }
 
   updateBattleHUDs() {
@@ -3599,8 +3796,23 @@ class UIManager {
       this.triggerTeraVisuals();
     }
 
+    const renderTypeTags = pokemon => {
+      const types = pokemon.types?.length ? pokemon.types : [pokemon.type];
+      return types.map(type => `<span class="move-type-tag ${type.toLowerCase()}">${type}</span>`).join(" ");
+    };
+    const renderStatusBadge = pokemon => {
+      if (!pokemon.status) return "";
+      const status = this.escapeHTML(pokemon.status);
+      return `<span class="battle-status-badge ${status}">${this.formatBattleStatus(status)}</span>`;
+    };
+    const renderMoveLabel = move => {
+      const category = move.category ? `<span class="move-category-tag">${this.escapeHTML(move.category)}</span>` : "";
+      const power = move.category === "status" || !move.power ? "Status" : move.power;
+      return `<span class="move-type-tag ${move.type.toLowerCase()}">${move.type}</span> ${category} ${this.escapeHTML(move.name)} (${power})`;
+    };
+
     // Player HUD
-    this.playerPokeName.innerHTML = `${battle.player.name} (Lv. ${battle.player.level}) <span class="move-type-tag ${battle.player.type.toLowerCase()}">${battle.player.type}</span>`;
+    this.playerPokeName.innerHTML = `${battle.player.name} (Lv. ${battle.player.level}) ${renderTypeTags(battle.player)} ${renderStatusBadge(battle.player)}`;
     this.playerHpText.innerText = `${battle.player.hp} / ${battle.player.maxHp} HP`;
     this.playerHpBar.style.width = `${(battle.player.hp / battle.player.maxHp) * 100}%`;
     
@@ -3624,7 +3836,7 @@ class UIManager {
     }
 
     // Enemy HUD
-    this.enemyPokeName.innerHTML = `${battle.enemy.name} (Lv. ${battle.enemy.level}) <span class="move-type-tag ${battle.enemy.type.toLowerCase()}">${battle.enemy.type}</span>`;
+    this.enemyPokeName.innerHTML = `${battle.enemy.name} (Lv. ${battle.enemy.level}) ${renderTypeTags(battle.enemy)} ${renderStatusBadge(battle.enemy)}`;
     this.enemyHpText.innerText = `${battle.enemy.hp} / ${battle.enemy.maxHp} HP`;
     this.enemyHpBar.style.width = `${(battle.enemy.hp / battle.enemy.maxHp) * 100}%`;
     
@@ -3648,18 +3860,84 @@ class UIManager {
     }
 
     // Move names with element labels
-    const move0 = battle.player.moves[0];
-    const move1 = battle.player.moves[1];
-    this.battleMove0.innerHTML = `<span class="move-type-tag ${move0.type.toLowerCase()}">${move0.type}</span> ${move0.name} (${move0.power})`;
-    this.battleMove1.innerHTML = `<span class="move-type-tag ${move1.type.toLowerCase()}">${move1.type}</span> ${move1.name} (${move1.power})`;
+    const moveButtons = [this.battleMove0, this.battleMove1, this.battleMove2, this.battleMove3];
+    moveButtons.forEach((button, idx) => {
+      if (!button) return;
+      const move = battle.player.moves[idx];
+      if (move) {
+        button.style.display = "flex";
+        button.innerHTML = renderMoveLabel(move);
+        button.disabled = battle.turn !== 0;
+      } else {
+        button.style.display = "none";
+      }
+    });
 
     // Turn indicator
     this.battleMove0.disabled = battle.turn !== 0;
     this.battleMove1.disabled = battle.turn !== 0;
+    if (this.battleMove2) this.battleMove2.disabled = battle.turn !== 0 || !battle.player.moves[2];
+    if (this.battleMove3) this.battleMove3.disabled = battle.turn !== 0 || !battle.player.moves[3];
+    const battlePlayer = this.getActiveBattlePlayer();
+    if (this.battleItemBtn) {
+      const hasBattleItems = battlePlayer && Object.entries(battlePlayer.inventory || {}).some(([itemId, count]) => BattleItems[itemId]?.kind === "battle" && count > 0);
+      this.battleItemBtn.style.display = "flex";
+      this.battleItemBtn.disabled = battle.turn !== 0 || this.combatAnimating || !hasBattleItems || !!battlePlayer?.battleItemUsed;
+      this.battleItemBtn.innerHTML = `🧪 ITEM ${battlePlayer?.battleItemUsed ? "(USED)" : ""}`;
+    }
+    if (this.battleTeraBtn && battlePlayer) {
+      const teraCharge = `${battlePlayer.teraCharge || 0}/${battlePlayer.maxTeraCharge || 1}`;
+      this.battleTeraBtn.innerHTML = `🌟 TERASTALLIZE (${teraCharge})`;
+      this.battleTeraBtn.disabled = battle.turn !== 0 || battle.player.terastallized || (battlePlayer.teraCharge || 0) <= 0;
+    }
+
+    if (this.battleStatsOverlay && getComputedStyle(this.battleStatsOverlay).display !== "none") {
+      this.toggleBattleStatsOverlay(true);
+    }
   }
 
   setBattleLog(msg) {
     this.battleLogText.innerHTML = msg;
+  }
+
+  toggleBattleStatsOverlay(forceOpen = null) {
+    if (!this.battleStatsOverlay) return;
+    const shouldOpen = forceOpen === null ? this.battleStatsOverlay.style.display === "none" : forceOpen;
+    if (!shouldOpen) {
+      this.battleStatsOverlay.style.display = "none";
+      return;
+    }
+    const battle = Battle.activeBattle;
+    if (!battle) return;
+    const renderStatPanel = pokemon => {
+      const stats = pokemon.stats || {};
+      const stages = pokemon.statStages || {};
+      const statRows = [
+        ["HP", stats.hp, null],
+        ["ATK", stats.attack, "attack"],
+        ["DEF", stats.defense, "defense"],
+        ["SPA", stats.specialAttack, "specialAttack"],
+        ["SPD", stats.specialDefense, "specialDefense"],
+        ["SPE", stats.speed, "speed"],
+        ["ACC", 100, "accuracy"],
+        ["EVA", 0, "evasion"]
+      ].map(([label, value, statKey]) => {
+        const stage = statKey ? Number(stages[statKey] || 0) : 0;
+        const stageClass = stage > 0 ? "positive" : stage < 0 ? "negative" : "neutral";
+        const stageText = statKey && stage !== 0 ? `<em class="battle-stat-stage ${stageClass}">${stage > 0 ? "+" : ""}${stage}</em>` : "";
+        return `<div class="battle-stat-pill"><span>${label}</span><strong>${Number.isFinite(value) ? value : "--"}</strong>${stageText}</div>`;
+      }).join("");
+      return `<div class="battle-stat-grid">${statRows}</div>`;
+    };
+    if (this.playerBattleStatsName) {
+      this.playerBattleStatsName.innerHTML = `${battle.player.name} (Lv. ${battle.player.level})`;
+    }
+    if (this.enemyBattleStatsName) {
+      this.enemyBattleStatsName.innerHTML = `${battle.enemy.name} (Lv. ${battle.enemy.level})`;
+    }
+    if (this.playerBattleStats) this.playerBattleStats.innerHTML = renderStatPanel(battle.player);
+    if (this.enemyBattleStats) this.enemyBattleStats.innerHTML = renderStatPanel(battle.enemy);
+    this.battleStatsOverlay.style.display = "flex";
   }
 
   triggerTeraVisuals() {
@@ -3682,8 +3960,121 @@ class UIManager {
   handlePlayerBattleMove(moveIdx) {
     const battle = Battle.activeBattle;
     if (!battle || battle.turn !== 0 || this.combatAnimating) return;
+    if (!battle.player.moves[moveIdx]) return;
 
     Battle.executePlayerMove(moveIdx);
+  }
+
+  getActiveBattlePlayer() {
+    const battle = Battle.activeBattle;
+    if (!battle) return this.game.players[0];
+    const idx = battle.challengerIdx === 0 ? 0 : (battle.ownerIdx === 0 ? 0 : battle.challengerIdx);
+    return this.game.players[idx] || this.game.players[0];
+  }
+
+  showBattleItemMenu() {
+    const player = this.getActiveBattlePlayer();
+    const battle = Battle.activeBattle;
+    if (!player || !battle || battle.turn !== 0 || player.battleItemUsed) {
+      this.setBattleLog(player?.battleItemUsed ? "You already used an item this battle." : "You cannot use an item right now.");
+      return;
+    }
+    const battleItems = Object.entries(player.inventory || {})
+      .filter(([itemId, count]) => BattleItems[itemId]?.kind === "battle" && count > 0)
+      .map(([itemId, count]) => ({ ...BattleItems[itemId], count }));
+    if (!battleItems.length) {
+      this.setBattleLog("No battle items available.");
+      return;
+    }
+
+    if (!this.battleItemOverlay || !this.battleItemGrid) return;
+    this.battleItemGrid.innerHTML = battleItems.map(item => {
+      const usableState = this.getBattleItemUsableState(item);
+      return `
+      <button class="battle-item-card ${usableState.ok ? "" : "disabled"}" type="button" data-item-id="${this.escapeHTML(item.id)}" ${usableState.ok ? "" : "disabled"}>
+        <span class="battle-item-icon">${this.getBattleItemIcon(item)}</span>
+        <span class="battle-item-info">
+          <span class="battle-item-name">${this.escapeHTML(item.name)}</span>
+          <span class="battle-item-text">${this.escapeHTML(usableState.ok ? item.text : usableState.reason)}</span>
+        </span>
+        <span class="battle-item-count">x${item.count}</span>
+      </button>
+    `;
+    }).join("");
+
+    this.battleItemGrid.querySelectorAll(".battle-item-card").forEach(card => {
+      card.addEventListener("click", () => this.useBattleItem(card.getAttribute("data-item-id")));
+    });
+
+    this.battleItemOverlay.style.display = "flex";
+  }
+
+  hideBattleItemMenu() {
+    if (this.battleItemOverlay) this.battleItemOverlay.style.display = "none";
+  }
+
+  getBattleItemIcon(item) {
+    if (item.heal) return "✚";
+    const changes = item.stats || (item.stat ? [{ stat: item.stat }] : []);
+    const firstStat = changes[0]?.stat || "";
+    if (firstStat.includes("attack")) return "ATK";
+    if (firstStat.includes("defense")) return "DEF";
+    if (firstStat.includes("speed")) return "SPD";
+    return "ITEM";
+  }
+
+  getBattleItemUsableState(item) {
+    const battle = Battle.activeBattle;
+    if (!battle || !item) return { ok: false, reason: "No active battle." };
+    if (item.heal && battle.player.hp >= battle.player.maxHp) {
+      return { ok: false, reason: "Already at full HP." };
+    }
+    return { ok: true, reason: "" };
+  }
+
+  useBattleItem(itemId) {
+    const player = this.getActiveBattlePlayer();
+    const item = BattleItems[itemId];
+    if (!player || !item || item.kind !== "battle") return;
+    if (player.battleItemUsed) {
+      this.setBattleLog("You already used an item this battle.");
+      return;
+    }
+    if (!this.game.consumeItem(player, itemId, 1)) {
+      this.setBattleLog(`No ${item.name} left.`);
+      return;
+    }
+    const result = Battle.applyBattleItemToPlayer(item);
+    if (!result.ok) {
+      player.inventory[itemId] = (player.inventory[itemId] || 0) + 1;
+      this.setBattleLog(result.message);
+      return;
+    }
+    player.battleItemUsed = true;
+    this.hideBattleItemMenu();
+    this.showCenterActionToast(result.message, "buff", this.battleOverlay);
+    this.updateBattleHUDs();
+    this.setBattleLog(result.message);
+  }
+
+  awardBattleItemDrop(player, won, tier = "battle") {
+    if (!player || player.isAI) return null;
+    const chance = won ? 0.7 : 0.3;
+    if (tier !== "rare" && Math.random() > chance) return null;
+    const itemId = this.game.rollItemDrop(tier);
+    this.game.addItem(player, itemId, 1);
+    const item = BattleItems[itemId];
+    this.showCenterActionToast(`Found ${item.name}!`, "money", this.gameContainer);
+    this.setDialogText(`${won ? "Battle reward" : "Consolation drop"}: found ${item.name}.`);
+    this.updateUI();
+    return itemId;
+  }
+
+  awardEvolutionPoints(player, pokemonName, points, reason, host = this.gameContainer) {
+    if (!player || player.isAI || !pokemonName || points <= 0) return;
+    this.game.addEvolutionPoints(player, pokemonName, points, reason);
+    this.showCenterActionToast(`+${points} EP ${pokemonName}!`, "buff", host);
+    this.updateUI();
   }
 
 
@@ -3737,7 +4128,7 @@ class UIManager {
       if (result.jailFineRequired) {
         const paidFine = this.game.payJailFine(ai);
         if (!paidFine) {
-          this.setDialogText(`${ai.name} needs ₽50 to leave detention.`);
+          this.setDialogText(`${ai.name} needs $50 to leave detention.`);
           setTimeout(() => this.executeAITurnEnd(), 1500);
           return;
         }
@@ -3792,6 +4183,7 @@ class UIManager {
     if (!container) return;
 
     if (!player.collection) player.collection = [];
+    this.game.normalizePlayerItems(player);
     this.game.normalizeCollectionMeta(player);
     if (!player.lockedCollectionPokemon) player.lockedCollectionPokemon = [];
     player.lockedCollectionPokemon = player.lockedCollectionPokemon.filter(name => player.collection.includes(name));
@@ -3802,7 +4194,7 @@ class UIManager {
       return idx < player.collection.length && !this.isCollectionPokemonLocked(player, player.collection[idx]);
     });
 
-    let html = "";
+    let html = this.renderInventoryPanel(player);
     if (player.collection.length === 0) {
       html += `<div style="font-size:0.82rem; color:#7F8C8D; text-align:center; padding: 10px 0;">No Pokémon caught yet. Win wild battles to catch them!</div>`;
     } else {
@@ -3914,6 +4306,90 @@ class UIManager {
         this.executeTrade("evolve");
       });
     }
+
+    container.querySelectorAll(".inventory-chip.usable").forEach(button => {
+      button.addEventListener("click", () => this.useInventoryItem(button.getAttribute("data-item-id")));
+    });
+    const evolveWithEpBtn = document.getElementById("evolve-with-ep-btn");
+    if (evolveWithEpBtn && !evolveWithEpBtn.disabled) {
+      evolveWithEpBtn.addEventListener("click", () => this.evolvePartnerWithEvolutionPoints());
+    }
+  }
+
+  renderInventoryPanel(player) {
+    const entries = Object.entries(player.inventory || {}).filter(([itemId, count]) => BattleItems[itemId] && count > 0);
+    const teraText = `${player.teraCharge || 0}/${player.maxTeraCharge || 1}`;
+    const evolutionPanel = this.renderEvolutionProgressPanel(player);
+    if (!entries.length) {
+      return `${evolutionPanel}<div class="inventory-panel"><div class="inventory-title">ITEMS <span>TERA ${teraText}</span></div><div class="inventory-empty">Win battles or visit Free Parking to find items.</div></div>`;
+    }
+    const itemButtons = entries.map(([itemId, count]) => {
+      const item = BattleItems[itemId];
+      const usable = item.kind === "training" || item.rechargeTera;
+      return `
+        <button class="inventory-chip ${usable ? "usable" : ""}" ${usable ? `data-item-id="${itemId}"` : "disabled"} title="${this.escapeHTML(item.text)}">
+          <span>${this.escapeHTML(item.name)}</span><strong>x${count}</strong>
+        </button>
+      `;
+    }).join("");
+    return `
+      ${evolutionPanel}
+      <div class="inventory-panel">
+        <div class="inventory-title">ITEMS <span>TERA ${teraText}</span></div>
+        <div class="inventory-list">${itemButtons}</div>
+        <div class="inventory-note">Training items apply to your current board partner. Battle items are used during fights.</div>
+      </div>
+    `;
+  }
+
+  renderEvolutionProgressPanel(player) {
+    const pokemonName = player.pokemon;
+    const points = this.game.getEvolutionPoints(player, pokemonName);
+    const required = this.game.getEvolutionPointRequirement(player, pokemonName);
+    const nextNames = this.getNextEvolutionNames(pokemonName);
+    const canEvolve = points >= required;
+    const pct = Math.min(100, Math.round((points / required) * 100));
+    const nextLabel = nextNames.length ? `Next: ${nextNames.join(" / ")}` : "Fully evolved: EP gives bonus levels";
+    return `
+      <div class="evolution-progress-panel">
+        <div class="evolution-progress-head">
+          <span>${this.escapeHTML(pokemonName)} EP</span>
+          <strong>${points}/${required}</strong>
+        </div>
+        <div class="evolution-progress-track">
+          <div class="evolution-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="evolution-progress-foot">
+          <span>${this.escapeHTML(nextLabel)}</span>
+          <button class="evolution-progress-btn" id="evolve-with-ep-btn" ${canEvolve ? "" : "disabled"}>${nextNames.length ? "EVOLVE" : "+LEVEL"}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  useInventoryItem(itemId) {
+    const player = this.game.players[0];
+    const item = BattleItems[itemId];
+    if (!player || !item) return;
+    if (item.rechargeTera) {
+      if ((player.teraCharge || 0) >= (player.maxTeraCharge || 1)) {
+        this.setDialogText("Your Tera Orb is already charged.");
+        return;
+      }
+      if (this.game.consumeItem(player, itemId, 1)) {
+        this.game.rechargeTera(player, "Tera Orb recharged with a Tera Shard");
+        this.setDialogText("Used Tera Shard. Your Tera Orb is charged.");
+        this.showCenterActionToast("Tera Orb charged!", "buff", this.gameContainer);
+        this.updateUI();
+      }
+      return;
+    }
+    if (item.kind === "training") {
+      const result = this.game.applyTrainingItem(player, player.pokemon, itemId);
+      this.setDialogText(result.message);
+      if (result.ok) this.showCenterActionToast(result.message, "buff", this.gameContainer);
+      this.updateUI();
+    }
   }
 
   executeTrade(type) {
@@ -3987,7 +4463,7 @@ class UIManager {
     const oldBase = this.game.normalizePokemonName(player, oldPartner);
     const oldChain = this.game.getEvolutionChain(oldBase);
     if (oldChain) {
-      player.pokemonEvolutionStages[oldBase] = Math.max(0, oldChain.indexOf(oldPartner));
+      player.pokemonEvolutionStages[oldBase] = Math.max(0, this.game.getStageOfPokemon(oldChain, oldPartner));
     }
     if (Array.isArray(player.partnerMoves)) {
       player.partnerMoveSets[oldBase] = player.partnerMoves.map(move => ({ ...move }));
@@ -3995,7 +4471,7 @@ class UIManager {
 
     const nextBase = this.game.normalizePokemonName(player, nextPartner);
     const chain = this.game.getEvolutionChain(nextBase);
-    const selectedStage = chain ? Math.max(0, chain.indexOf(nextPartner)) : 0;
+    const selectedStage = chain ? Math.max(0, this.game.getStageOfPokemon(chain, nextPartner)) : 0;
 
     player.collection.splice(idx, 1);
     player.collectionMeta.splice(idx, 1);
@@ -4024,15 +4500,44 @@ class UIManager {
   getEvolutionChainForPokemon(pokemonName) {
     if (!this.game) return null;
     const chains = Object.values(this.game.getEvolutionChains());
-    return chains.find(chain => chain.includes(pokemonName)) || null;
+    return chains.find(chain => {
+      return chain.some(element => {
+        if (Array.isArray(element)) {
+          return element.includes(pokemonName);
+        }
+        return element === pokemonName;
+      });
+    }) || null;
+  }
+
+  getNextEvolutionNames(pokemonName) {
+    const chain = this.getEvolutionChainForPokemon(pokemonName);
+    if (!chain) return [];
+    let idx = -1;
+    for (let i = 0; i < chain.length; i++) {
+      const element = chain[i];
+      if (Array.isArray(element)) {
+        if (element.includes(pokemonName)) {
+          idx = i;
+          break;
+        }
+      } else if (element === pokemonName) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx === -1) return [];
+    const nextElement = chain[idx + 1];
+    if (!nextElement) return [];
+    if (Array.isArray(nextElement)) {
+      return nextElement.filter(name => PokemonDB[name]);
+    }
+    return PokemonDB[nextElement] ? [nextElement] : [];
   }
 
   getNextEvolutionName(pokemonName) {
-    const chain = this.getEvolutionChainForPokemon(pokemonName);
-    if (!chain) return null;
-    const idx = chain.indexOf(pokemonName);
-    const nextName = chain[idx + 1];
-    return nextName && PokemonDB[nextName] ? nextName : null;
+    const nextNames = this.getNextEvolutionNames(pokemonName);
+    return nextNames.length > 0 ? nextNames[0] : null;
   }
 
   getPokemonSpriteHTML(pokemonName, className = "") {
@@ -4047,27 +4552,41 @@ class UIManager {
   getEvolutionTargets(costIndices) {
     const player = this.game.players[0];
     const targets = [];
-    const partnerNext = this.getNextEvolutionName(player.pokemon);
-    targets.push({
-      type: "partner",
-      label: "Partner",
-      name: player.pokemon,
-      nextName: partnerNext,
-      detail: partnerNext ? `Evolve to ${partnerNext}` : "Fully evolved: gain +2 levels"
-    });
+    
+    const partnerNexts = this.getNextEvolutionNames(player.pokemon);
+    if (partnerNexts.length > 0) {
+      partnerNexts.forEach(nextName => {
+        targets.push({
+          type: "partner",
+          label: "Partner",
+          name: player.pokemon,
+          nextName: nextName,
+          detail: `Evolve to ${nextName}`
+        });
+      });
+    } else {
+      targets.push({
+        type: "partner",
+        label: "Partner",
+        name: player.pokemon,
+        nextName: null,
+        detail: "Fully evolved: gain +2 levels"
+      });
+    }
 
     player.collection.forEach((pokemonName, idx) => {
       if (costIndices.includes(idx)) return;
       if (this.isCollectionPokemonLocked(player, pokemonName)) return;
-      const nextName = this.getNextEvolutionName(pokemonName);
-      if (!nextName) return;
-      targets.push({
-        type: "collection",
-        index: idx,
-        label: "Collection",
-        name: pokemonName,
-        nextName,
-        detail: `Evolve to ${nextName}`
+      const nextNames = this.getNextEvolutionNames(pokemonName);
+      nextNames.forEach(nextName => {
+        targets.push({
+          type: "collection",
+          index: idx,
+          label: "Collection",
+          name: pokemonName,
+          nextName,
+          detail: `Evolve to ${nextName}`
+        });
       });
     });
     return targets;
@@ -4159,6 +4678,43 @@ class UIManager {
     return overlay;
   }
 
+  evolvePartnerWithEvolutionPoints() {
+    const player = this.game.players[0];
+    const currentName = player.pokemon;
+    const nextNames = this.getNextEvolutionNames(currentName);
+    if (!this.game.spendEvolutionPoints(player, currentName)) {
+      const points = this.game.getEvolutionPoints(player, currentName);
+      const required = this.game.getEvolutionPointRequirement(player, currentName);
+      this.setDialogText(`${currentName} needs ${required - points} more EP to evolve.`);
+      return;
+    }
+
+    if (!nextNames.length) {
+      const baseName = this.game.normalizePokemonName(player, currentName);
+      player.pokemonBonusLevels[baseName] = (player.pokemonBonusLevels[baseName] || 0) + 1;
+      this.game.recalculatePlayerStats(0);
+      this.game.log(`${currentName} used 10 EP for +1 bonus level!`);
+      this.setDialogText(`${currentName} is fully evolved and gained +1 bonus level!`);
+      this.showCenterActionToast(`${currentName} +1 level!`, "buff", this.gameContainer);
+      this.renderCollection();
+      this.updateUI();
+      return;
+    }
+
+    const nextName = nextNames[0];
+    const baseName = this.game.normalizePokemonName(player, currentName);
+    const chain = this.game.getEvolutionChain(baseName);
+    const newStage = this.game.getStageOfPokemon(chain, nextName);
+    player.pokemonEvolutionStages[baseName] = Math.max(0, newStage);
+    player.pokemon = nextName;
+    this.game.recalculatePlayerStats(0);
+    this.game.log(`${currentName} evolved into ${nextName} using Evolution Points!`);
+    this.setDialogText(`${currentName} evolved into ${nextName}!`);
+    this.showCenterActionToast(`${nextName} evolved!`, "buff", this.gameContainer);
+    this.renderCollection();
+    this.updateUI();
+  }
+
   confirmEvolutionTrade(costIndices, target) {
     const player = this.game.players[0];
     this.game.normalizeCollectionMeta(player);
@@ -4170,10 +4726,9 @@ class UIManager {
       const baseName = this.game.normalizePokemonName(player, oldPoke);
       const chain = this.game.getEvolutionChain(baseName);
       if (target.nextName) {
-        const currentStage = chain ? Math.max(0, chain.indexOf(oldPoke)) : 0;
-        player.pokemonEvolutionStages[baseName] = chain
-          ? Math.min(currentStage + 1, chain.length - 1)
-          : currentStage;
+        const newStage = this.game.getStageOfPokemon(chain, target.nextName);
+        player.pokemonEvolutionStages[baseName] = Math.max(0, newStage);
+        player.pokemon = target.nextName;
         this.game.recalculatePlayerStats(0);
         this.game.log(`🔄 Traded 3 Pokémon (${tradedNames.join(", ")}) to evolve partner ${oldPoke} into ${player.pokemon}!`);
         this.setDialogText(`Evolved! Partner evolved from ${oldPoke} to ${player.pokemon}!`);
@@ -4213,11 +4768,18 @@ class UIManager {
     if (!player) return defaultMoves;
     const normName = this.game.normalizePokemonName(player, pokemonName);
     const isPartner = normName === player.baseStarter;
-    if (!isPartner || !Array.isArray(player.partnerMoves) || player.partnerMoves.length < 2) {
-      return defaultMoves;
+    if (!isPartner || !Array.isArray(player.partnerMoves) || player.partnerMoves.length === 0) {
+      return defaultMoves.slice(0, 4);
     }
     const savedMoves = player.partnerMoves.map(move => ({ ...move }));
-    return [savedMoves[0] || defaultMoves[0], savedMoves[1] || defaultMoves[1]].filter(Boolean);
+    const moveCount = Math.max(defaultMoves.length, savedMoves.length, 4);
+    const resolved = [];
+    for (let idx = 0; idx < moveCount; idx++) {
+      const savedMove = savedMoves[idx];
+      const defaultMove = defaultMoves[idx];
+      if (savedMove || defaultMove) resolved.push(savedMove || defaultMove);
+    }
+    return resolved.slice(0, 4);
   }
 
   showMoveLearnModal(tradedIdx) {
@@ -4323,7 +4885,51 @@ class UIManager {
     this.updateUI();
   }
 
-  animateCombatMove(attackerSide, defenderSide, move, effectiveness, damage) {
+  formatBattleStatus(status) {
+    if (status === "burn") return "BRN";
+    if (status === "poison") return "PSN";
+    if (status === "paralysis") return "PAR";
+    return String(status || "").slice(0, 3).toUpperCase();
+  }
+
+  formatBattleEffectWord(event) {
+    if (!event) return "";
+    if (event.kind === "status") {
+      if (event.status === "burn") return "BURNED!";
+      if (event.status === "poison") return "POISONED!";
+      if (event.status === "paralysis") return "PARALYZED!";
+      return "STATUS!";
+    }
+    if (event.kind === "stat") {
+      const labels = {
+        attack: "ATK",
+        defense: "DEF",
+        specialAttack: "SP. ATK",
+        specialDefense: "SP. DEF",
+        speed: "SPEED",
+        accuracy: "ACC",
+        evasion: "EVA"
+      };
+      return `${labels[event.stat] || "STAT"} ${event.amount > 0 ? "UP" : "DOWN"}!`;
+    }
+    return event.text || "";
+  }
+
+  showBattleEffectFeedback(attackerSide, defenderSide, effectEvent = {}) {
+    const events = Array.isArray(effectEvent.effects) ? effectEvent.effects : [];
+    events.forEach((event, idx) => {
+      if (event.kind !== "status" && event.kind !== "stat") return;
+      const side = event.target === "attacker" ? attackerSide : defenderSide;
+      const word = this.formatBattleEffectWord(event);
+      setTimeout(() => {
+        this.showActionTextPopup(side, word);
+        const variant = event.kind === "status" ? `status ${event.status || ""}` : event.amount > 0 ? "buff" : "debuff";
+        this.showCenterActionToast(event.text, variant, this.battleOverlay);
+      }, 120 * idx);
+    });
+  }
+
+  animateCombatMove(attackerSide, defenderSide, move, effectiveness, damage, effectEvent = {}) {
     this.combatAnimating = true;
 
     // Determine DOM elements based on sides
@@ -4331,8 +4937,9 @@ class UIManager {
     const defenderSprite = defenderSide === "player" ? this.playerBattleSprite : this.enemyBattleSprite;
 
     // Disable move buttons during animation
-    this.battleMove0.disabled = true;
-    this.battleMove1.disabled = true;
+    [this.battleMove0, this.battleMove1, this.battleMove2, this.battleMove3, this.battleItemBtn].forEach(button => {
+      if (button) button.disabled = true;
+    });
 
     // 1. Attack / Lunge Phase (0ms)
     const lungeClass = attackerSide === "player" ? "strike-player" : "strike-enemy";
@@ -4347,8 +4954,8 @@ class UIManager {
     else if (effectiveness === 0) word = "NO EFFECT!";
     else if (effectiveness < 1.0) word = "NOT EFFECTIVE";
     this.showActionTextPopup(attackerSide, word);
-    this.showDamageNumber(defenderSide, damage);
-    if (attackerSide === "player") {
+    if (damage > 0) this.showDamageNumber(defenderSide, damage);
+    if (attackerSide === "player" && damage > 0) {
       this.showCenterActionToast(`${move.name}: ${damage} damage!`, effectiveness > 1 ? "damage super" : "damage", this.battleOverlay);
     }
 
@@ -4381,10 +4988,11 @@ class UIManager {
         this.enemyHpText.innerText = `${battle.enemy.hp} / ${battle.enemy.maxHp} HP`;
         this.enemyHpBar.style.width = `${(battle.enemy.hp / battle.enemy.maxHp) * 100}%`;
 
-        const lastLog = battle.logs[battle.logs.length - 1];
-        if (lastLog) {
-          this.setBattleLog(lastLog);
+        const recentLogs = battle.logs.slice(-3);
+        if (recentLogs.length) {
+          this.setBattleLog(recentLogs.map(log => this.escapeHTML(log)).join("<br>"));
         }
+        this.showBattleEffectFeedback(attackerSide, defenderSide, effectEvent);
       }
     }, 150);
 

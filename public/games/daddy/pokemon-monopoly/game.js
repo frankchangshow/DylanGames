@@ -3,8 +3,22 @@
  * Core state machine for player turns, board movements, real-estate, cards, trading, and mortgaging.
  */
 
-import { BoardSpaces, AcademyCards, TeraRaidCards } from './assets.js?v=27';
-import { Sound } from './sound.js?v=27';
+import { BoardSpaces, AcademyCards, TeraRaidCards } from './assets.js?v=38';
+import { Sound } from './sound.js?v=38';
+
+export const BattleItems = {
+  potion: { id: "potion", name: "Potion", kind: "battle", text: "Restore 20 HP during battle.", heal: 20, rarity: "Common" },
+  xAttack: { id: "xAttack", name: "X Attack", kind: "battle", text: "+1 Attack this battle.", stat: "attack", amount: 1, rarity: "Common" },
+  xDefense: { id: "xDefense", name: "X Defense", kind: "battle", text: "+1 Defense this battle.", stat: "defense", amount: 1, rarity: "Common" },
+  xSpeed: { id: "xSpeed", name: "X Speed", kind: "battle", text: "+1 Speed this battle.", stat: "speed", amount: 1, rarity: "Common" },
+  guardSnack: { id: "guardSnack", name: "Guard Snack", kind: "battle", text: "+1 Defense and Sp. Def this battle.", stats: [{ stat: "defense", amount: 1 }, { stat: "specialDefense", amount: 1 }], rarity: "Uncommon" },
+  protein: { id: "protein", name: "Protein", kind: "training", text: "Permanent +1 Attack training for partner.", trainingStat: "attack", amount: 1, rarity: "Uncommon" },
+  iron: { id: "iron", name: "Iron", kind: "training", text: "Permanent +1 Defense training for partner.", trainingStat: "defense", amount: 1, rarity: "Uncommon" },
+  hpUp: { id: "hpUp", name: "HP Up", kind: "training", text: "Permanent +5 HP for partner.", trainingStat: "hp", amount: 5, rarity: "Uncommon" },
+  swiftFeather: { id: "swiftFeather", name: "Swift Feather", kind: "training", text: "Permanent +1 Speed training for partner.", trainingStat: "speed", amount: 1, rarity: "Uncommon" },
+  rareCandy: { id: "rareCandy", name: "Rare Candy", kind: "training", text: "Permanent +1 level for partner.", levelBonus: 1, rarity: "Rare" },
+  teraShard: { id: "teraShard", name: "Tera Shard", kind: "utility", text: "Recharge your Tera Orb instantly.", rechargeTera: true, rarity: "Rare" }
+};
 
 export class GameEngine {
   constructor() {
@@ -60,6 +74,12 @@ export class GameEngine {
         pokemonLevelUps: {},
         pokemonBonusLevels: {},
         pokemonEvolutionStages: {},
+        pokemonEvolutionPoints: {},
+        pokemonTraining: {},
+        inventory: { potion: 2, xAttack: 1, xDefense: 1 },
+        teraCharge: 1,
+        maxTeraCharge: 1,
+        battleItemUsed: false,
         passedGo: false
       },
       {
@@ -89,6 +109,12 @@ export class GameEngine {
         pokemonLevelUps: {},
         pokemonBonusLevels: {},
         pokemonEvolutionStages: {},
+        pokemonEvolutionPoints: {},
+        pokemonTraining: {},
+        inventory: { potion: 1 },
+        teraCharge: 1,
+        maxTeraCharge: 1,
+        battleItemUsed: false,
         passedGo: false
       },
       {
@@ -118,6 +144,12 @@ export class GameEngine {
         pokemonLevelUps: {},
         pokemonBonusLevels: {},
         pokemonEvolutionStages: {},
+        pokemonEvolutionPoints: {},
+        pokemonTraining: {},
+        inventory: { potion: 1 },
+        teraCharge: 1,
+        maxTeraCharge: 1,
+        battleItemUsed: false,
         passedGo: false
       },
       {
@@ -147,6 +179,12 @@ export class GameEngine {
         pokemonLevelUps: {},
         pokemonBonusLevels: {},
         pokemonEvolutionStages: {},
+        pokemonEvolutionPoints: {},
+        pokemonTraining: {},
+        inventory: { potion: 1 },
+        teraCharge: 1,
+        maxTeraCharge: 1,
+        battleItemUsed: false,
         passedGo: false
       }
     ];
@@ -210,6 +248,104 @@ export class GameEngine {
     if (player.collectionMeta.length > player.collection.length) {
       player.collectionMeta = player.collectionMeta.slice(0, player.collection.length);
     }
+  }
+
+  normalizePlayerItems(player) {
+    if (!player) return player;
+    if (!player.inventory || typeof player.inventory !== "object" || Array.isArray(player.inventory)) {
+      player.inventory = {};
+    }
+    Object.keys(player.inventory).forEach(itemId => {
+      player.inventory[itemId] = Math.max(0, Math.floor(Number(player.inventory[itemId]) || 0));
+      if (player.inventory[itemId] <= 0) delete player.inventory[itemId];
+    });
+    if (!Number.isFinite(player.maxTeraCharge) || player.maxTeraCharge < 1) player.maxTeraCharge = 1;
+    if (!Number.isFinite(player.teraCharge)) player.teraCharge = player.maxTeraCharge;
+    player.teraCharge = Math.max(0, Math.min(player.maxTeraCharge, Math.floor(player.teraCharge)));
+    player.battleItemUsed = !!player.battleItemUsed;
+    if (!player.pokemonTraining || typeof player.pokemonTraining !== "object" || Array.isArray(player.pokemonTraining)) {
+      player.pokemonTraining = {};
+    }
+    return player;
+  }
+
+  addItem(player, itemId, count = 1) {
+    if (!player || !BattleItems[itemId]) return false;
+    this.normalizePlayerItems(player);
+    const amount = Math.max(1, Math.floor(Number(count) || 1));
+    player.inventory[itemId] = (player.inventory[itemId] || 0) + amount;
+    this.log(`${player.name} received ${BattleItems[itemId].name}${amount > 1 ? ` x${amount}` : ""}!`);
+    return true;
+  }
+
+  consumeItem(player, itemId, count = 1) {
+    if (!player || !BattleItems[itemId]) return false;
+    this.normalizePlayerItems(player);
+    const amount = Math.max(1, Math.floor(Number(count) || 1));
+    if ((player.inventory[itemId] || 0) < amount) return false;
+    player.inventory[itemId] -= amount;
+    if (player.inventory[itemId] <= 0) delete player.inventory[itemId];
+    return true;
+  }
+
+  rechargeTera(player, reason = "Tera Orb recharged") {
+    if (!player) return false;
+    this.normalizePlayerItems(player);
+    const before = player.teraCharge;
+    player.teraCharge = player.maxTeraCharge;
+    if (player.teraCharge > before) {
+      this.log(`${player.name}'s ${reason}!`);
+      return true;
+    }
+    return false;
+  }
+
+  spendTeraCharge(player) {
+    if (!player) return false;
+    this.normalizePlayerItems(player);
+    if (player.teraCharge <= 0) return false;
+    player.teraCharge -= 1;
+    return true;
+  }
+
+  resetBattleItemUse(player) {
+    if (!player) return;
+    this.normalizePlayerItems(player);
+    player.battleItemUsed = false;
+  }
+
+  getPokemonTraining(player, pokemonName) {
+    this.ensurePokemonProgress(player);
+    this.normalizePlayerItems(player);
+    const normName = this.normalizePokemonName(player, pokemonName);
+    if (!player.pokemonTraining[normName]) {
+      player.pokemonTraining[normName] = { hp: 0, attack: 0, defense: 0, speed: 0 };
+    }
+    return player.pokemonTraining[normName];
+  }
+
+  applyTrainingItem(player, pokemonName, itemId) {
+    const item = BattleItems[itemId];
+    if (!player || !item || item.kind !== "training") return { ok: false, message: "That item cannot train Pokémon." };
+    if (!this.consumeItem(player, itemId, 1)) return { ok: false, message: `No ${item.name} left.` };
+    const normName = this.normalizePokemonName(player, pokemonName);
+    if (item.levelBonus) {
+      player.pokemonLevelUps[normName] = (player.pokemonLevelUps[normName] || 0) + item.levelBonus;
+      this.recalculatePlayerStats(player.id);
+      this.log(`${player.name} used ${item.name}. ${pokemonName} gained 1 level!`);
+      return { ok: true, message: `${pokemonName} gained 1 level!` };
+    }
+    const training = this.getPokemonTraining(player, pokemonName);
+    training[item.trainingStat] = (training[item.trainingStat] || 0) + item.amount;
+    this.log(`${player.name} used ${item.name}. ${pokemonName}'s ${item.trainingStat.toUpperCase()} training improved!`);
+    return { ok: true, message: `${pokemonName}'s ${item.trainingStat.toUpperCase()} training improved!` };
+  }
+
+  rollItemDrop(tier = "battle") {
+    const roll = Math.random();
+    if (tier === "rare" || roll > 0.92) return ["rareCandy", "teraShard"][Math.floor(Math.random() * 2)];
+    if (roll > 0.62) return ["protein", "iron", "hpUp", "swiftFeather", "guardSnack"][Math.floor(Math.random() * 5)];
+    return ["potion", "xAttack", "xDefense", "xSpeed"][Math.floor(Math.random() * 4)];
   }
 
   normalizeGameStats(stats = {}) {
@@ -276,9 +412,15 @@ export class GameEngine {
       pokemonLevelUps: {},
       pokemonBonusLevels: {},
       pokemonEvolutionStages: {},
+      pokemonEvolutionPoints: {},
+      pokemonTraining: {},
+      inventory: {},
+      teraCharge: 1,
+      maxTeraCharge: 1,
+      battleItemUsed: false,
       passedGo: false,
       ...player
-    })).map((player) => this.ensurePokemonProgress(player));
+    })).map((player) => this.normalizePlayerItems(this.ensurePokemonProgress(player)));
     this.currentPlayerIdx = Number.isInteger(state.currentPlayerIdx) ? state.currentPlayerIdx : 0;
     this.spaces = JSON.parse(JSON.stringify(state.spaces || BoardSpaces));
     this.academyDeck = JSON.parse(JSON.stringify(state.academyDeck || AcademyCards));
@@ -294,6 +436,7 @@ export class GameEngine {
     this.mysteryEncounterState = this.normalizeMysteryEncounterState(state.mysteryEncounterState);
     this.players.forEach(player => {
       this.normalizeCollectionMeta(player);
+      this.normalizePlayerItems(player);
       if (!Number.isFinite(this.gameStats.passesGoByPlayer[player.id])) {
         this.gameStats.passesGoByPlayer[player.id] = 0;
       }
@@ -316,13 +459,22 @@ export class GameEngine {
     const chain = this.getEvolutionChain(activeBase);
 
     if (chain) {
+      const currentStage = this.getStageOfPokemon(chain, player.pokemon);
       const savedStage = Number.isInteger(player.pokemonEvolutionStages[activeBase])
         ? player.pokemonEvolutionStages[activeBase]
-        : Math.max(0, chain.indexOf(player.pokemon));
+        : Math.max(0, currentStage);
       const finalStage = Math.max(0, Math.min(savedStage, chain.length - 1));
       player.pokemonEvolutionStages[activeBase] = finalStage;
       player.evolveStage = finalStage;
-      player.pokemon = chain[finalStage];
+
+      const stageContent = chain[finalStage];
+      if (Array.isArray(stageContent)) {
+        if (!stageContent.includes(player.pokemon)) {
+          player.pokemon = stageContent[0];
+        }
+      } else {
+        player.pokemon = stageContent;
+      }
     } else {
       player.evolveStage = 0;
     }
@@ -422,7 +574,7 @@ export class GameEngine {
         player.jailTurns++;
         this.log(`${player.name} failed to roll doubles (Detention Turn ${player.jailTurns}/3).`);
         if (player.jailTurns >= 3) {
-          this.log(`${player.name} has spent 3 turns in detention. Must pay ₽50 fine to leave.`);
+          this.log(`${player.name} has spent 3 turns in detention. Must pay $50 fine to leave.`);
           // Forced payment and movement are handled by the caller so the UI can animate the roll.
           return { dice: this.dice, jailFineRequired: true, spacesMoved: die1 + die2 };
         }
@@ -446,7 +598,11 @@ export class GameEngine {
       if (!this.gameStats) this.gameStats = this.createGameStats();
       this.gameStats.totalPassesGo = (this.gameStats.totalPassesGo || 0) + 1;
       this.gameStats.passesGoByPlayer[player.id] = (this.gameStats.passesGoByPlayer[player.id] || 0) + 1;
-      this.log(`${player.name} passed GO and collected ₽200!`);
+      this.log(`${player.name} passed GO and collected $200!`);
+      this.addEvolutionPoints(player, player.pokemon, 3, "passed GO");
+      if (Math.random() < 0.5) {
+        this.rechargeTera(player, "Tera Orb recharged while passing GO");
+      }
     }
 
     player.position = newPos;
@@ -466,7 +622,7 @@ export class GameEngine {
       player.cash -= 50;
       player.inJail = false;
       player.jailTurns = 0;
-      this.log(`${player.name} paid ₽50 fine and left detention.`);
+      this.log(`${player.name} paid $50 fine and left detention.`);
       return true;
     }
     return false;
@@ -547,7 +703,7 @@ export class GameEngine {
       player.cash -= cost;
       this.ownership[spaceId] = playerIdx;
       this.buildings[spaceId] = 0;
-      this.log(`${player.name} bought ${space.name} (${space.pokemon}) for ₽${cost}!`);
+      this.log(`${player.name} bought ${space.name} (${space.pokemon}) for $${cost}!`);
       Sound.playBuyCamp();
       this.recalculatePlayerStats(playerIdx);
       return true;
@@ -578,7 +734,7 @@ export class GameEngine {
 
     payee.cash -= rent;
     owner.cash += rent;
-    this.log(`${payee.name} paid ₽${rent} rent to ${owner.name} for ${this.spaces[spaceId].name}.`);
+    this.log(`${payee.name} paid $${rent} rent to ${owner.name} for ${this.spaces[spaceId].name}.`);
     
     return { success: payee.cash >= 0, rent }; // Negative cash triggers mortgage/bankruptcy menu
   }
@@ -639,12 +795,12 @@ export class GameEngine {
       if (player.cash < space.houseCost) {
         return {
           ready: false,
-          message: `Need ₽${space.houseCost} to upgrade to a Gym Station (You have ₽${player.cash}).`
+          message: `Need $${space.houseCost} to upgrade to a Gym Station (You have $${player.cash}).`
         };
       }
       return {
         ready: true,
-        message: `Ready to upgrade to a Pokémon Gym Station for ₽${space.houseCost}!`
+        message: `Ready to upgrade to a Pokémon Gym Station for $${space.houseCost}!`
       };
     }
 
@@ -662,14 +818,14 @@ export class GameEngine {
     if (player.cash < space.houseCost) {
       return {
         ready: false,
-        message: `Need ₽${space.houseCost} to build a Camp (You have ₽${player.cash}).`
+        message: `Need $${space.houseCost} to build a Camp (You have $${player.cash}).`
       };
     }
 
     const nextCamp = currentCount + 1;
     return {
       ready: true,
-      message: `Ready to build Camp #${nextCamp} for ₽${space.houseCost}!`
+      message: `Ready to build Camp #${nextCamp} for $${space.houseCost}!`
     };
   }
 
@@ -703,7 +859,7 @@ export class GameEngine {
 
     player.cash -= space.houseCost;
     this.buildings[spaceId] = (this.buildings[spaceId] || 0) + 1;
-    this.log(`${player.name} set up a Camp on ${space.name} for ₽${space.houseCost}.`);
+    this.log(`${player.name} set up a Camp on ${space.name} for $${space.houseCost}.`);
     Sound.playBuyCamp();
     this.recalculatePlayerStats(playerIdx);
     return true;
@@ -735,7 +891,7 @@ export class GameEngine {
 
     player.cash -= space.houseCost;
     this.buildings[spaceId] = 5; // 5 represents Gym (Hotel)
-    this.log(`${player.name} upgraded Camp to a Pokémon Gym Station on ${space.name} for ₽${space.houseCost}!`);
+    this.log(`${player.name} upgraded Camp to a Pokémon Gym Station on ${space.name} for $${space.houseCost}!`);
     Sound.playBuyCamp();
     this.recalculatePlayerStats(playerIdx);
     return true;
@@ -754,7 +910,7 @@ export class GameEngine {
     this.buildings[spaceId] = bCount - 1;
     
     const itemSold = bCount === 5 ? "Gym Station" : "Camp";
-    this.log(`${player.name} sold ${itemSold} on ${space.name} for ₽${refund}.`);
+    this.log(`${player.name} sold ${itemSold} on ${space.name} for $${refund}.`);
     this.recalculatePlayerStats(playerIdx);
     return true;
   }
@@ -781,7 +937,7 @@ export class GameEngine {
     const value = Math.floor(space.cost / 2);
     player.cash += value;
     this.mortgages[spaceId] = true;
-    this.log(`${player.name} mortgaged ${space.name} for ₽${value}.`);
+    this.log(`${player.name} mortgaged ${space.name} for $${value}.`);
     return true;
   }
 
@@ -801,7 +957,7 @@ export class GameEngine {
     const cost = Math.floor((space.cost / 2) * 1.1);
     player.cash -= cost;
     this.mortgages[spaceId] = false;
-    this.log(`${player.name} unmortgaged ${space.name} for ₽${cost}.`);
+    this.log(`${player.name} unmortgaged ${space.name} for $${cost}.`);
     return true;
   }
 
@@ -842,7 +998,7 @@ export class GameEngine {
         }
       });
       player.cash -= totalCost;
-      this.log(`${player.name} paid ₽${totalCost} for repairs.`);
+      this.log(`${player.name} paid $${totalCost} for repairs.`);
     }
   }
 
@@ -923,7 +1079,13 @@ export class GameEngine {
   normalizePokemonName(player, pokemonName) {
     if (!player) return pokemonName;
     for (const [baseStarter, evos] of Object.entries(this.getEvolutionChains())) {
-      if (evos.includes(pokemonName)) {
+      const isMatch = evos.some(evo => {
+        if (Array.isArray(evo)) {
+          return evo.includes(pokemonName);
+        }
+        return evo === pokemonName;
+      });
+      if (isMatch) {
         return baseStarter; // map evolutions back to base starter name
       }
     }
@@ -936,10 +1098,29 @@ export class GameEngine {
       "Fuecoco": ["Fuecoco", "Crocalor", "Skeledirge"],
       "Quaxly": ["Quaxly", "Quaxwell", "Quaquaval"],
       "Pawmi": ["Pawmi", "Pawmo", "Pawmot"],
-      "Tinkatink": ["Tinkatink", "Tinkaton"],
-      "Charcadet": ["Charcadet", "Ceruledge"],
+      "Tinkatink": ["Tinkatink", "Tinkatuff", "Tinkaton"],
+      "Charcadet": ["Charcadet", ["Ceruledge", "Armarouge"]],
       "Shroodle": ["Shroodle", "Grafaiai"],
-      "Tandemaus": ["Tandemaus", "Maushold"]
+      "Tandemaus": ["Tandemaus", "Maushold"],
+      "Lechonk": ["Lechonk", "Oinkologne"],
+      "Tarountula": ["Tarountula", "Spidops"],
+      "Fidough": ["Fidough", "Dachsbun"],
+      "Smoliv": ["Smoliv", "Dolliv", "Arboliva"],
+      "Nacli": ["Nacli", "Naclstack", "Garganacl"],
+      "Toedscool": ["Toedscool", "Toedscruel"],
+      "Capsakid": ["Capsakid", "Scovillain"],
+      "Wattrel": ["Wattrel", "Kilowattrel"],
+      "Tadbulb": ["Tadbulb", "Bellibolt"],
+      "Rookidee": ["Rookidee", "Corvisquire", "Corviknight"],
+      "Finizen": ["Finizen", "Palafin"],
+      "Frigibax": ["Frigibax", "Arctibax", "Baxcalibur"],
+      "Gimmighoul": ["Gimmighoul", "Gholdengo"],
+      "Pawniard": ["Pawniard", "Bisharp", "Kingambit"],
+      "Mankey": ["Mankey", "Primeape", "Annihilape"],
+      "Paldean Wooper": ["Paldean Wooper", "Clodsire"],
+      "Glimmet": ["Glimmet", "Glimmora"],
+      "Girafarig": ["Girafarig", "Farigiraf"],
+      "Dunsparce": ["Dunsparce", "Dudunsparce"]
     };
   }
 
@@ -947,17 +1128,33 @@ export class GameEngine {
     return this.getEvolutionChains()[basePokemon] || null;
   }
 
+  getStageOfPokemon(chain, pokemonName) {
+    if (!chain) return -1;
+    for (let i = 0; i < chain.length; i++) {
+      const element = chain[i];
+      if (Array.isArray(element)) {
+        if (element.includes(pokemonName)) return i;
+      } else if (element === pokemonName) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   ensurePokemonProgress(player) {
     if (!player) return player;
     if (!player.pokemonLevelUps) player.pokemonLevelUps = {};
     if (!player.pokemonBonusLevels) player.pokemonBonusLevels = {};
     if (!player.pokemonEvolutionStages) player.pokemonEvolutionStages = {};
+    if (!player.pokemonEvolutionPoints) player.pokemonEvolutionPoints = {};
+    if (!player.pokemonTraining) player.pokemonTraining = {};
     if (!player.starterBase) player.starterBase = player.baseStarter || this.normalizePokemonName(player, player.pokemon);
+    this.normalizePlayerItems(player);
 
     const activeBase = this.normalizePokemonName(player, player.pokemon);
     const chain = this.getEvolutionChain(activeBase);
     if (chain && !Number.isInteger(player.pokemonEvolutionStages[activeBase])) {
-      const currentStage = Math.max(0, chain.indexOf(player.pokemon));
+      const currentStage = Math.max(0, this.getStageOfPokemon(chain, player.pokemon));
       const legacyStage = Number.isInteger(player.evolutionUpgrades) ? player.evolutionUpgrades : 0;
       player.pokemonEvolutionStages[activeBase] = Math.min(Math.max(currentStage, legacyStage), chain.length - 1);
     }
@@ -981,6 +1178,43 @@ export class GameEngine {
     const levelUps = player.pokemonLevelUps ? (player.pokemonLevelUps[normName] || 0) : 0;
     const bonusLevels = player.pokemonBonusLevels ? (player.pokemonBonusLevels[normName] || 0) : 0;
     return this.getPokemonBaseLevel(player, pokemonName) + levelUps + bonusLevels;
+  }
+
+  getEvolutionPointRequirement(player, pokemonName) {
+    this.ensurePokemonProgress(player);
+    const baseName = this.normalizePokemonName(player, pokemonName);
+    const chain = this.getEvolutionChain(baseName);
+    if (!chain) return 10;
+    const stage = Math.max(0, this.getStageOfPokemon(chain, pokemonName));
+    if (stage <= 0) return 8;
+    if (stage === 1) return 12;
+    return 10;
+  }
+
+  getEvolutionPoints(player, pokemonName) {
+    this.ensurePokemonProgress(player);
+    const baseName = this.normalizePokemonName(player, pokemonName);
+    return Math.max(0, Math.floor(Number(player.pokemonEvolutionPoints[baseName]) || 0));
+  }
+
+  addEvolutionPoints(player, pokemonName, points, reason = "progress") {
+    if (!player || !pokemonName || !Number.isFinite(points) || points <= 0) return 0;
+    this.ensurePokemonProgress(player);
+    const baseName = this.normalizePokemonName(player, pokemonName);
+    const amount = Math.floor(points);
+    player.pokemonEvolutionPoints[baseName] = this.getEvolutionPoints(player, pokemonName) + amount;
+    this.log(`${player.name}'s ${pokemonName} gained +${amount} Evolution Points (${reason}).`);
+    return player.pokemonEvolutionPoints[baseName];
+  }
+
+  spendEvolutionPoints(player, pokemonName) {
+    this.ensurePokemonProgress(player);
+    const baseName = this.normalizePokemonName(player, pokemonName);
+    const required = this.getEvolutionPointRequirement(player, pokemonName);
+    const current = this.getEvolutionPoints(player, pokemonName);
+    if (current < required) return false;
+    player.pokemonEvolutionPoints[baseName] = current - required;
+    return true;
   }
 
   degradeProperty(spaceId) {
