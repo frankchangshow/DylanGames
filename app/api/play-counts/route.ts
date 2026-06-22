@@ -5,9 +5,13 @@ import {
   incrementPlayCount,
   isSupabasePlayCountsConfigured
 } from "@/src/data/supabasePlayCounts";
-import { getGameForKid, isKid } from "@/src/data/games";
+import { isKid } from "@/src/data/games";
 
 export const dynamic = "force-dynamic";
+
+function isSafeGameId(value: string) {
+  return /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+}
 
 export async function GET(request: Request) {
   const debug = new URL(request.url).searchParams.get("debug") === "1";
@@ -42,14 +46,8 @@ export async function POST(request: Request) {
   const kid = body?.kid;
   const gameId = body?.gameId;
 
-  if (typeof kid !== "string" || typeof gameId !== "string" || !isKid(kid)) {
+  if (typeof kid !== "string" || typeof gameId !== "string" || !isKid(kid) || !isSafeGameId(gameId)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
-  }
-
-  const game = await getGameForKid(kid, gameId);
-
-  if (!game || game.status === "coming-soon" || game.type === "placeholder") {
-    return NextResponse.json({ error: "Invalid game" }, { status: 404 });
   }
 
   if (!isSupabasePlayCountsConfigured()) {
