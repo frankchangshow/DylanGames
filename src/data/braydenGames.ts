@@ -3,6 +3,14 @@ import type { Game } from "./types";
 
 const braydenGameDetails: Array<Pick<Game, "id" | "title" | "description" | "type" | "status" | "playUrl">> = [
   {
+    id: "archery_dot_survivor",
+    title: "Archery Dot Survivor",
+    description: "Dodge the danger and survive with sharp archery skills.",
+    type: "html",
+    status: "playable",
+    playUrl: "/games/brayden/archery_dot_survivor/archery_dot_survivor.html"
+  },
+  {
     id: "2d_platformer",
     title: "2D Platformer",
     description: "Jump, collect coins, and unlock grapple powers.",

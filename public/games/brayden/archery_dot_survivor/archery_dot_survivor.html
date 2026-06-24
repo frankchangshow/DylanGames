@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Archery Castle Defender - Ultimate Chiptune Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f1705;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            color: white;
+            z-index: 10;
+        }
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 15px 25px;
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .ability-slot {
+            width: 60px;
+            height: 60px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .ability-slot.unlocked {
+            opacity: 1;
+            border-color: #3b82f6;
+        }
+        .ability-cooldown {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(59, 130, 246, 0.5);
+            transition: height 0.1s linear;
+        }
+
+        #shop-panel {
+            position: absolute;
+            right: -420px;
+            top: 0;
+            width: 400px;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(15px);
+            border-left: 3px solid #fbbf24;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            pointer-events: auto;
+            padding: 20px;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        #shop-panel.open { right: 0; }
+        .shop-item {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .shop-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .shop-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        
+        #boss-bar-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            display: none;
+            pointer-events: none;
+        }
+
+        #music-toggle {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #music-toggle:active { transform: scale(0.9); }
+
+        @media (max-width: 768px) {
+            #shop-panel { width: 100%; right: -100%; }
+            #boss-bar-container { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Music -->
+    <audio id="bgMusic" src="nickpanek-8-bit-chiptune-action-music-for-video-games-329940 (1).mp3" loop></audio>
+
+    <div id="shop-panel">
+        <h2 class="text-3xl font-black text-yellow-500 mb-1 italic text-center">FORTRESS ARMORY</h2>
+        <div class="h-1 bg-yellow-500/20 mb-4 rounded"></div>
+        
+        <div class="space-y-2">
+            <!-- Ability Unlocks -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="shop-item border-l-4 border-blue-500 bg-blue-950/20">
+                    <div class="text-[10px] text-blue-400 font-bold uppercase">Skill: Arrow Storm</div>
+                    <button onclick="buyUpgrade('abilityStorm')" id="btn-abilityStorm" class="shop-btn bg-blue-600 text-[11px] py-1">Unlock: 1200</button>
+                </div>
+                <div class="shop-item border-l-4 border-cyan-500 bg-cyan-950/20">
+                    <div class="text-[10px] text-cyan-400 font-bold uppercase">Skill: Glacial Nova</div>
+                    <button onclick="buyUpgrade('abilityNova')" id="btn-abilityNova" class="shop-btn bg-cyan-600 text-[11px] py-1">Unlock: 2000</button>
+                </div>
+            </div>
+
+            <!-- Heavy Artillery -->
+            <div class="shop-item border-l-4 border-amber-600 bg-amber-950/20">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-amber-500 uppercase text-xs">Grand Trebuchet</span>
+                    <span id="lvl-trebuchet" class="text-amber-500 font-mono">0/4</span>
+                </div>
+                <p class="text-[10px] text-slate-300 italic">One-shot strength. Boulders ricochet between targets.</p>
+                <button onclick="buyUpgrade('trebuchet')" id="btn-trebuchet" class="shop-btn bg-amber-700 text-white">Buy: 3500</button>
+            </div>
+
+            <div class="shop-item border-l-4 border-cyan-400 bg-cyan-950/20">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-cyan-400 uppercase text-xs">Dual Crossbows</span>
+                    <span id="lvl-dualCrossbow" class="text-cyan-400 font-mono">Lv.0</span>
+                </div>
+                <p class="text-[10px] text-slate-300">8-shot high-speed volley. Random Freeze/Stun/Combustion on hit.</p>
+                <button onclick="buyUpgrade('dualCrossbow')" id="btn-dualCrossbow" class="shop-btn bg-cyan-600 text-white">Buy: 5000</button>
+            </div>
+
+            <div class="shop-item border-l-4 border-blue-500 bg-blue-950/20">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-blue-400 uppercase text-xs">Castle Expander</span>
+                    <span id="lvl-expander" class="text-blue-400 font-mono">Lv.0</span>
+                </div>
+                <p class="text-[10px] text-slate-300">Expands the outer walls, boosting total health pool.</p>
+                <button onclick="buyUpgrade('expander')" id="btn-expander" class="shop-btn bg-blue-700 text-white">Expand: 1500</button>
+            </div>
+
+            <!-- Upgrades -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="shop-item border-t border-slate-700">
+                    <div class="text-[10px] text-slate-400 uppercase">Reload Speed</div>
+                    <button onclick="buyUpgrade('fireRate')" id="btn-fireRate" class="shop-btn bg-blue-600 text-[11px] py-1">Buy</button>
+                </div>
+                <div class="shop-item border-t border-slate-700">
+                    <div class="text-[10px] text-slate-400 uppercase">Tower Haste</div>
+                    <button onclick="buyUpgrade('towerSpeed')" id="btn-towerSpeed" class="shop-btn bg-indigo-600 text-[11px] py-1">Buy</button>
+                </div>
+            </div>
+
+            <!-- Automated Perimeter Weapons -->
+            <div class="shop-item border-l-4 border-emerald-500">
+                <div class="flex justify-between items-center"><span class="font-bold text-emerald-500 uppercase text-xs">Siege Ballista</span><span id="lvl-ballista" class="font-mono text-xs">0/4</span></div>
+                <p class="text-[10px] text-slate-300">Fires high-speed armor-piercing iron bolts.</p>
+                <button onclick="buyUpgrade('ballista')" id="btn-ballista" class="shop-btn bg-emerald-600 text-white">Build: 2000</button>
+            </div>
+
+            <div class="shop-item border-l-4 border-orange-500">
+                <div class="flex justify-between items-center"><span class="font-bold text-orange-500 uppercase text-xs">Siege Catapult</span><span id="lvl-catapult" class="font-mono text-xs">0/8</span></div>
+                <p class="text-[10px] text-slate-300">Launches massive homing rocks that deal area splash damage.</p>
+                <button onclick="buyUpgrade('catapult')" id="btn-catapult" class="shop-btn bg-orange-600 text-white">Build: 750</button>
+            </div>
+
+            <div class="shop-item border-l-4 border-red-500">
+                <div class="flex justify-between items-center"><span class="font-bold text-red-500 uppercase text-xs">Rapid Cannon</span><span id="lvl-cannon" class="font-mono text-xs">0/8</span></div>
+                <p class="text-[10px] text-slate-300">Rapid-fire swivel mounted defenses.</p>
+                <button onclick="buyUpgrade('cannon')" id="btn-cannon" class="shop-btn bg-red-600 text-white">Install: 1200</button>
+            </div>
+
+            <div class="shop-item">
+                <button onclick="buyUpgrade('repair')" id="btn-repair" class="shop-btn bg-slate-600 text-white">Repair Walls (+20%): 300</button>
+            </div>
+        </div>
+
+        <button onclick="toggleShop()" class="mt-6 w-full py-4 bg-slate-800 rounded-xl font-black tracking-tighter hover:bg-slate-700 transition-colors">RESUME BATTLE</button>
+    </div>
+
+    <div id="boss-bar-container">
+        <div class="text-center text-red-500 font-black text-sm uppercase mb-1 tracking-widest">Boss Approaching</div>
+        <div class="w-full h-4 bg-gray-900 rounded-full border-2 border-red-900 overflow-hidden">
+            <div id="boss-hp-bar" class="h-full bg-red-600 transition-all duration-300" style="width: 100%"></div>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <div class="flex justify-between items-start">
+            <div class="glass-panel flex flex-col gap-2">
+                <div class="flex items-center gap-4">
+                    <div class="text-3xl font-black text-yellow-400 tracking-tighter">GOLD: <span id="score-val">0</span></div>
+                    <div id="music-toggle" class="pointer-events-auto bg-slate-800 p-2 rounded-full border border-slate-600" onclick="toggleMusic()">
+                        <svg id="music-on" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path></svg>
+                        <svg id="music-off" class="w-5 h-5 text-slate-500 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    </div>
+                </div>
+                <div class="text-sm font-bold text-blue-300 uppercase tracking-widest">Wave <span id="wave-val">1</span></div>
+                <button onclick="toggleShop()" class="pointer-events-auto mt-1 bg-yellow-600 hover:bg-yellow-500 text-white text-xs px-4 py-2 rounded-lg font-black shadow-lg">SHOP [E]</button>
+            </div>
+            
+            <div class="glass-panel text-right">
+                <div class="text-xl font-black text-red-500 uppercase italic">Fortress</div>
+                <div class="text-2xl font-mono text-white mb-2"><span id="hp-val">100</span> / <span id="max-hp-val">100</span></div>
+                <div class="w-56 h-4 bg-gray-900 rounded-full overflow-hidden border-2 border-white/20">
+                    <div id="hp-bar" class="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-4 mb-4">
+            <div class="glass-panel py-2 px-4 flex gap-4 pointer-events-auto">
+                <div id="slot-1" class="ability-slot" onclick="useAbility(1)">
+                    <span class="text-[10px] text-slate-400 z-10 font-bold">Storm</span>
+                    <span class="font-black text-blue-400 z-10">[1]</span>
+                    <div id="cooldown-1" class="ability-cooldown" style="height: 0%"></div>
+                </div>
+                <div id="slot-2" class="ability-slot" onclick="useAbility(2)">
+                    <span class="text-[10px] text-slate-400 z-10 font-bold">Nova</span>
+                    <span class="font-black text-cyan-400 z-10">[2]</span>
+                    <div id="cooldown-2" class="ability-cooldown" style="height: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score-val'), hpEl = document.getElementById('hp-val');
+        const maxHpEl = document.getElementById('max-hp-val'), waveEl = document.getElementById('wave-val');
+        const hpBar = document.getElementById('hp-bar'), shopPanel = document.getElementById('shop-panel');
+        const bossBarContainer = document.getElementById('boss-bar-container'), bossHpBar = document.getElementById('boss-hp-bar');
+        const bgMusic = document.getElementById('bgMusic');
+        const musicOnIcon = document.getElementById('music-on'), musicOffIcon = document.getElementById('music-off');
+
+        // Game State
+        let score = 0, hp = 100, maxHp = 100, wave = 1, gameOver = false, isPaused = false;
+        let lastTime = 0, lastFired = 0, screenShake = 0, musicStarted = false;
+        let enemiesInWave = 10, enemiesSpawned = 0, enemiesKilled = 0;
+        let bossActive = false;
+
+        const abilities = {
+            1: { cd: 1200, current: 0, active: 0, unlocked: false }, // Storm
+            2: { cd: 1800, current: 0, active: 0, unlocked: false }  // Nova
+        };
+
+        const upgrades = {
+            fireRate: { level: 1, basePrice: 100, mult: 1.6 },
+            towerSpeed: { level: 1, basePrice: 400, mult: 1.8 },
+            abilityStorm: { level: 0, basePrice: 1200, mult: 1, max: 1 },
+            abilityNova: { level: 0, basePrice: 2000, mult: 1, max: 1 },
+            dualCrossbow: { level: 0, basePrice: 5000, mult: 1, max: 1 },
+            trebuchet: { level: 0, basePrice: 3500, mult: 1.8, max: 4 },
+            crossbow: { level: 0, basePrice: 500, mult: 2.5, max: 3 },
+            expander: { level: 0, basePrice: 1500, mult: 3.5, max: 5 },
+            catapult: { level: 0, basePrice: 750, mult: 1.5, max: 8 },
+            cannon: { level: 0, basePrice: 1200, mult: 1.6, max: 8 },
+            ballista: { level: 0, basePrice: 2000, mult: 1.7, max: 4 },
+            repair: { level: 1, basePrice: 300, mult: 1.3 }
+        };
+
+        const player = { x: 0, y: 0, radius: 14, color: '#3b82f6', speed: 5, vx: 0, vy: 0, angle: 0 };
+        const castle = { x: 0, y: 0, radius: 70 };
+        
+        const keys = {}, bolts = [], enemies = [], particles = [], projectiles = [], popups = [], fireCircles = [];
+        const catapults = [], cannons = [], ballistas = [], trebuchets = [];
+        const mouse = { x: 0, y: 0 };
+
+        function init() {
+            resize();
+            player.x = canvas.width / 2; player.y = canvas.height / 2 + 150;
+            castle.x = canvas.width / 2; castle.y = canvas.height / 2;
+
+            window.addEventListener('resize', resize);
+            window.addEventListener('keydown', e => { 
+                keys[e.code] = true; 
+                startMusic();
+                if(e.code === 'KeyE' || e.code === 'Escape') toggleShop();
+                if(e.code === 'Digit1') useAbility(1);
+                if(e.code === 'Digit2') useAbility(2);
+            });
+            window.addEventListener('keyup', e => keys[e.code] = false);
+            window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+            startWave();
+            updateShopUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Centralized Gold Function
+        function gainGold(amount) {
+            score += Math.floor(amount);
+            scoreEl.innerText = score;
+            updateShopUI();
+        }
+
+        function startMusic() {
+            if (!musicStarted) {
+                bgMusic.volume = 0.5;
+                const playPromise = bgMusic.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        musicStarted = true;
+                        musicOnIcon.classList.remove('hidden');
+                        musicOffIcon.classList.add('hidden');
+                    }).catch(error => { console.log("Playback prevented:", error); });
+                }
+            }
+        }
+
+        function toggleMusic() {
+            if (!musicStarted) { startMusic(); return; }
+            if (bgMusic.paused) { bgMusic.play(); musicOnIcon.classList.remove('hidden'); musicOffIcon.classList.add('hidden'); } 
+            else { bgMusic.pause(); musicOnIcon.classList.add('hidden'); musicOffIcon.classList.remove('hidden'); }
+        }
+
+        function useAbility(id) {
+            if (isPaused || gameOver || !abilities[id].unlocked || abilities[id].current > 0) return;
+            abilities[id].current = abilities[id].cd;
+            abilities[id].active = id === 1 ? 300 : 60; 
+            if (id === 2) {
+                enemies.forEach(e => { e.freezeTimer = 240; createPopup(e.x, e.y, "FROZEN", "#22d3ee"); });
+                screenShake = 20;
+            }
+        }
+
+        function toggleShop() {
+            if(gameOver) return;
+            isPaused = !isPaused;
+            shopPanel.classList.toggle('open');
+            updateShopUI();
+        }
+
+        function buyUpgrade(type) {
+            const up = upgrades[type];
+            const price = Math.floor(up.basePrice * Math.pow(up.mult, up.level));
+            if (score >= price && (!up.max || up.level < up.max)) {
+                score -= price;
+                gainGold(0);
+                if (type === 'repair') hp = Math.min(maxHp, hp + Math.floor(maxHp * 0.2));
+                else if (type === 'expander') {
+                    up.level++; castle.radius += 15; maxHp += 50; hp += 50;
+                    refreshTowers();
+                } else if (type === 'abilityStorm') {
+                    up.level++; abilities[1].unlocked = true;
+                    document.getElementById('slot-1').classList.add('unlocked');
+                } else if (type === 'abilityNova') {
+                    up.level++; abilities[2].unlocked = true;
+                    document.getElementById('slot-2').classList.add('unlocked');
+                } else {
+                    up.level++;
+                    if (type === 'catapult') addCatapult();
+                    if (type === 'trebuchet') addTrebuchet();
+                    if (type === 'cannon') addCannon();
+                    if (type === 'ballista') addBallista();
+                }
+                updateShopUI();
+                hpEl.innerText = hp; maxHpEl.innerText = maxHp;
+                hpBar.style.width = (hp / maxHp * 100) + '%';
+            }
+        }
+
+        function addCatapult() { catapults.push({ angle: 0, lastFired: 0, cooldown: 120 }); refreshTowers(); }
+        function addTrebuchet() { trebuchets.push({ angle: 0, lastFired: 0, cooldown: 400 }); refreshTowers(); }
+        function addCannon() { cannons.push({ angle: 0, lastFired: 0, cooldown: 40 }); refreshTowers(); }
+        function addBallista() { ballistas.push({ angle: 0, lastFired: 0, cooldown: 100 }); refreshTowers(); }
+
+        // Spread towers dynamically
+        function refreshTowers() {
+            catapults.forEach((c, i) => {
+                const angle = (i * (Math.PI * 2 / catapults.length));
+                c.x = castle.x + Math.cos(angle) * (castle.radius + 70);
+                c.y = castle.y + Math.sin(angle) * (castle.radius + 70);
+            });
+            trebuchets.forEach((t, i) => {
+                const angle = (i * (Math.PI * 2 / trebuchets.length)) + Math.PI/4;
+                t.x = castle.x + Math.cos(angle) * (castle.radius + 120);
+                t.y = castle.y + Math.sin(angle) * (castle.radius + 120);
+            });
+            ballistas.forEach((b, i) => {
+                const angle = (i * (Math.PI * 2 / ballistas.length)) + Math.PI/8;
+                b.x = castle.x + Math.cos(angle) * (castle.radius + 10);
+                b.y = castle.y + Math.sin(angle) * (castle.radius + 10);
+            });
+            cannons.forEach((c, i) => {
+                c.angle = (i * (Math.PI * 2 / cannons.length));
+            });
+        }
+
+        function repositionPerimeter(obj, offset) {
+            const angle = Math.atan2(obj.y - castle.y, obj.x - castle.x);
+            obj.x = castle.x + Math.cos(angle) * (castle.radius + offset);
+            obj.y = castle.y + Math.sin(angle) * (castle.radius + offset);
+        }
+
+        function updateShopUI() {
+            Object.keys(upgrades).forEach(type => {
+                const up = upgrades[type], price = Math.floor(up.basePrice * Math.pow(up.mult, up.level));
+                const btn = document.getElementById(`btn-${type}`);
+                if (!btn) return;
+                btn.innerText = (up.max && up.level >= up.max) ? 'UNLOCKED' : `Buy: ${price}`;
+                btn.disabled = score < price || (up.max && up.level >= up.max);
+                const label = document.getElementById(`lvl-${type}`);
+                if (label) label.innerText = up.max ? `Lv.${up.level}/${up.max}` : `Lv.${up.level}`;
+            });
+        }
+
+        function startWave() {
+            enemiesSpawned = 0; enemiesKilled = 0; bossActive = false;
+            waveEl.innerText = wave;
+            bossBarContainer.style.display = 'none';
+            if (wave % 10 === 0) {
+                enemiesInWave = 1;
+                spawnBoss();
+            } else {
+                enemiesInWave = 10 + (wave * 6);
+                spawnSequence();
+            }
+        }
+
+        function spawnBoss() {
+            bossActive = true;
+            enemiesSpawned = 1;
+            bossBarContainer.style.display = 'block';
+            const radius = 60, bossHp = wave * 150;
+            enemies.push({ 
+                x: canvas.width/2, y: -radius, radius, color: '#fbbf24', 
+                speed: 0.4, baseSpeed: 0.4, hp: bossHp, maxHp: bossHp, 
+                isBoss: true, stunTimer: 0, freezeTimer: 0
+            });
+        }
+
+        function spawnSequence() {
+            if (gameOver || isPaused || bossActive) { setTimeout(spawnSequence, 500); return; }
+            if (enemiesSpawned >= enemiesInWave) return;
+            spawnEnemy();
+            enemiesSpawned++;
+            setTimeout(spawnSequence, Math.max(100, 1500 - (wave * 100)));
+        }
+
+        function spawnEnemy() {
+            const side = Math.floor(Math.random() * 4);
+            let x, y, radius = 14 + Math.random() * 8;
+            if (side === 0) { x = Math.random() * canvas.width; y = -radius; }
+            else if (side === 1) { x = canvas.width + radius; y = Math.random() * canvas.height; }
+            else if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + radius; }
+            else { x = -radius; y = Math.random() * canvas.height; }
+            
+            const rand = Math.random();
+            let type = { color: '#f87171', speed: 1, hp: 1, radius };
+
+            // Enemy progression scaling
+            if (wave >= 15 && rand < 0.15) {
+                type = { color: '#c084fc', speed: 0.6, hp: 6, radius: radius * 1.5, text: "TANK" };
+            } else if (wave >= 8 && rand < 0.3) {
+                type = { color: '#facc15', speed: 2.2, hp: 0.5, radius: radius * 0.7, text: "SCOUT" };
+            }
+
+            const difficulty = (1 + wave * 0.08);
+            enemies.push({ 
+                x, y, radius: type.radius, color: type.color, 
+                speed: type.speed * difficulty * (0.7 + Math.random() * 0.3), 
+                baseSpeed: type.speed * difficulty,
+                hp: type.hp * (1 + Math.floor(wave / 5)),
+                stunTimer: 0, freezeTimer: 0
+            });
+            if (type.text) createPopup(x, y, type.text, type.color);
+        }
+
+        function createPopup(x, y, text, color) { popups.push({ x, y, text, color, life: 60 }); }
+
+        function fireBolt() {
+            if (gameOver || isPaused) return;
+            startMusic();
+            let baseCooldown = (upgrades.dualCrossbow.level > 0) ? 10 : 20;
+            const cooldown = Math.max(2, baseCooldown - (upgrades.fireRate.level * 2));
+            if (lastTime - lastFired < cooldown) return;
+            lastFired = lastTime;
+            const dx = mouse.x - player.x, dy = mouse.y - player.y;
+            const angle = Math.atan2(dy, dx);
+            let count = (upgrades.dualCrossbow.level > 0) ? 8 : (1 + upgrades.crossbow.level);
+            let spread = (upgrades.dualCrossbow.level > 0) ? 0.3 : 0.15;
+            for(let i=0; i<count; i++) {
+                const off = (i - (count-1)/2) * spread;
+                bolts.push({
+                    x: player.x, y: player.y, vx: Math.cos(angle + off) * 16, vy: Math.sin(angle + off) * 16,
+                    angle: angle + off, life: 120, 
+                    size: (upgrades.dualCrossbow.level > 0) ? 1.5 : (1 + (upgrades.crossbow.level * 0.3)),
+                    isDualBolt: (upgrades.dualCrossbow.level > 0)
+                });
+            }
+        }
+
+        function update() {
+            if (gameOver || isPaused) return;
+            
+            if (screenShake > 0) screenShake *= 0.9;
+
+            Object.keys(abilities).forEach(id => {
+                if (abilities[id].current > 0) abilities[id].current--;
+                if (abilities[id].active > 0) {
+                    abilities[id].active--;
+                    if (id == '1' && lastTime % 3 === 0) { 
+                        bolts.push({ x: Math.random()*canvas.width, y: 0, vx: 0, vy: 18, angle: Math.PI/2, life: 100, size: 2, isStormBolt: true });
+                    }
+                }
+                document.getElementById(`cooldown-${id}`).style.height = (abilities[id].current / abilities[id].cd * 100) + '%';
+            });
+
+            if (keys['KeyW'] || keys['ArrowUp']) player.y -= player.speed;
+            if (keys['KeyS'] || keys['ArrowDown']) player.y += player.speed;
+            if (keys['KeyA'] || keys['ArrowLeft']) player.x -= player.speed;
+            if (keys['KeyD'] || keys['ArrowRight']) player.x += player.speed;
+            player.x += player.vx; player.y += player.vy;
+            if (keys['Space']) fireBolt();
+            
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+            const pdx = player.x - castle.x, pdy = player.y - castle.y;
+            if (Math.sqrt(pdx*pdx + pdy*pdy) < castle.radius + player.radius) {
+                const angle = Math.atan2(pdy, pdx);
+                player.x = castle.x + Math.cos(angle) * (castle.radius + player.radius);
+                player.y = castle.y + Math.sin(angle) * (castle.radius + player.radius);
+            }
+            player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+
+            const towerCooldownMult = 1 / (1 + (upgrades.towerSpeed.level - 1) * 0.15);
+
+            // Towers
+            trebuchets.forEach(t => {
+                if (lastTime - t.lastFired > t.cooldown * towerCooldownMult && enemies.length > 0) {
+                    const target = enemies[0];
+                    const angle = Math.atan2(target.y-t.y, target.x-t.x);
+                    projectiles.push({ x: t.x, y: t.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, type: 'trebuchet', radius: 18, life: 350, speed: 12, bounces: 3 });
+                    t.lastFired = lastTime;
+                }
+            });
+            catapults.forEach(c => {
+                if (lastTime - c.lastFired > c.cooldown * towerCooldownMult && enemies.length > 0) {
+                    const target = enemies[0];
+                    const angle = Math.atan2(target.y-c.y, target.x-c.x);
+                    projectiles.push({ x: c.x, y: c.y, vx: Math.cos(angle)*15, vy: Math.sin(angle)*15, type: 'rock', radius: 10, life: 200, speed: 15 });
+                    c.lastFired = lastTime;
+                }
+            });
+            cannons.forEach(c => {
+                if (lastTime - c.lastFired > c.cooldown * towerCooldownMult && enemies.length > 0) {
+                    const target = enemies[enemies.length-1];
+                    c.angle = Math.atan2(target.y-castle.y, target.x-castle.x);
+                    projectiles.push({ x: castle.x+Math.cos(c.angle)*castle.radius, y: castle.y+Math.sin(c.angle)*castle.radius, vx: Math.cos(c.angle)*18, vy: Math.sin(c.angle)*18, type: 'shell', radius: 6, life: 150 });
+                    c.lastFired = lastTime;
+                }
+            });
+            ballistas.forEach(b => {
+                if (lastTime - b.lastFired > b.cooldown * towerCooldownMult && enemies.length > 0) {
+                    let closest = null, minDist = Infinity;
+                    enemies.forEach(e => { const d = (e.x-b.x)**2 + (e.y-b.y)**2; if(d < minDist) { minDist = d; closest = e; } });
+                    if(closest) {
+                        const angle = Math.atan2(closest.y-b.y, closest.x-b.x); b.angle = angle;
+                        projectiles.push({ x: b.x, y: b.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, angle, type: 'ballista', radius: 5, life: 250, pierce: 3 });
+                        b.lastFired = lastTime;
+                    }
+                }
+            });
+
+            // Projectiles mechanics
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+                if ((p.type === 'rock' || p.type === 'trebuchet') && enemies.length > 0) {
+                    let target = null, minDist = Infinity;
+                    enemies.forEach(e => { const distSq = (e.x-p.x)**2 + (e.y-p.y)**2; if (distSq < minDist) { minDist = distSq; target = e; } });
+                    if (target) {
+                        const dx = target.x-p.x, dy = target.y-p.y, dist = Math.sqrt(dx*dx+dy*dy);
+                        p.vx += ((dx/dist)*p.speed - p.vx)*0.08; p.vy += ((dy/dist)*p.speed - p.vy)*0.08;
+                        const s = Math.sqrt(p.vx*p.vx+p.vy*p.vy); p.vx=(p.vx/s)*p.speed; p.vy=(p.vy/s)*p.speed;
+                    }
+                }
+                p.x += p.vx; p.y += p.vy; p.life--;
+                if (p.life <= 0) { projectiles.splice(i, 1); continue; }
+                for (let ei = enemies.length - 1; ei >= 0; ei--) {
+                    const e = enemies[ei];
+                    if (Math.sqrt((p.x-e.x)**2 + (p.y-e.y)**2) < e.radius + p.radius) {
+                        if (p.type === 'trebuchet') {
+                            e.hp -= 999; screenShake = 15;
+                            if (p.bounces > 0) { createPopup(p.x, p.y, "RICOCHET", "#fbbf24"); p.bounces--; }
+                            else projectiles.splice(i, 1);
+                            break;
+                        } else if (p.type === 'rock') {
+                            enemies.forEach(se => { if (Math.sqrt((se.x-p.x)**2 + (se.y-p.y)**2) < 80) se.hp -= 2; });
+                            projectiles.splice(i, 1); createExplosion(p.x, p.y, '#78350f'); break;
+                        } else if (p.type === 'ballista') {
+                            e.hp -= 3; p.pierce--; if (p.pierce <= 0) projectiles.splice(i, 1); break;
+                        } else if (p.type === 'shell') {
+                            e.hp -= 5; projectiles.splice(i, 1); createExplosion(p.x, p.y, '#ef4444'); break;
+                        }
+                    }
+                }
+            }
+
+            // Enemies mechanics
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                if (e.stunTimer > 0) { e.stunTimer--; e.speed = 0; }
+                else if (e.freezeTimer > 0) { e.freezeTimer--; e.speed = e.baseSpeed * 0.1; }
+                else { e.speed = e.baseSpeed; }
+
+                const dx = castle.x-e.x, dy = castle.y-e.y, dist = Math.sqrt(dx*dx+dy*dy);
+                e.x += (dx/dist)*e.speed; e.y += (dy/dist)*e.speed;
+                
+                if (dist < castle.radius) {
+                    hp -= e.isBoss ? 20 : 5; hp = Math.max(0, hp); hpEl.innerText = hp; 
+                    hpBar.style.width = (hp/maxHp*100)+'%'; enemies.splice(i, 1); enemiesKilled++; 
+                    screenShake = 12; createExplosion(e.x, e.y, '#ffffff'); if (hp <= 0) gameOver = true;
+                } else {
+                    for (let j = bolts.length - 1; j >= 0; j--) {
+                        const b = bolts[j];
+                        if (Math.sqrt((b.x-e.x)**2 + (b.y-e.y)**2) < e.radius + 6) {
+                            e.hp -= b.isStormBolt ? 5 : 1;
+                            if (b.isDualBolt) {
+                                const roll = Math.random();
+                                if (roll < 0.1) { createPopup(e.x, e.y, "BOOM", "#f59e0b"); fireCircles.push({ x: e.x, y: e.y, radius: 60, life: 240, maxLife: 240 }); createExplosion(e.x, e.y, '#f59e0b'); }
+                                else if (roll < 0.2) e.freezeTimer = 300;
+                                else if (roll < 0.3) e.stunTimer = 180;
+                            }
+                            bolts.splice(j, 1); break;
+                        }
+                    }
+                }
+                if (e.isBoss) bossHpBar.style.width = (e.hp / e.maxHp * 100) + '%';
+                
+                if (e.hp <= 0) {
+                    if (e.isBoss) bossActive = false;
+                    gainGold(e.isBoss ? 1000 : 20);
+                    createExplosion(e.x, e.y, e.color); 
+                    enemies.splice(i, 1); 
+                    enemiesKilled++;
+                }
+            }
+
+            if (enemiesKilled >= enemiesInWave && enemies.length === 0) { gainGold(200); wave++; startWave(); }
+            
+            for (let i = fireCircles.length - 1; i >= 0; i--) {
+                const fc = fireCircles[i]; fc.life--;
+                enemies.forEach(e => { if (Math.sqrt((e.x - fc.x)**2 + (e.y - fc.y)**2) < e.radius + fc.radius) e.hp -= 0.04; });
+                if (fc.life <= 0) fireCircles.splice(i, 1);
+            }
+            
+            for (let i = bolts.length-1; i>=0; i--) { bolts[i].x += bolts[i].vx; bolts[i].y += bolts[i].vy; bolts[i].life--; if(bolts[i].life<=0) bolts.splice(i,1); }
+            for (let i = popups.length-1; i>=0; i--) { popups[i].y-=1; popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
+            for (let i = particles.length-1; i>=0; i--) { particles[i].x += particles[i].vx; particles[i].y += particles[i].vy; particles[i].life -= 0.02; if(particles[i].life<=0) particles.splice(i,1); }
+            lastTime++;
+        }
+
+        function createExplosion(x, y, color) { for (let i = 0; i < 12; i++) particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, radius: Math.random()*6, life: 1, color }); }
+
+        function draw() {
+            ctx.save();
+            if (screenShake > 0) ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)'; ctx.lineWidth = 1;
+            for(let i=0; i<canvas.width; i+=100) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+            for(let j=0; j<canvas.height; j+=100) { ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(canvas.width,j); ctx.stroke(); }
+
+            fireCircles.forEach(fc => {
+                const grad = ctx.createRadialGradient(fc.x, fc.y, 0, fc.x, fc.y, fc.radius);
+                grad.addColorStop(0, `rgba(251, 146, 60, ${0.4 * (fc.life/fc.maxLife)})`); grad.addColorStop(1, `rgba(239, 68, 68, 0)`);
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(fc.x, fc.y, fc.radius, 0, Math.PI*2); ctx.fill();
+            });
+
+            // Castle Base
+            ctx.save(); ctx.translate(castle.x, castle.y);
+            ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(0, 0, castle.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 6; ctx.stroke();
+            const bt = 12 + (upgrades.expander.level * 2);
+            for(let i=0; i<bt; i++) { ctx.rotate(Math.PI*2/bt); ctx.fillStyle = '#475569'; ctx.fillRect(castle.radius-12, -10, 15, 20); }
+            
+            cannons.forEach(c => { 
+                ctx.save(); ctx.rotate(c.angle); 
+                ctx.fillStyle = '#1e293b'; ctx.fillRect(castle.radius - 10, -12, 15, 24);
+                ctx.fillStyle = '#0f172a'; ctx.fillRect(castle.radius + 5, -8, 20, 16);
+                ctx.fillStyle = '#334155'; ctx.fillRect(castle.radius + 25, -10, 5, 20);
+                ctx.restore(); 
+            });
+            ctx.restore();
+
+            // Trebuchet medieval rendering
+            trebuchets.forEach(t => { 
+                ctx.save(); ctx.translate(t.x, t.y);
+                ctx.fillStyle = '#3e2723'; ctx.fillRect(-25, -25, 50, 50);
+                ctx.strokeStyle = '#1b110e'; ctx.lineWidth = 2; ctx.strokeRect(-25, -25, 50, 50);
+                ctx.fillStyle = '#4e342e'; ctx.beginPath(); ctx.moveTo(-25, 25); ctx.lineTo(0, -25); ctx.lineTo(25, 25); ctx.fill();
+                ctx.save(); const armRot = Math.sin(lastTime*0.02)*0.8; ctx.rotate(armRot); 
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(-10, -6, 55, 12);
+                ctx.save(); ctx.translate(-15, 0); ctx.rotate(-armRot); ctx.fillStyle = '#3e2723'; ctx.fillRect(-10, -10, 20, 20);
+                ctx.strokeStyle = '#757575'; ctx.strokeRect(-10, -10, 20, 20); ctx.restore();
+                ctx.restore(); ctx.restore();
+            });
+
+            // Ballista medieval rendering
+            ballistas.forEach(b => {
+                ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.angle);
+                ctx.fillStyle = '#2e7d32'; ctx.fillRect(-20, -8, 30, 16);
+                ctx.fillStyle = '#1b5e20'; ctx.fillRect(-5, -3, 35, 6);
+                ctx.strokeStyle = '#388e3c'; ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.moveTo(5, -8); ctx.quadraticCurveTo(20, -25, 0, -35); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(5, 8); ctx.quadraticCurveTo(20, 25, 0, 35); ctx.stroke();
+                ctx.fillStyle = '#8d6e63'; ctx.beginPath(); ctx.arc(5, -8, 5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(5, 8, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#cd7f32'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            });
+
+            // Catapult spoon rendering
+            catapults.forEach(c => {
+                ctx.save(); ctx.translate(c.x, c.y);
+                ctx.fillStyle = '#4e342e'; ctx.fillRect(-20, -20, 40, 40);
+                ctx.strokeStyle = '#2d1d19'; ctx.lineWidth = 3; ctx.strokeRect(-20, -20, 40, 40);
+                ctx.save(); ctx.rotate(Math.sin(lastTime*0.05)*0.5);
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(0, -4, 25, 8);
+                ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.arc(30, 0, 10, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.restore();
+                ctx.restore();
+            });
+
+            particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); });
+            ctx.globalAlpha = 1;
+
+            projectiles.forEach(p => {
+                ctx.fillStyle = p.type === 'trebuchet' ? '#1f2937' : (p.type === 'rock' ? '#78350f' : '#334155');
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+                if(p.type === 'trebuchet') { ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.stroke(); }
+            });
+
+            bolts.forEach(b => {
+                ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.angle); ctx.scale(b.size, b.size);
+                ctx.strokeStyle = b.isDualBolt ? '#22d3ee' : '#fbbf24';
+                ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(14, 0); ctx.stroke(); ctx.restore();
+            });
+
+            enemies.forEach(e => {
+                ctx.fillStyle = e.color; 
+                if (e.stunTimer > 0) ctx.fillStyle = '#94a3b8';
+                if (e.freezeTimer > 0) ctx.fillStyle = '#38bdf8';
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2); ctx.fill();
+                if (e.hp > 0.1 && !e.isBoss) { 
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(e.x-10, e.y-e.radius-8, 20, 3);
+                    ctx.fillStyle = 'white'; ctx.fillRect(e.x-10, e.y-e.radius-8, 20*(Math.max(0, e.hp)/(1+Math.floor(wave/5))), 3); 
+                }
+            });
+
+            popups.forEach(p => { ctx.fillStyle = p.color; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.globalAlpha = p.life/60; ctx.fillText(p.text, p.x, p.y); });
+            ctx.globalAlpha = 1;
+
+            ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
+            if (upgrades.dualCrossbow.level > 0) {
+                ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(12, -14); ctx.lineTo(0, -3); ctx.moveTo(0, 3); ctx.lineTo(12, 14); ctx.lineTo(0, 25); ctx.stroke();
+            } else if (upgrades.crossbow.level > 0) {
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(15,0); ctx.lineTo(0,20); ctx.stroke();
+            } else {
+                ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(0,-18); ctx.quadraticCurveTo(20,0,0,18); ctx.stroke();
+            }
+            ctx.restore();
+            ctx.fillStyle = player.color; ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI*2); ctx.fill();
+
+            if (gameOver) { ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.font = 'bold 50px sans-serif'; ctx.fillText('CASTLE FALLEN', canvas.width/2, canvas.height/2); }
+            ctx.restore();
+        }
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; castle.x = canvas.width/2; castle.y = canvas.height/2; refreshTowers(); }
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        
+        window.addEventListener('mousedown', (e) => { 
+            startMusic();
+            if (gameOver) location.reload(); 
+            else if (!isPaused) fireBolt(); 
+        });
+        
+        init();
+    </script>
+</body>
+</html>
