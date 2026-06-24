@@ -1,6 +1,22 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import GameCardStats from "@/src/components/GameCardStats";
 import { getDylanGames } from "@/src/data/dylanGames";
+
+export const metadata: Metadata = {
+  title: "Dylan Games",
+  description: "Pick a game and start playing!",
+  openGraph: {
+    title: "Dylan Games",
+    description: "Pick a game and start playing!",
+    url: "https://dylan-games.com/"
+  },
+  twitter: {
+    card: "summary",
+    title: "Dylan Games",
+    description: "Pick a game and start playing!"
+  }
+};
 
 function GameThumbnail({
   title,

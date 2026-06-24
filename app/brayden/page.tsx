@@ -1,7 +1,23 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import GameCardStats from "@/src/components/GameCardStats";
 import { getBraydenGames } from "@/src/data/braydenGames";
 import type { Game } from "@/src/data/types";
+
+export const metadata: Metadata = {
+  title: "Brayden Games",
+  description: "Pick a game and start playing.",
+  openGraph: {
+    title: "Brayden Games",
+    description: "Pick a game and start playing.",
+    url: "https://braydengames.com/"
+  },
+  twitter: {
+    card: "summary",
+    title: "Brayden Games",
+    description: "Pick a game and start playing."
+  }
+};
 
 const gameTypeLabels: Record<Game["type"], string> = {
   external: "Others",
