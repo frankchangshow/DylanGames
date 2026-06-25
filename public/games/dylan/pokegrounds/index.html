@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Poke Battle Grounds - Choose any Pokémon, select your moveset, charge your Ultimate meter, and face off in a tactical retro-styled battle arena. Built using the official PokeAPI.">
+  <title>Poke Battle Grounds - Ultimate Arena</title>
+  <!-- Google Fonts for retro/cyberpunk game feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Animated Particles Wrapper -->
+  <div id="particle-bg"></div>
+
+  <!-- Audio Controls / Global Header -->
+  <header class="game-header">
+    <div class="logo">
+      <span class="logo-poke">POKÉ</span>
+      <span class="logo-bg">BATTLE GROUNDS</span>
+    </div>
+    <div class="header-controls">
+      <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound">
+        <span class="sound-icon">🔊</span> SOUND ON
+      </button>
+    </div>
+  </header>
+
+  <main class="game-container">
+    
+    <!-- SECTION 1: SELECTION SCREEN -->
+    <section id="selection-screen" class="game-card visible">
+      <h1 class="screen-title">Prepare Your Pokémon</h1>
+      <p class="screen-subtitle">Select any Pokémon, customize your moves, and pick your opponent!</p>
+
+      <div class="selection-grid">
+        <!-- PLAYER SELECTION PANEL -->
+        <div class="selection-panel player-panel">
+          <div class="panel-header">
+            <span class="badge badge-player">Player 1</span>
+            <h2>Select Your Team (6 Slots)</h2>
+          </div>
+          
+          <!-- Team Slots row -->
+          <div class="team-slots-wrapper">
+            <span class="slots-label">Select Slot to Edit:</span>
+            <div class="team-slots" id="player-team-slots">
+              <button class="slot-btn active" data-slot="0" title="Slot 1"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="1" title="Slot 2"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="2" title="Slot 3"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="3" title="Slot 4"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="4" title="Slot 5"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="5" title="Slot 6"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+            </div>
+          </div>
+          
+          <!-- Search Box -->
+          <div class="search-box">
+            <input type="text" id="player-search-input" placeholder="Enter Pokémon Name or ID (e.g. Greninja, 25)..." autocomplete="off">
+            <button id="player-search-btn" class="btn btn-primary">Search</button>
+          </div>
+
+          <!-- Quick Select List -->
+          <div class="quick-select">
+            <div class="quick-select-tabs" id="player-quick-tabs"></div>
+            <div class="quick-chips" id="player-quick-chips"></div>
+          </div>
+
+          <!-- Pokémon Preview Details Card -->
+          <div id="player-preview" class="pokemon-preview empty">
+            <div class="loader hidden" id="player-loader">
+              <div class="spinner"></div>
+              <p>Fetching Pokémon details...</p>
+            </div>
+            <div class="preview-content">
+              <p class="placeholder-text">Search or choose a popular Pokémon to begin</p>
+            </div>
+          </div>
+
+          <!-- Moves Selection Section -->
+          <div id="player-moves-section" class="moves-section hidden">
+            <h3>Customize Moves for Selected Slot <span class="move-count">(<span id="player-move-selected-count">0</span>/4 selected)</span></h3>
+            <p class="move-instruction">Choose exactly 4 moves. If you don't choose, we'll auto-fill the best ones.</p>
+            <div class="moves-grid" id="player-moves-grid">
+              <!-- Dynamically populated moves checkboxes -->
+            </div>
+          </div>
+        </div>
+
+        <!-- OPPONENT SELECTION PANEL -->
+        <div class="selection-panel opponent-panel">
+          <div class="panel-header">
+            <span class="badge badge-opponent">CPU Opponent</span>
+            <h2>Select Opponent Team</h2>
+          </div>
+
+          <!-- Random Option or Manual Search Toggle -->
+          <div class="opponent-options">
+            <button id="opt-random-btn" class="btn btn-toggle active">Random Team</button>
+            <button id="opt-manual-btn" class="btn btn-toggle">Choose Team</button>
+          </div>
+
+          <!-- Opponent Team Slots row (hidden by default in Random mode) -->
+          <div class="team-slots-wrapper hidden" id="opponent-team-wrapper">
+            <span class="slots-label">Select Slot to Edit:</span>
+            <div class="team-slots" id="opponent-team-slots">
+              <button class="slot-btn active" data-slot="0" title="Slot 1"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="1" title="Slot 2"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="2" title="Slot 3"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="3" title="Slot 4"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="4" title="Slot 5"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+              <button class="slot-btn" data-slot="5" title="Slot 6"><span class="slot-ball">🔴</span> <span class="slot-text">Empty</span></button>
+            </div>
+          </div>
+
+          <div id="opponent-manual-search" class="search-box hidden">
+            <input type="text" id="opponent-search-input" placeholder="Enter Opponent Name or ID (e.g. Mew, 150)..." autocomplete="off">
+            <button id="opponent-search-btn" class="btn btn-secondary">Search</button>
+          </div>
+
+          <div id="opponent-quick-select" class="quick-select hidden">
+            <div class="quick-select-tabs" id="opponent-quick-tabs"></div>
+            <div class="quick-chips" id="opponent-quick-chips"></div>
+          </div>
+
+          <!-- Opponent Pokémon Preview Card -->
+          <div id="opponent-preview" class="pokemon-preview">
+            <div class="loader hidden" id="opponent-loader">
+              <div class="spinner"></div>
+              <p>Fetching Pokémon details...</p>
+            </div>
+            <div class="preview-content">
+              <div class="random-opponent-card">
+                <span class="mystery-symbol">?</span>
+                <p>Opponent team will be selected randomly when the battle starts.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opponent Moves Selection Section -->
+          <div id="opponent-moves-section" class="moves-section hidden">
+            <h3>Opponent Moves for Selected Slot <span class="move-count">(<span id="opponent-move-selected-count">0</span>/4 selected)</span></h3>
+            <div class="moves-grid" id="opponent-moves-grid">
+              <!-- Dynamically populated moves -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP SELECTOR CONTAINER -->
+      <div class="map-selector-container">
+        <h3 class="selector-title">Select Battle Ground</h3>
+        <p class="selector-subtitle">Choose where the clash occurs. The arena element will boost or weaken certain movesets.</p>
+        <div class="map-options-grid" id="map-options-grid">
+          <div class="map-card active" data-map="default">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Neo Arena</div>
+            <div class="map-card-desc">Standard championship field. Neutral terrain.</div>
+            <div class="map-card-boost neutral">Neutral Field</div>
+          </div>
+          <div class="map-card" data-map="volcano">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Volcanic Crater</div>
+            <div class="map-card-desc">Boiling lava sea. Fire moves +20%, Water moves -20%.</div>
+            <div class="map-card-boost fire">🔥 Fire +20% / 💧 Water -20%</div>
+          </div>
+          <div class="map-card" data-map="ocean">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Oceanic Abyss</div>
+            <div class="map-card-desc">Sunken temple. Water moves +20%, Fire moves -20%.</div>
+            <div class="map-card-boost water">💧 Water +20% / 🔥 Fire -20%</div>
+          </div>
+          <div class="map-card" data-map="forest">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Viridian Canopy</div>
+            <div class="map-card-desc">Sacred forest canopy. Grass moves +20%, Ground moves -20%.</div>
+            <div class="map-card-boost grass">🌿 Grass +20% / 🪵 Ground -20%</div>
+          </div>
+          <div class="map-card" data-map="powergrid">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Lightning Ridge</div>
+            <div class="map-card-desc">Charged high voltage grid. Electric moves +20%, Flying moves -20%.</div>
+            <div class="map-card-boost electric">⚡ Electric +20% / 🌪️ Flying -20%</div>
+          </div>
+          <div class="map-card" data-map="glacial">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Glacial Cavern</div>
+            <div class="map-card-desc">Frozen cave of eternal ice. Ice moves +20%, Grass moves -20%.</div>
+            <div class="map-card-boost ice">❄️ Ice +20% / 🌿 Grass -20%</div>
+          </div>
+          <div class="map-card" data-map="sky">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Sky Pillar</div>
+            <div class="map-card-desc">Summit peak. Dragon & Flying moves boosted.</div>
+            <div class="map-card-boost dragon">🐉 Dragon/Flying +20%</div>
+          </div>
+          <div class="map-card" data-map="graveyard">
+            <div class="map-card-glow"></div>
+            <div class="map-card-name">Haunted Cemetery</div>
+            <div class="map-card-desc">Resting place of spirits. Ghost & Dark moves boosted, Normal -20%.</div>
+            <div class="map-card-boost ghost">👻 Ghost/Dark +20% / Normal -20%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button to start game -->
+      <div class="start-battle-container">
+        <button id="start-battle-btn" class="btn btn-large btn-danger" disabled>Ready For Battle</button>
+        <p id="start-warning" class="warning-text">Select your Pokémon to unlock the battle arena.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: BATTLE ARENA SCREEN -->
+    <section id="battle-screen" class="battle-arena-container hidden">
+      
+      <!-- Battle Arena Backplate / Background -->
+      <div id="battle-field" class="battle-field bg-default">
+        <!-- Floating Visual Effects elements will render inside here (projectiles, slashes, shakes) -->
+        
+        <!-- TOP: OPPONENT DISPLAY -->
+        <div id="opponent-battle-side" class="opponent-battle-side">
+          <div class="pokemon-hud hud-opponent">
+            <div class="hud-header">
+              <span id="bt-opponent-name" class="bt-poke-name">Opponent</span>
+              <span class="hud-types" id="bt-opponent-types"></span>
+              <span class="hud-level">Lv.<span id="bt-opponent-level">50</span></span>
+            </div>
+            <div class="hud-bar-container hp-bar-container">
+              <div class="hud-label">HP</div>
+              <div class="hud-bar-outer">
+                <div id="bt-opponent-hp-bar" class="hud-bar-inner hp-bar-green" style="width: 100%"></div>
+              </div>
+              <span class="hud-stats-numbers" id="bt-opponent-hp-num">100/100</span>
+            </div>
+            <div class="hud-bar-container ultimate-bar-container">
+              <div class="hud-label u-label">ULT</div>
+              <div class="hud-bar-outer">
+                <div id="bt-opponent-ult-bar" class="hud-bar-inner ult-bar-blue" style="width: 0%"></div>
+              </div>
+              <span class="hud-stats-numbers" id="bt-opponent-ult-num">0%</span>
+            </div>
+            <!-- Opponent Party Indicators (6 Pokeballs) -->
+            <div class="hud-party-row" id="bt-opponent-party">
+              <span class="hud-party-ball" data-slot="0"></span>
+              <span class="hud-party-ball" data-slot="1"></span>
+              <span class="hud-party-ball" data-slot="2"></span>
+              <span class="hud-party-ball" data-slot="3"></span>
+              <span class="hud-party-ball" data-slot="4"></span>
+              <span class="hud-party-ball" data-slot="5"></span>
+            </div>
+          </div>
+          
+          <div class="pokemon-sprite-wrapper sprite-opponent" id="opponent-sprite-container">
+            <img id="bt-opponent-sprite" class="battle-sprite" src="" alt="Opponent Sprite">
+            <div class="sprite-shadow"></div>
+          </div>
+        </div>
+
+        <!-- BOTTOM: PLAYER DISPLAY -->
+        <div id="player-battle-side" class="player-battle-side">
+          <div class="pokemon-sprite-wrapper sprite-player" id="player-sprite-container">
+            <img id="bt-player-sprite" class="battle-sprite" src="" alt="Player Sprite">
+            <div class="sprite-shadow"></div>
+          </div>
+
+          <div class="pokemon-hud hud-player">
+            <div class="hud-header">
+              <span id="bt-player-name" class="bt-poke-name">Your Pokémon</span>
+              <span class="hud-types" id="bt-player-types"></span>
+              <span class="hud-level">Lv.<span id="bt-player-level">50</span></span>
+            </div>
+            <div class="hud-bar-container hp-bar-container">
+              <div class="hud-label">HP</div>
+              <div class="hud-bar-outer">
+                <div id="bt-player-hp-bar" class="hud-bar-inner hp-bar-green" style="width: 100%"></div>
+              </div>
+              <span class="hud-stats-numbers" id="bt-player-hp-num">100/100</span>
+            </div>
+            <div class="hud-bar-container ultimate-bar-container">
+              <div class="hud-label u-label">ULT</div>
+              <div class="hud-bar-outer">
+                <div id="bt-player-ult-bar" class="hud-bar-inner ult-bar-gold" style="width: 0%"></div>
+              </div>
+              <span class="hud-stats-numbers" id="bt-player-ult-num">0%</span>
+            </div>
+            <!-- Player Party Indicators (6 Pokeballs) -->
+            <div class="hud-party-row" id="bt-player-party">
+              <span class="hud-party-ball" data-slot="0"></span>
+              <span class="hud-party-ball" data-slot="1"></span>
+              <span class="hud-party-ball" data-slot="2"></span>
+              <span class="hud-party-ball" data-slot="3"></span>
+              <span class="hud-party-ball" data-slot="4"></span>
+              <span class="hud-party-ball" data-slot="5"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Hit effect layers -->
+        <div id="damage-numbers-layer"></div>
+        <div id="visual-effects-layer"></div>
+      </div>
+
+      <!-- Party Switch Panel (Sliding bottom tray) -->
+      <div id="party-switch-panel" class="party-switch-panel hidden">
+        <div class="switch-panel-header">
+          <h3>Choose a Pokémon to Swap In:</h3>
+          <button id="close-switch-panel-btn" class="btn-close">✕</button>
+        </div>
+        <div id="party-members-list" class="party-members-list">
+          <!-- Dynamically populated party cards -->
+        </div>
+      </div>
+
+      <!-- BOTTOM CONTROL DASHBOARD -->
+      <footer class="battle-dashboard">
+        
+        <!-- BATTLE LOG TICKER -->
+        <div class="battle-log-wrapper">
+          <div class="battle-log-header">Battle Feed</div>
+          <div id="battle-log" class="battle-log-content">
+            <p class="log-entry system-log">Battle started! Make your move.</p>
+          </div>
+        </div>
+
+        <!-- BATTLE ACTIONS (MOVES GRID) -->
+        <div class="actions-panel">
+          <!-- Move options -->
+          <div id="battle-moves-grid" class="battle-moves-grid">
+            <!-- 4 Moves Buttons generated dynamically -->
+            <button class="move-btn btn-locked" disabled>Move 1</button>
+            <button class="move-btn btn-locked" disabled>Move 2</button>
+            <button class="move-btn btn-locked" disabled>Move 3</button>
+            <button class="move-btn btn-locked" disabled>Move 4</button>
+          </div>
+          
+          <!-- Ultimate Move Panel -->
+          <div class="ultimate-action-wrapper">
+            <button id="ultimate-move-btn" class="ultimate-btn btn-locked" disabled>
+              <div class="ult-glow"></div>
+              <span class="ult-label">SUPER ULTIMATE</span>
+              <span id="ult-charge-percent" class="ult-sublabel">0% Charged</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-controls">
+          <button id="switch-menu-btn" class="btn btn-secondary party-btn">🔄 Switch</button>
+          <button id="forfeit-btn" class="btn btn-secondary">Forfeit Battle</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- FORCED SWITCH OVERLAY (Mandatory choice on faint) -->
+    <div id="forced-switch-overlay" class="battle-overlay hidden">
+      <div class="overlay-card forced-switch-card">
+        <h2 class="overlay-title" style="color: var(--color-red)">Pokémon Fainted!</h2>
+        <p class="overlay-message">Select your next Pokémon to send out:</p>
+        <div id="forced-party-list" class="party-members-list">
+          <!-- Clickable swap cards populated on faint -->
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAYS: WIN/LOSE OVERLAYS -->
+    <div id="battle-overlay" class="battle-overlay hidden">
+      <div class="overlay-card">
+        <h2 id="overlay-title" class="overlay-title">VICTORY!</h2>
+        <div class="overlay-visual">
+          <img id="overlay-sprite" class="overlay-sprite" src="" alt="Winner Sprite">
+        </div>
+        <p id="overlay-message" class="overlay-message">Your Charizard defeated Opponent Pikachu!</p>
+        <div class="overlay-buttons">
+          <button id="overlay-restart-btn" class="btn btn-large btn-primary">Rematch (Same Teams)</button>
+          <button id="overlay-select-screen-btn" class="btn btn-large btn-secondary">Choose New Teams</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CINEMATIC ULTIMATE OVERLAY -->
+  <div id="ultimate-cinematic-overlay" class="ultimate-cinematic-overlay hidden">
+    <div class="cinematic-backdrop-flash" id="cinematic-flash"></div>
+    <div class="cinematic-banner">
+      <div class="cinematic-stripe"></div>
+      <div class="cinematic-content">
+        <div class="cinematic-sub">SUPER ULTIMATE ACTIVATED</div>
+        <div class="cinematic-main">
+          <span class="cinematic-poke" id="cinematic-poke-name">CHARIZARD</span>
+          <span class="cinematic-slash">//</span>
+          <span class="cinematic-move" id="cinematic-move-name">G-MAX WILDFIRE</span>
+        </div>
+      </div>
+      <div class="cinematic-sprite-holder">
+        <img id="cinematic-sprite" src="" alt="Ultimate Attacker">
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
